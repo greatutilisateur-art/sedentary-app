@@ -1,0 +1,915 @@
+{
+  "$schema": "./activity_catalog_schema_v1.json",
+  "catalog_version": "1.0.0",
+  "policy_compatibility": "1.0.x",
+  "vocabulary_version": "1.0.0",
+  "status": "published",
+  "activity_count": 23,
+  "notes": [
+    "activities_v1.json est la source de vérité du catalogue V0.",
+    "Le Markdown lisible est généré automatiquement depuis ce fichier.",
+    "Les catégories visibles ne pilotent pas directement la diversité; le moteur utilise internal_family.",
+    "Les niveaux de preuve sont documentaires et ne sont pas des multiplicateurs de score."
+  ],
+  "activities": [
+    {
+      "id": "MOUV01",
+      "revision": 2,
+      "status": "published",
+      "title": "Une petite marche ?",
+      "instruction": "Et si tu allais marcher 2 à 5 minutes pour te dégourdir les jambes ?",
+      "user_category": "mouvement",
+      "internal_family": "walking",
+      "intensity": "active",
+      "duration_seconds_min": 120,
+      "duration_seconds_max": 300,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": true,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "certain",
+      "space_required": "outside_desk",
+      "discretion": "medium",
+      "body_focus": [
+        "legs",
+        "whole_body"
+      ],
+      "safety_flags": [
+        "stop_if_pain"
+      ],
+      "evidence_level": "high",
+      "base_weight": 12,
+      "variant_of": null,
+      "search_synonyms": [
+        "dégourdir les jambes",
+        "marche",
+        "marcher"
+      ]
+    },
+    {
+      "id": "MOUV02",
+      "revision": 2,
+      "status": "published",
+      "title": "Un verre d’eau ?",
+      "instruction": "Va boire un verre d’eau. Profites-en pour marcher un peu et te dégourdir les jambes.",
+      "user_category": "mouvement",
+      "internal_family": "walking_hydration_anchor",
+      "intensity": "gentle",
+      "duration_seconds_min": 120,
+      "duration_seconds_max": 300,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": true,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "certain",
+      "space_required": "outside_desk",
+      "discretion": "medium",
+      "body_focus": [
+        "legs",
+        "whole_body"
+      ],
+      "safety_flags": [],
+      "evidence_level": "indirect",
+      "base_weight": 7,
+      "variant_of": null,
+      "search_synonyms": [
+        "bouteille",
+        "eau",
+        "fontaine"
+      ]
+    },
+    {
+      "id": "MOUV03",
+      "revision": 2,
+      "status": "published",
+      "title": "Les escaliers cette fois ?",
+      "instruction": "Si tu dois changer d’étage, prends les escaliers si tu en as envie.",
+      "user_category": "mouvement",
+      "internal_family": "stairs",
+      "intensity": "dynamic",
+      "duration_seconds_min": 60,
+      "duration_seconds_max": 180,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": true,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "certain",
+      "space_required": "building",
+      "discretion": "low",
+      "body_focus": [
+        "cardiorespiratory",
+        "legs"
+      ],
+      "safety_flags": [
+        "avoid_if_balance_issue",
+        "stop_if_pain"
+      ],
+      "evidence_level": "moderate",
+      "base_weight": 5,
+      "variant_of": null,
+      "search_synonyms": [
+        "escaliers",
+        "étage"
+      ]
+    },
+    {
+      "id": "MOUV04",
+      "revision": 2,
+      "status": "published",
+      "title": "Prendre un peu l’air ?",
+      "instruction": "Si tu peux sortir quelques minutes, va marcher tranquillement dehors.",
+      "user_category": "mouvement",
+      "internal_family": "outdoor_walk",
+      "intensity": "gentle",
+      "duration_seconds_min": 180,
+      "duration_seconds_max": 600,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": true,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "certain",
+      "space_required": "outside",
+      "discretion": "low",
+      "body_focus": [
+        "legs",
+        "whole_body"
+      ],
+      "safety_flags": [],
+      "evidence_level": "indirect",
+      "base_weight": 7,
+      "variant_of": "MOUV01",
+      "search_synonyms": [
+        "air",
+        "dehors",
+        "extérieur"
+      ]
+    },
+    {
+      "id": "MOB01",
+      "revision": 2,
+      "status": "published",
+      "title": "Déverrouille un peu tes épaules",
+      "instruction": "Fais lentement quelques cercles avec les épaules, puis laisse-les redescendre.",
+      "user_category": "mobilite",
+      "internal_family": "shoulder_mobility",
+      "intensity": "gentle",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": null,
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "optional",
+      "space_required": "desk",
+      "discretion": "high",
+      "body_focus": [
+        "shoulders",
+        "upper_back"
+      ],
+      "safety_flags": [
+        "no_forced_range",
+        "stop_if_pain"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 6,
+      "variant_of": null,
+      "search_synonyms": [
+        "cercles épaules",
+        "épaules"
+      ]
+    },
+    {
+      "id": "MOB02",
+      "revision": 2,
+      "status": "published",
+      "title": "Tourne doucement le haut du corps",
+      "instruction": "Si tu peux te lever, c’est mieux. Regarde derrière toi à droite, reviens au centre, puis à gauche. Répète doucement.",
+      "user_category": "mobilite",
+      "internal_family": "thoracic_rotation",
+      "intensity": "gentle",
+      "duration_seconds_min": 45,
+      "duration_seconds_max": 90,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "probable",
+      "space_required": "desk",
+      "discretion": "medium",
+      "body_focus": [
+        "thoracic_spine",
+        "trunk"
+      ],
+      "safety_flags": [
+        "no_forced_range",
+        "stop_if_pain"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 5,
+      "variant_of": null,
+      "search_synonyms": [
+        "rotation dos",
+        "torsion",
+        "tourner le buste"
+      ]
+    },
+    {
+      "id": "MOB03",
+      "revision": 2,
+      "status": "published",
+      "title": "Fais bouger tes chevilles",
+      "instruction": "Si tu peux te lever, c’est mieux. Fais quelques mouvements ou rotations avec chaque cheville, tranquillement.",
+      "user_category": "mobilite",
+      "internal_family": "ankle_mobility",
+      "intensity": "gentle",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "optional",
+      "space_required": "desk",
+      "discretion": "high",
+      "body_focus": [
+        "ankles"
+      ],
+      "safety_flags": [
+        "stop_if_pain",
+        "use_support_if_needed"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 5,
+      "variant_of": null,
+      "search_synonyms": [
+        "cercles chevilles",
+        "chevilles"
+      ]
+    },
+    {
+      "id": "MOB04",
+      "revision": 2,
+      "status": "published",
+      "title": "Étire doucement l’arrière des jambes",
+      "instruction": "Si tu peux te lever, c’est mieux. Penche-toi progressivement vers l’avant, seulement aussi loin que c’est confortable, puis remonte.",
+      "user_category": "mobilite",
+      "internal_family": "posterior_chain_mobility",
+      "intensity": "gentle",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "probable",
+      "space_required": "desk",
+      "discretion": "medium",
+      "body_focus": [
+        "back",
+        "hamstrings",
+        "posterior_chain"
+      ],
+      "safety_flags": [
+        "no_forced_range",
+        "soft_knees_allowed",
+        "stop_if_dizziness",
+        "stop_if_pain"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 4,
+      "variant_of": null,
+      "search_synonyms": [
+        "arrière jambes",
+        "chaîne postérieure",
+        "toucher le sol"
+      ]
+    },
+    {
+      "id": "MOB05",
+      "revision": 2,
+      "status": "published",
+      "title": "Redresse-toi et ouvre un peu le haut du corps",
+      "instruction": "Si tu peux te lever, c’est mieux. Ouvre doucement la poitrine, redresse-toi quelques secondes, puis relâche.",
+      "user_category": "mobilite",
+      "internal_family": "chest_opening",
+      "intensity": "gentle",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "probable",
+      "space_required": "desk",
+      "discretion": "medium",
+      "body_focus": [
+        "chest",
+        "shoulders",
+        "upper_back"
+      ],
+      "safety_flags": [
+        "no_forced_range",
+        "stop_if_pain"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 5,
+      "variant_of": null,
+      "search_synonyms": [
+        "haut du corps",
+        "ouvrir poitrine"
+      ]
+    },
+    {
+      "id": "MOB06",
+      "revision": 2,
+      "status": "published",
+      "title": "Fais bouger doucement tes hanches",
+      "instruction": "Si tu peux te lever, c’est mieux. Fais quelques mouvements de bassin dans différentes directions, sans forcer.",
+      "user_category": "mobilite",
+      "internal_family": "hip_mobility",
+      "intensity": "gentle",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "probable",
+      "space_required": "small",
+      "discretion": "medium",
+      "body_focus": [
+        "hips",
+        "pelvis"
+      ],
+      "safety_flags": [
+        "no_forced_range",
+        "use_support_if_needed"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 4,
+      "variant_of": null,
+      "search_synonyms": [
+        "bassin",
+        "hanches"
+      ]
+    },
+    {
+      "id": "ETIR01",
+      "revision": 2,
+      "status": "published",
+      "title": "Un petit étirement des mollets ?",
+      "instruction": "Place un pied légèrement derrière l’autre et amène doucement le talon arrière vers le sol. Puis change de côté.",
+      "user_category": "etirement",
+      "internal_family": "calf_stretch",
+      "intensity": "gentle",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "probable",
+      "space_required": "small",
+      "discretion": "medium",
+      "body_focus": [
+        "ankles",
+        "calves"
+      ],
+      "safety_flags": [
+        "stop_if_pain",
+        "use_support_if_needed"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 4,
+      "variant_of": null,
+      "search_synonyms": [
+        "mollets",
+        "étirement mollet"
+      ]
+    },
+    {
+      "id": "ETIR02",
+      "revision": 2,
+      "status": "published",
+      "title": "Un peu d’étirement pour l’arrière des jambes ?",
+      "instruction": "Pose un talon légèrement devant toi et incline doucement le bassin vers l’avant, sans forcer.",
+      "user_category": "etirement",
+      "internal_family": "hamstring_stretch",
+      "intensity": "gentle",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "probable",
+      "space_required": "small",
+      "discretion": "medium",
+      "body_focus": [
+        "hamstrings",
+        "posterior_chain"
+      ],
+      "safety_flags": [
+        "no_forced_range",
+        "stop_if_pain"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 4,
+      "variant_of": null,
+      "search_synonyms": [
+        "arrière cuisses",
+        "ischios"
+      ]
+    },
+    {
+      "id": "ETIR03",
+      "revision": 2,
+      "status": "published",
+      "title": "Grandis-toi quelques secondes",
+      "instruction": "Si tu peux te lever, c’est mieux. Lève les bras, grandis-toi doucement, puis relâche.",
+      "user_category": "etirement",
+      "internal_family": "global_reach",
+      "intensity": "gentle",
+      "duration_seconds_min": 15,
+      "duration_seconds_max": 30,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "probable",
+      "space_required": "small",
+      "discretion": "medium",
+      "body_focus": [
+        "shoulders",
+        "trunk",
+        "whole_body"
+      ],
+      "safety_flags": [
+        "no_forced_range"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 4,
+      "variant_of": null,
+      "search_synonyms": [
+        "grandir",
+        "s’étirer"
+      ]
+    },
+    {
+      "id": "DYN01",
+      "revision": 2,
+      "status": "published",
+      "title": "Envie de bouger un peu plus ?",
+      "instruction": "Fais 5 à 8 squats tranquilles, à ton rythme.",
+      "user_category": "dynamique",
+      "internal_family": "squat",
+      "intensity": "dynamic",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "certain",
+      "space_required": "small",
+      "discretion": "low",
+      "body_focus": [
+        "glutes",
+        "legs"
+      ],
+      "safety_flags": [
+        "avoid_if_balance_issue",
+        "stable_footing",
+        "stop_if_pain"
+      ],
+      "evidence_level": "moderate",
+      "base_weight": 7,
+      "variant_of": null,
+      "search_synonyms": [
+        "flexions jambes",
+        "squats"
+      ]
+    },
+    {
+      "id": "DYN02",
+      "revision": 2,
+      "status": "published",
+      "title": "Quelques montées sur la pointe des pieds ?",
+      "instruction": "Monte doucement sur la pointe des pieds, redescends, puis recommence 10 fois.",
+      "user_category": "dynamique",
+      "internal_family": "calf_raise",
+      "intensity": "active",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "certain",
+      "space_required": "desk",
+      "discretion": "medium",
+      "body_focus": [
+        "ankles",
+        "calves"
+      ],
+      "safety_flags": [
+        "avoid_if_balance_issue",
+        "use_support_if_needed"
+      ],
+      "evidence_level": "moderate",
+      "base_weight": 6,
+      "variant_of": null,
+      "search_synonyms": [
+        "pointes pieds",
+        "élévations mollets"
+      ]
+    },
+    {
+      "id": "DYN03",
+      "revision": 2,
+      "status": "published",
+      "title": "Quelques levers de chaise ?",
+      "instruction": "Lève-toi puis rassieds-toi tranquillement 5 à 8 fois.",
+      "user_category": "dynamique",
+      "internal_family": "sit_to_stand",
+      "intensity": "active",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": null,
+      "standing_required": true,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "certain",
+      "space_required": "desk",
+      "discretion": "low",
+      "body_focus": [
+        "glutes",
+        "legs"
+      ],
+      "safety_flags": [
+        "avoid_if_balance_issue",
+        "stable_chair",
+        "stop_if_pain"
+      ],
+      "evidence_level": "moderate",
+      "base_weight": 7,
+      "variant_of": null,
+      "search_synonyms": [
+        "assis debout",
+        "lever chaise"
+      ]
+    },
+    {
+      "id": "DYN04",
+      "revision": 2,
+      "status": "published",
+      "title": "Quelques minutes plus dynamiques ?",
+      "instruction": "Marche d’un bon pas pendant environ 2 minutes.",
+      "user_category": "dynamique",
+      "internal_family": "brisk_walk",
+      "intensity": "dynamic",
+      "duration_seconds_min": 120,
+      "duration_seconds_max": 180,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": true,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "certain",
+      "space_required": "outside_desk",
+      "discretion": "low",
+      "body_focus": [
+        "cardiorespiratory",
+        "legs"
+      ],
+      "safety_flags": [
+        "stop_if_unwell"
+      ],
+      "evidence_level": "high",
+      "base_weight": 8,
+      "variant_of": "MOUV01",
+      "search_synonyms": [
+        "bon pas",
+        "marche rapide"
+      ]
+    },
+    {
+      "id": "BIEN01",
+      "revision": 2,
+      "status": "published",
+      "title": "Une minute pour souffler ?",
+      "instruction": "Respire tranquillement, en laissant l’expiration durer un peu plus longtemps, pendant environ 1 minute.",
+      "user_category": "bien_etre",
+      "internal_family": "slow_breathing",
+      "intensity": "gentle",
+      "duration_seconds_min": 60,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": null,
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "adjacent_only",
+      "space_required": "desk",
+      "discretion": "high",
+      "body_focus": [
+        "breathing"
+      ],
+      "safety_flags": [
+        "return_to_normal_breathing_if_uncomfortable"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 4,
+      "variant_of": null,
+      "search_synonyms": [
+        "respiration",
+        "souffler"
+      ]
+    },
+    {
+      "id": "BIEN02",
+      "revision": 2,
+      "status": "published",
+      "title": "Relâche un peu les épaules",
+      "instruction": "Monte-les doucement vers les oreilles, puis laisse-les redescendre. Répète quelques fois.",
+      "user_category": "bien_etre",
+      "internal_family": "shoulder_release",
+      "intensity": "gentle",
+      "duration_seconds_min": 15,
+      "duration_seconds_max": 30,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": null,
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "optional",
+      "space_required": "desk",
+      "discretion": "high",
+      "body_focus": [
+        "shoulders",
+        "upper_back"
+      ],
+      "safety_flags": [
+        "stop_if_pain"
+      ],
+      "evidence_level": "limited",
+      "base_weight": 4,
+      "variant_of": null,
+      "search_synonyms": [
+        "relâchement épaules"
+      ]
+    },
+    {
+      "id": "VIS01",
+      "revision": 2,
+      "status": "published",
+      "title": "Regarde au loin",
+      "instruction": "Si tu le peux, regarde quelques instants par la fenêtre ou vers un point éloigné.",
+      "user_category": "visuel",
+      "internal_family": "distance_gaze",
+      "intensity": "gentle",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 120,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": null,
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "adjacent_only",
+      "space_required": "desk",
+      "discretion": "high",
+      "body_focus": [
+        "visual"
+      ],
+      "safety_flags": [],
+      "evidence_level": "moderate",
+      "base_weight": 5,
+      "variant_of": null,
+      "search_synonyms": [
+        "fenêtre",
+        "regarder loin"
+      ]
+    },
+    {
+      "id": "VIS02",
+      "revision": 2,
+      "status": "published",
+      "title": "Une petite pause pour les yeux",
+      "instruction": "Ferme les yeux quelques instants, relâche ton regard, puis regarde à nouveau au loin.",
+      "user_category": "visuel",
+      "internal_family": "visual_rest",
+      "intensity": "gentle",
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 60,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": null,
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "standard"
+      ],
+      "sedentary_break_effect": "adjacent_only",
+      "space_required": "desk",
+      "discretion": "high",
+      "body_focus": [
+        "visual"
+      ],
+      "safety_flags": [],
+      "evidence_level": "limited",
+      "base_weight": 4,
+      "variant_of": "VIS01",
+      "search_synonyms": [
+        "fermer les yeux",
+        "repos yeux"
+      ]
+    },
+    {
+      "id": "START01",
+      "revision": 2,
+      "status": "published",
+      "title": "Pour commencer : le haut du corps",
+      "instruction": "Quelques mouvements d’épaules, rotations douces du haut du corps et ouverture de la poitrine.",
+      "user_category": "mobilite",
+      "internal_family": "start_upper_body",
+      "intensity": "gentle",
+      "duration_seconds_min": 120,
+      "duration_seconds_max": 120,
+      "compatible_postures": [
+        "seated",
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": false,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "start_of_day"
+      ],
+      "sedentary_break_effect": "probable",
+      "space_required": "small",
+      "discretion": "medium",
+      "body_focus": [
+        "chest",
+        "shoulders",
+        "thoracic_spine"
+      ],
+      "safety_flags": [
+        "no_forced_range"
+      ],
+      "evidence_level": "indirect",
+      "base_weight": 6,
+      "variant_of": null,
+      "search_synonyms": [
+        "début journée haut corps"
+      ]
+    },
+    {
+      "id": "START02",
+      "revision": 2,
+      "status": "published",
+      "title": "Pour commencer : jambes et hanches",
+      "instruction": "Quelques mouvements de chevilles, mobilisations douces des hanches et flexions/extensions des jambes.",
+      "user_category": "mobilite",
+      "internal_family": "start_lower_body",
+      "intensity": "gentle",
+      "duration_seconds_min": 120,
+      "duration_seconds_max": 120,
+      "compatible_postures": [
+        "standing"
+      ],
+      "preferred_posture": "standing",
+      "standing_required": true,
+      "walking_required": false,
+      "eligible_opportunity_types": [
+        "start_of_day"
+      ],
+      "sedentary_break_effect": "certain",
+      "space_required": "small",
+      "discretion": "medium",
+      "body_focus": [
+        "ankles",
+        "hips",
+        "legs"
+      ],
+      "safety_flags": [
+        "no_forced_range",
+        "use_support_if_needed"
+      ],
+      "evidence_level": "indirect",
+      "base_weight": 6,
+      "variant_of": null,
+      "search_synonyms": [
+        "début journée jambes"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "vocabulary_version": "1.0.0",
+  "user_categories": {
+    "mouvement": "Déplacement ou marche",
+    "mobilite": "Mouvements articulaires ou corporels dynamiques et doux",
+    "etirement": "Mise en tension maintenue ou semi-maintained d'une zone corporelle",
+    "dynamique": "Activation musculaire ou déplacement plus engagé",
+    "bien_etre": "Récupération ou détente, sans garantie de rupture de l'assise",
+    "visuel": "Repos ou changement de sollicitation visuelle"
+  },
+  "internal_families": [
+    "ankle_mobility",
+    "brisk_walk",
+    "calf_raise",
+    "calf_stretch",
+    "chest_opening",
+    "distance_gaze",
+    "global_reach",
+    "hamstring_stretch",
+    "hip_mobility",
+    "outdoor_walk",
+    "posterior_chain_mobility",
+    "shoulder_mobility",
+    "shoulder_release",
+    "sit_to_stand",
+    "slow_breathing",
+    "squat",
+    "stairs",
+    "start_lower_body",
+    "start_upper_body",
+    "thoracic_rotation",
+    "visual_rest",
+    "walking",
+    "walking_hydration_anchor"
+  ],
+  "intensities": [
+    "gentle",
+    "active",
+    "dynamic"
+  ],
+  "compatible_postures": [
+    "seated",
+    "standing"
+  ],
+  "opportunity_types": [
+    "standard",
+    "start_of_day"
+  ],
+  "sedentary_break_effects": [
+    "certain",
+    "probable",
+    "optional",
+    "adjacent_only"
+  ],
+  "space_requirements": [
+    "desk",
+    "small",
+    "outside_desk",
+    "building",
+    "outside"
+  ],
+  "discretion_levels": [
+    "high",
+    "medium",
+    "low"
+  ],
+  "body_focus": [
+    "ankles",
+    "back",
+    "breathing",
+    "calves",
+    "cardiorespiratory",
+    "chest",
+    "glutes",
+    "hamstrings",
+    "hips",
+    "legs",
+    "pelvis",
+    "posterior_chain",
+    "shoulders",
+    "thoracic_spine",
+    "trunk",
+    "upper_back",
+    "visual",
+    "whole_body"
+  ],
+  "safety_flags": {
+    "avoid_if_balance_issue": "À éviter si un problème d'équilibre rend le mouvement incertain",
+    "no_forced_range": "Rester dans une amplitude confortable, sans forcer",
+    "return_to_normal_breathing_if_uncomfortable": "Revenir à une respiration habituelle en cas d'inconfort",
+    "soft_knees_allowed": "Les genoux peuvent rester légèrement fléchis",
+    "stable_chair": "Utiliser une chaise stable",
+    "stable_footing": "S'assurer d'un appui stable",
+    "stop_if_dizziness": "Arrêter en cas de vertige",
+    "stop_if_pain": "Arrêter en cas de douleur",
+    "stop_if_unwell": "Arrêter en cas de malaise ou de sensation inhabituelle",
+    "use_support_if_needed": "Utiliser un support stable si nécessaire"
+  },
+  "evidence_levels": [
+    "high",
+    "moderate",
+    "limited",
+    "indirect"
+  ],
+  "activity_statuses": [
+    "draft",
+    "published",
+    "deprecated",
+    "archived"
+  ],
+  "catalog_statuses": [
+    "draft",
+    "published",
+    "deprecated",
+    "archived"
+  ]
+}
