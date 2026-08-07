@@ -2,8 +2,8 @@
 
 **Produit :** application Android hors ligne de lutte contre la sédentarité au travail  
 **Portée :** V0  
-**Statut :** validée produit — révision 1.1  
-**Dépendances métier :** `DecisionEngineSpecification_v1`, `ActivityCatalogSchema_v1`
+**Statut :** validée produit — révision 1.1.1 (planning simplifié)  
+**Dépendances métier :** `DecisionEngine.md`, `ActivityCatalogSchema_v1`
 
 ---
 
@@ -42,8 +42,10 @@ L'UX ne cherche pas à maximiser le nombre d'interactions. Elle cherche à rédu
 
 ### Choix de conception V0
 
-- quatre créneaux préremplis ;
+- quatre créneaux préremplis et modifiables ;
+- minimum de 20 minutes entre deux opportunités distinctes ;
 - boutons `Dans 10 min`, `Dans 30 min`, `Pas maintenant` ;
+- report autorisé pendant la pause déjeuner ou après l'heure de fin habituelle lorsqu'il est demandé explicitement ;
 - écran sans chronomètre ;
 - bouton `C'est parti` qui ferme l'écran ;
 - même activité conservée après un report ;
@@ -140,17 +142,19 @@ Chaque créneau affiche :
 
 Un créneau invalide n'est pas déplacé silencieusement.
 
-Un créneau cible exactement égal à l'heure de fin de travail est valide. La tolérance technique habituelle peut donc conduire à un affichage quelques minutes après cette heure, mais jamais au-delà de la limite de retard définie par la politique du moteur.
+Deux créneaux standards actifs doivent être séparés d'au moins 20 minutes. Ce minimum est une règle de conception destinée à éviter deux propositions distinctes presque simultanées ; ce n'est pas une fréquence scientifique recommandée.
 
-Message :
+Un créneau cible exactement égal à l'heure de fin de travail est valide. La tolérance technique habituelle peut donc conduire à un affichage quelques minutes après cette heure, sauf si cet affichage tardif créerait moins de 20 minutes avant le prochain créneau fixe.
+
+Messages possibles :
 
 > Cet horaire est en dehors de tes heures de travail.
 
-ou :
-
 > Cet horaire tombe pendant ta pause déjeuner.
 
-La poursuite est autorisée seulement si au moins un créneau est valide. Les créneaux invalides sont désactivés tant qu'ils ne sont pas corrigés.
+> Laisse au moins 20 min entre deux créneaux.
+
+La poursuite est autorisée seulement si au moins un créneau est valide. Un créneau invalide reste signalé jusqu'à correction ; il n'est jamais déplacé automatiquement.
 
 #### ONB-04 — Possibilités habituelles
 
@@ -317,7 +321,11 @@ Ordre lorsque les reports sont temporellement possibles :
 2. `Dans 30 min`
 3. `Pas maintenant`
 
-`Pas maintenant` reste toujours disponible. Un bouton de report n'est affiché que si l'heure obtenue reste valide selon les frontières de la journée. Ainsi, pour un créneau cible exactement égal à l'heure de fin, les reports ne sont pas proposés.
+`Pas maintenant` reste toujours disponible.
+
+Un report peut être proposé même s'il tombe pendant la pause déjeuner ou après l'heure habituelle de fin de travail : il s'agit alors d'une décision explicite de l'utilisateur.
+
+En revanche, un bouton de report n'est pas affiché si l'heure obtenue serait située à moins de 20 minutes d'un autre créneau fixe. Les créneaux fixes gardent la priorité et ne sont ni déplacés ni annulés à cause d'un report.
 
 Toucher le corps de la notification ouvre l'écran activité.
 
@@ -336,6 +344,14 @@ Raisons :
 
 Le report retire la notification courante et planifie la même activité. Aucune notification de confirmation supplémentaire n'est envoyée.
 
+Un report :
+
+- ne recalcule pas les autres créneaux ;
+- peut traverser la pause déjeuner ;
+- peut dépasser l'heure habituelle de fin de travail ;
+- reste soumis au minimum de 20 minutes avec les autres opportunités fixes ;
+- peut être reporté à nouveau si une option reste disponible.
+
 ### 6.4 Pas maintenant
 
 - retire la notification ;
@@ -346,13 +362,14 @@ Le report retire la notification courante et planifie la même activité. Aucune
 
 ### 6.5 Notification arrivée tardivement
 
-Si la notification est encore dans la tolérance métier, elle s'affiche normalement.
+Si la notification est encore dans la tolérance technique et ne créerait pas un conflit de moins de 20 minutes avec le prochain créneau fixe, elle s'affiche normalement.
 
-Si elle est périmée :
+Sinon :
 
-- aucune notification ;
+- aucune notification pour cette occurrence tardive ;
 - aucun rattrapage ;
-- aucun message à l'utilisateur.
+- le prochain créneau fixe reste inchangé ;
+- aucun message technique à l'utilisateur.
 
 ---
 
@@ -441,10 +458,14 @@ L'utilisateur ne doit jamais être piégé dans l'écran.
 ### 8.1 Comportement
 
 - reste dans la même opportunité ;
-- exclut toutes les activités déjà montrées dans cette interaction ;
+- exclut uniquement l'activité actuellement affichée du prochain tirage ;
+- permet de reproposer une activité montrée plus tôt ;
 - conserve les mêmes contraintes de capacité et de réglages ;
+- ne crée aucune préférence négative durable ;
 - remplace le contenu sur place ;
 - utilise une transition visuelle courte et non indispensable à la compréhension.
+
+Une séquence `A → B → A` est donc possible en V0. Ce risque de répétition est accepté pour garder une logique simple : l'application suggère, elle ne prétend pas mémoriser ce que l'utilisateur veut réellement faire.
 
 ### 8.2 Aucune alternative
 
@@ -524,7 +545,7 @@ Contenu :
 - interrupteur ;
 - heure cible ;
 - texte expliquant qu'il s'agit d'une activité de 2 minutes ;
-- rappel qu'elle compte dans l'espacement des notifications.
+- rappel qu'elle doit rester à au moins 20 minutes des créneaux standards.
 
 Pas de marche proposée dans ce contexte V0.
 
@@ -579,6 +600,14 @@ Action :
 ### Toutes les catégories désactivées
 
 Bloquer uniquement la dernière désactivation avec un message inline. Pas de dialogue modal.
+
+### Créneaux trop proches
+
+Message inline dans l'édition :
+
+> Laisse au moins 20 min entre deux créneaux.
+
+Aucun déplacement automatique n'est effectué.
 
 ### Tous les créneaux invalides
 

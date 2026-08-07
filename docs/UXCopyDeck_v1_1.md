@@ -1,4 +1,4 @@
-# UXCopyDeck_v1.1
+# UXCopyDeck_v1.1.1
 
 ## Onboarding
 
@@ -39,6 +39,7 @@ Ils sont préremplis et entièrement modifiables.
 **Erreurs**
 - Cet horaire est en dehors de tes heures de travail.
 - Cet horaire tombe pendant ta pause déjeuner.
+- Laisse au moins 20 min entre deux créneaux.
 
 ### ONB-04
 
@@ -109,9 +110,11 @@ Certains créneaux doivent être ajustés.
 `{duration_label} · Touche pour voir la consigne`
 
 **Actions**
-- Dans 10 min — si le report reste possible
-- Dans 30 min — si le report reste possible
+- Dans 10 min — si aucun créneau fixe n'est à moins de 20 min
+- Dans 30 min — si aucun créneau fixe n'est à moins de 20 min
 - Pas maintenant — toujours disponible
+
+Un report peut tomber pendant la pause déjeuner ou après l'heure habituelle de fin de travail.
 
 ---
 
