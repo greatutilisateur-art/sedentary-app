@@ -19,6 +19,12 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("../catalog", "../policy")
+        }
+    }
+
     buildTypes {
         release {
             optimization {

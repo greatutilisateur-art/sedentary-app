@@ -12,14 +12,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.sedentaryapp.data.CatalogActivity
+import org.sedentaryapp.data.CatalogRepository
 import org.sedentaryapp.engine.decision.DecisionEngine
-import org.sedentaryapp.engine.model.ActivityDefinition
 import org.sedentaryapp.engine.model.CandidateFilterRequest
 import org.sedentaryapp.engine.model.DecisionPolicy
 import org.sedentaryapp.engine.model.RepetitionCoefficients
@@ -31,61 +33,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val catalogRepository = CatalogRepository(this)
+        val activities = catalogRepository.loadActivities()
+
         setContent {
             SedentaryAppTheme {
-                EngineDemoScreen()
+                RealCatalogScreen(
+                    activities = activities,
+                )
             }
         }
     }
 }
 
 @Composable
-fun EngineDemoScreen() {
-
-    val activities = remember {
-        listOf(
-            ActivityDefinition(
-                id = "A",
-                status = "published",
-                userCategory = "mouvement",
-                internalFamily = "walking",
-                intensity = "gentle",
-                durationSecondsMin = 120,
-                durationSecondsMax = 300,
-                standingRequired = true,
-                walkingRequired = true,
-                eligibleOpportunityTypes = setOf("standard"),
-                baseWeight = 1.0,
-            ),
-            ActivityDefinition(
-                id = "B",
-                status = "published",
-                userCategory = "mobilite",
-                internalFamily = "shoulders",
-                intensity = "gentle",
-                durationSecondsMin = 30,
-                durationSecondsMax = 60,
-                standingRequired = false,
-                walkingRequired = false,
-                eligibleOpportunityTypes = setOf("standard"),
-                baseWeight = 1.0,
-            ),
-            ActivityDefinition(
-                id = "C",
-                status = "published",
-                userCategory = "dynamique",
-                internalFamily = "squats",
-                intensity = "active",
-                durationSecondsMin = 30,
-                durationSecondsMax = 60,
-                standingRequired = true,
-                walkingRequired = false,
-                eligibleOpportunityTypes = setOf("standard"),
-                baseWeight = 1.0,
-            ),
-        )
-    }
-
+fun RealCatalogScreen(
+    activities: List<CatalogActivity>,
+) {
     val policy = remember {
         DecisionPolicy(
             scoring = ScoringPolicy(
@@ -101,19 +65,28 @@ fun EngineDemoScreen() {
         )
     }
 
+    val definitions = remember(activities) {
+        activities.map { it.definition }
+    }
+
     fun chooseActivity(
         excludedIds: Set<String>,
         attempt: Int,
-    ): ActivityDefinition? {
-        return DecisionEngine.chooseActivity(
-            activities = activities,
+    ): CatalogActivity? {
+        val selectedDefinition = DecisionEngine.chooseActivity(
+            activities = definitions,
             history = emptyList(),
             policy = policy,
-            seed = "demo-$attempt",
+            seed = "real-catalog-demo-$attempt",
             filterRequest = CandidateFilterRequest(
+                opportunityType = "standard",
                 excludedActivityIds = excludedIds,
             ),
         )
+
+        return activities.firstOrNull {
+            it.definition.id == selectedDefinition?.id
+        }
     }
 
     var shownIds by remember {
@@ -121,11 +94,22 @@ fun EngineDemoScreen() {
     }
 
     var attempt by remember {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
 
     var currentActivity by remember {
-        mutableStateOf(chooseActivity(emptySet(), 0))
+        mutableStateOf(
+            chooseActivity(
+                excludedIds = emptySet(),
+                attempt = 0,
+            )
+        )
+    }
+
+    val availableStandardActivities = remember(activities) {
+        activities.filter {
+            "standard" in it.definition.eligibleOpportunityTypes
+        }
     }
 
     Column(
@@ -141,32 +125,52 @@ fun EngineDemoScreen() {
             style = MaterialTheme.typography.headlineMedium,
         )
 
-        Text(
-            modifier = Modifier.padding(top = 32.dp),
-            text = when (currentActivity?.id) {
-                "A" -> "Une petite marche ?"
-                "B" -> "Quelques cercles d’épaules ?"
-                "C" -> "Quelques squats tranquilles ?"
-                else -> "Aucune autre activité"
-            },
-            style = MaterialTheme.typography.titleLarge,
-        )
-
         currentActivity?.let { activity ->
 
             Text(
-                modifier = Modifier.padding(top = 12.dp),
-                text = "${activity.durationSecondsMin}–${activity.durationSecondsMax} secondes",
+                modifier = Modifier.padding(top = 32.dp),
+                text = activity.title,
+                style = MaterialTheme.typography.titleLarge,
             )
 
-            val excludedForNext = shownIds + activity.id
+            Text(
+                modifier = Modifier.padding(top = 16.dp),
+                text = activity.instruction,
+                style = MaterialTheme.typography.bodyLarge,
+            )
 
-            if (excludedForNext.size < activities.size) {
+            Text(
+                modifier = Modifier.padding(top = 16.dp),
+                text = formatDuration(
+                    minSeconds = activity.definition.durationSecondsMin,
+                    maxSeconds = activity.definition.durationSecondsMax,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
 
+            postureLabel(activity)?.let { label ->
+                Text(
+                    modifier = Modifier.padding(top = 8.dp),
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+
+            val excludedForNext =
+                shownIds + activity.definition.id
+
+            val alternativesRemain =
+                availableStandardActivities.any {
+                    it.definition.id !in excludedForNext
+                }
+
+            if (alternativesRemain) {
                 Button(
                     modifier = Modifier.padding(top = 32.dp),
                     onClick = {
-                        val newShownIds = shownIds + activity.id
+                        val newShownIds =
+                            shownIds + activity.definition.id
+
                         val newAttempt = attempt + 1
 
                         currentActivity = chooseActivity(
@@ -181,6 +185,42 @@ fun EngineDemoScreen() {
                     Text("Autre activité")
                 }
             }
+        } ?: Text(
+            text = "Aucune activité ne correspond actuellement à ces réglages.",
+        )
+    }
+}
+
+private fun formatDuration(
+    minSeconds: Int,
+    maxSeconds: Int,
+): String {
+    fun value(seconds: Int): String {
+        return when {
+            seconds < 60 -> "$seconds s"
+            seconds % 60 == 0 -> "${seconds / 60} min"
+            else -> "${seconds / 60} min ${seconds % 60} s"
         }
+    }
+
+    return if (minSeconds == maxSeconds) {
+        value(minSeconds)
+    } else {
+        "${value(minSeconds)} – ${value(maxSeconds)}"
+    }
+}
+
+private fun postureLabel(
+    activity: CatalogActivity,
+): String? {
+    return when {
+        activity.definition.standingRequired ->
+            "Debout nécessaire"
+
+        activity.preferredPosture == "standing" ->
+            "Debout conseillé"
+
+        else ->
+            null
     }
 }
