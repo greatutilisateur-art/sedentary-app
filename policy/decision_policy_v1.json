@@ -1,26 +1,37 @@
 {
-  "policy_version": "decision-policy-v1.0.0",
+  "policy_version": "decision-policy-v1.0.1",
   "selector_version": "weighted-selector-v1.0.0",
-  "default_slots": ["10:10", "11:50", "15:10", "17:30"],
+  "default_slots": [
+    "10:10",
+    "11:50",
+    "15:10",
+    "17:30"
+  ],
   "technical_lateness_tolerance_minutes": 15,
-  "spacing": {
-    "standard_min_minutes": 90,
-    "boundary_exception_min_minutes": 60,
-    "boundaries": ["lunch_start", "work_end"],
-    "cancel_if_below_exception_min": true,
-    "catch_up_cancelled_slots": false
+  "scheduling": {
+    "minimum_gap_between_distinct_opportunities_minutes": 20,
+    "configured_standard_slots_must_respect_minimum_gap": true,
+    "fixed_standard_slots_have_priority": true,
+    "catch_up_missed_slots": false,
+    "drop_late_opportunity_if_too_close_to_fixed_slot": true
   },
   "snooze": {
-    "options_minutes": [10, 30],
-    "one_active_opportunity": true,
-    "priority_over_normal_slot": true,
-    "cancel_if_crosses_lunch_or_work_end": true
+    "options_minutes": [
+      10,
+      30
+    ],
+    "preserve_activity": true,
+    "one_active_occurrence_per_opportunity": true,
+    "allow_during_lunch_break": true,
+    "allow_after_work_end": true,
+    "does_not_move_standard_slots": true,
+    "hide_option_if_too_close_to_fixed_slot": true
   },
   "start_of_day": {
     "supported": true,
     "enabled_by_default": false,
-    "counts_for_spacing": true,
-    "included_in_default_four_slots": false
+    "included_in_default_four_slots": false,
+    "minimum_gap_to_standard_slots_minutes": 20
   },
   "scoring": {
     "min_weight": 0.05,
@@ -38,9 +49,10 @@
     "use_preference_bonus_in_v0": false
   },
   "alternative": {
-    "exclude_all_activities_seen_in_interaction": true,
+    "exclude_current_activity_only": true,
+    "allow_activities_seen_earlier_in_interaction": true,
     "persistent_penalty": false,
-    "stop_when_exhausted": true
+    "stop_when_no_other_candidate": true
   },
   "history": {
     "engine_scope": "current_day_and_recent_proposals",
