@@ -7,20 +7,20 @@ Application Android gratuite, open source et entièrement hors ligne destinée �
 - vision produit consolidée ;
 - principes produit ;
 - cadre scientifique ;
-- catalogue V0 de 23 activités ;
+- catalogue V0 de 23 activités, version `1.0.2` ;
 - schéma JSON et vocabulaires contrôlés ;
 - moteur de décision V0 simplifié ;
-- politique `decision-policy-v1.0.1` ;
+- politique `decision-policy-v1.0.5` ;
 - scénarios de test mis à jour ;
-- UX spécifiée.
+- UX V1.2 spécifiée et validée avant implémentation Android.
 
 ### Validation actuelle
 
-Le moteur avait été simulé avec une ancienne politique utilisant une règle d'espacement 90/60.
+Le moteur a été resimulé après simplification du planning puis du scoring. `internal_family` n’influence plus la sélection runtime.
 
 Cette règle a été supprimée avant l'implémentation Android.
 
-Les anciens résultats automatisés ne doivent donc plus être considérés comme une validation de la politique actuelle. Le simulateur devra être mis à jour et les tests relancés avant le passage au Kotlin.
+La validation actuelle est documentée dans `docs/VALIDATION_STATUS.md`. Une dernière exécution doit être reproduite sur le dépôt local synchronisé avant le passage au Kotlin.
 
 ## Sources de vérité
 
@@ -29,25 +29,58 @@ Les anciens résultats automatisés ne doivent donc plus être considérés comm
 3. `catalog/activity_vocabularies_v1.json` — valeurs contrôlées ;
 4. `policy/decision_policy_v1.json` — paramètres versionnés du moteur ;
 5. `docs/DecisionEngine.md` — règles métier ;
-6. `docs/UXSpecification_v1_1.md` — comportement UX ;
-7. `docs/Scientific_framework.md` — cadre scientifique ;
-8. `docs/Vision.md` et `docs/ProductPrinciples.md` — direction et arbitrages produit.
+6. `docs/UXSpecification_v1_2.md` — comportement UX courant ;
+7. `docs/AndroidArchitecture_V0_2.md` — architecture Android V0 ;
+8. `docs/Scientific_framework.md` — cadre scientifique ;
+9. `docs/Vision.md` et `docs/ProductPrinciples.md` — direction et arbitrages produit.
 
 Les documents explicitement marqués `LEGACY` sont conservés uniquement pour l'historique et ne doivent pas guider l'implémentation.
 
 ## Politique de planning V0
 
-- quatre créneaux par défaut, entièrement modifiables ;
+- quatre créneaux proposés par défaut, avec 1 à 4 créneaux actifs au choix ;
 - créneaux fixes dans les plages de travail configurées ;
 - minimum de 20 minutes entre deux opportunités distinctes ;
 - aucune règle 90/60 ;
 - aucun rattrapage ;
 - reports +10/+30 conservant la même activité ;
 - reports explicitement demandés autorisés pendant la pause déjeuner ou après la fin habituelle du travail ;
-- un report ne déplace jamais un créneau fixe.
+- un report ne déplace jamais un créneau fixe ;
+- une seule notification d’activité visible à la fois ;
+- les comportements passifs ne créent ni préférence, ni relance, ni rattrapage ;
+- modifier le planning ou un réglage d’éligibilité annule un report actif ;
+- un report ne traverse jamais minuit.
 
-## Architecture future
+- zéro jour travaillé sélectionné est valide et produit zéro proposition ;
+- suspension uniquement manuelle jusqu’à `Reprendre` ;
+- reprise/permission/onboarding : opportunités futures uniquement ;
+- horaires interprétés en heure locale ;
+- travail traversant minuit non supporté en V0.
 
-Le moteur sera implémenté en Kotlin pur avant son intégration Android.
+- accueil réduit à l’état + prochaine proposition ;
+- posture portée par un badge contextuel ;
+- permission Android différée si aucune proposition automatique n’est prévue ;
+- réglages pouvant produire zéro activité éligible sans blocage.
 
-Aucune règle métier ne doit dépendre de Compose, Room, DataStore, WorkManager ou du gestionnaire de notifications.
+
+## Flux activité UX V1.2
+
+- aucun bouton de confirmation de démarrage ;
+- l’écran activité sert à consulter la consigne ;
+- Retour Android est neutre ;
+- `Dernière activité proposée` permet de rouvrir la consigne depuis l’accueil ;
+- swipe, verrouillage et autres comportements passifs n’ont aucune signification comportementale ;
+- `Pas maintenant` reste l’abandon explicite ;
+- un report conserve la même activité ;
+- aucune métrique V0 ne prétend mesurer les activités réellement effectuées ;
+- `Autre activité` suit une séquence `A → B → C` : toutes les activités déjà montrées dans l’interaction sont temporairement exclues.
+
+## Architecture Android V0
+
+Le port Kotlin pur du moteur est préparé pour `:engine` mais n’est pas encore intégré au projet Android.
+
+Le module `:app` utilise Compose, DataStore et AlarmManager inexact.
+
+Pas de Room, pas de Hilt et pas de WorkManager comme scheduler principal en V0.
+
+Aucune règle métier ne dépend de Compose, DataStore, AlarmManager ou du gestionnaire de notifications.

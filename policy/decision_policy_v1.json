@@ -1,11 +1,11 @@
 {
-  "policy_version": "decision-policy-v1.0.1",
+  "policy_version": "decision-policy-v1.0.5",
   "selector_version": "weighted-selector-v1.0.0",
   "default_slots": [
     "10:10",
     "11:50",
     "15:10",
-    "17:30"
+    "17:00"
   ],
   "technical_lateness_tolerance_minutes": 15,
   "scheduling": {
@@ -13,7 +13,11 @@
     "configured_standard_slots_must_respect_minimum_gap": true,
     "fixed_standard_slots_have_priority": true,
     "catch_up_missed_slots": false,
-    "drop_late_opportunity_if_too_close_to_fixed_slot": true
+    "drop_late_opportunity_if_too_close_to_fixed_slot": true,
+    "one_visible_activity_notification_at_a_time": true,
+    "new_notification_replaces_previous_unhandled_notification": true,
+    "passive_device_events_create_behavioral_signal": false,
+    "no_catch_up_after_device_unavailable": true
   },
   "snooze": {
     "options_minutes": [
@@ -25,7 +29,9 @@
     "allow_during_lunch_break": true,
     "allow_after_work_end": true,
     "does_not_move_standard_slots": true,
-    "hide_option_if_too_close_to_fixed_slot": true
+    "hide_option_if_too_close_to_fixed_slot": true,
+    "same_calendar_day_only": true,
+    "cancel_on_schedule_change": true
   },
   "start_of_day": {
     "supported": true,
@@ -39,24 +45,72 @@
     "history_window_proposals": 4,
     "repetition_coefficients": {
       "same_as_previous_activity": 0.15,
-      "same_as_previous_family": 0.45,
       "same_activity_in_recent_window": 0.55,
-      "family_at_least_twice_in_recent_window": 0.75,
       "no_repetition": 1.0
     },
     "combine_repetition_coefficients": false,
     "use_evidence_level_at_runtime": false,
-    "use_preference_bonus_in_v0": false
+    "use_preference_bonus_in_v0": false,
+    "use_internal_family_in_v0": false
   },
   "alternative": {
-    "exclude_current_activity_only": true,
-    "allow_activities_seen_earlier_in_interaction": true,
+    "exclude_current_activity_only": false,
+    "allow_activities_seen_earlier_in_interaction": false,
     "persistent_penalty": false,
-    "stop_when_no_other_candidate": true
+    "stop_when_no_other_candidate": true,
+    "exclude_all_activities_seen_in_current_interaction": true
   },
   "history": {
     "engine_scope": "current_day_and_recent_proposals",
     "persist_full_trace_in_release_build": false,
     "persist_full_trace_in_debug_build": true
+  },
+  "slot_configuration": {
+    "min_active_standard_slots": 1,
+    "max_active_standard_slots": 4,
+    "validate_only_active_slots": true,
+    "inactive_slots_create_opportunities": false
+  },
+  "workdays": {
+    "allow_empty_selection": true,
+    "empty_selection_creates_opportunities": false,
+    "next_workday_is_computed_from_selected_weekdays": true
+  },
+  "capabilities": {
+    "walking_requires_standing": true,
+    "turning_off_standing_turns_off_walking": true,
+    "turning_on_standing_does_not_turn_on_walking": true
+  },
+  "suspension": {
+    "mode": "manual_until_resumed",
+    "automatic_resume_next_workday": false,
+    "creates_catch_up_on_resume": false
+  },
+  "reactivation": {
+    "future_opportunities_only": true,
+    "no_catch_up_after_notification_permission_restore": true,
+    "no_catch_up_after_manual_resume": true,
+    "no_catch_up_after_onboarding_completion": true,
+    "no_catch_up_after_device_unavailable": true
+  },
+  "settings_changes": {
+    "cancel_active_snooze_on_schedule_change": true,
+    "cancel_active_snooze_on_eligibility_change": true,
+    "eligibility_fields": [
+      "enabled_categories",
+      "enabled_intensities",
+      "can_stand",
+      "can_walk"
+    ],
+    "already_visible_notification_is_not_retroactively_rewritten": true,
+    "alternative_uses_latest_settings": true
+  },
+  "local_time": {
+    "configured_slots_are_wall_clock_local_time": true,
+    "recompute_future_opportunities_after_timezone_change": true,
+    "recompute_future_opportunities_after_dst_change": true,
+    "never_duplicate_already_processed_slot": true,
+    "overnight_work_shift_supported": false,
+    "work_start_must_be_before_work_end_same_calendar_day": true
   }
 }

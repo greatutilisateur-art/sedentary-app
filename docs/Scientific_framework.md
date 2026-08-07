@@ -126,7 +126,7 @@ Le produit peut légitimement encourager une personne à :
 Les recommandations générales ne valident pas automatiquement :
 
 - quatre rappels par jour ;
-- les horaires `10:10`, `11:50`, `15:10`, `17:30` ;
+- les horaires `10:10`, `11:50`, `15:10`, `17:00` ;
 - le minimum produit de `20 minutes` entre deux opportunités distinctes ;
 - une durée universelle de pause ;
 - un optimum identique pour tous.
@@ -469,17 +469,17 @@ L’activité impose de quitter l’assise.
 
 ### `probable`
 
-L’activité se réalise normalement debout, mais une variante assise peut parfois exister.
+Dans la convention produit, l’activité peut parfois rester réalisable assis, mais la consigne recommande explicitement de se lever ou privilégie la station debout. La rupture est donc attendue si cette recommandation est suivie, sans être garantie.
 
 ### `optional`
 
-L’activité peut être effectuée assis ou debout.
+L’activité peut être effectuée assis ou debout sans recommandation forte de quitter l’assise.
 
 ### `adjacent_only`
 
 L’activité apporte un bénéfice adjacent sans garantir de rupture de l’assise.
 
-Cette classification décrit le comportement attendu. Elle n’est pas un niveau de preuve scientifique.
+Cette classification est une convention de conception décrivant le comportement attendu. Elle n’est ni une observation du comportement réel ni un niveau de preuve scientifique.
 
 ---
 

@@ -55,7 +55,7 @@ La configuration initiale propose :
 10:10
 11:50
 15:10
-17:30
+17:00
 ```
 
 Ces valeurs sont préremplies mais modifiables.
@@ -140,7 +140,7 @@ Exemple :
 10:10
 11:50
 15:10
-17:30
+17:00
 ```
 
 reste le planning du jour même si la proposition de 10:10 est reportée.
@@ -297,6 +297,46 @@ Le planning normal continue.
 
 ---
 
+## Comportements passifs et événements système
+
+Un comportement passif ou un événement système n’est pas interprété comme une préférence utilisateur.
+
+Exemples : notification ignorée, écran verrouillé ou éteint, téléphone éteint, application arrêtée par le système, redémarrage ou appareil indisponible.
+
+Ces événements ne créent ni pénalité, ni préférence, ni relance, ni dette, ni rattrapage. Une opportunité devenue périmée est simplement abandonnée.
+
+Le moteur métier ne reçoit pas l’état de l’écran ou du téléphone comme signal comportemental.
+
+## Une seule notification d’activité visible
+
+Une seule notification d’activité peut être visible à la fois. Une nouvelle proposition valide remplace une ancienne notification encore présente et non traitée. L’ancienne opportunité est abandonnée silencieusement.
+
+
+## Modification des horaires avec report actif
+
+Toute modification des jours, horaires de travail, pause déjeuner ou créneaux annule le report temporaire éventuellement actif.
+
+Le nouveau planning devient immédiatement la seule référence.
+
+Aucun report créé sous l’ancienne configuration n’est recalculé ou migré.
+
+---
+
+## Limite de jour pour les reports
+
+Un report explicitement demandé peut dépasser la pause déjeuner et l’heure habituelle de fin de travail.
+
+En revanche, il ne peut pas changer de jour civil.
+
+```text
+23:50 + 30 min
+→ option non proposée
+```
+
+Cette limite évite de mélanger une opportunité de la veille avec le planning du lendemain.
+
+---
+
 # C. SUSPENSION
 
 ## 14. États
@@ -305,21 +345,25 @@ Le planning normal continue.
 
 ```text
 ACTIVE
-SUSPENDED_UNTIL_NEXT_WORKDAY
-SUSPENDED_INDEFINITELY
+SUSPENDED
 ```
 
-### Jusqu’au prochain jour travaillé
+### Suspension manuelle
 
-Les propositions restantes de la journée sont abandonnées.
+`Suspendre` met les propositions en pause jusqu'à une action explicite `Reprendre`.
 
-La configuration reste inchangée.
+La suspension :
 
-### Jusqu’à réactivation
+- conserve les jours, horaires, créneaux et préférences ;
+- ne se termine jamais automatiquement au prochain jour travaillé ;
+- ne crée aucun rattrapage lors de la reprise ;
+- reste distincte de la permission Android.
 
-Les propositions restent suspendues jusqu’à une action explicite.
+Si les propositions sont suspendues :
 
-Les horaires et préférences restent conservés.
+```text
+OpportunityPolicy → DENIED
+```
 
 ---
 
@@ -481,7 +525,7 @@ L’utilisateur peut toujours :
 
 ## 26. Exclusion lors d’une alternative
 
-Lors d’une demande `Autre activité`, seule l’activité actuellement affichée est exclue.
+Lors d’une demande `Autre activité`, toutes les activités déjà affichées pendant l’interaction courante sont exclues.
 
 ### Exemple
 
@@ -528,7 +572,7 @@ A peut redevenir éligible
 Une séquence :
 
 ```text
-A → B → A
+A → B → C
 ```
 
 est possible.
@@ -586,9 +630,9 @@ Fenêtre :
 4 dernières propositions
 ```
 
-Cet historique modifie seulement la probabilité de sélection.
+L’historique sert uniquement à rendre temporairement moins probable une activité récemment proposée.
 
-Il ne rend aucune activité indisponible.
+`internal_family` est conservé dans le catalogue comme métadonnée éditoriale, mais n’est pas utilisé par le scoring V0.
 
 ---
 
@@ -598,19 +642,22 @@ Un seul coefficient est appliqué :
 
 ```text
 même activité que la précédente       × 0.15
-sinon même famille précédente         × 0.45
-sinon activité dans les 4 dernières  × 0.55
-sinon famille ≥ 2 fois sur 4         × 0.75
-sinon                                × 1.00
+sinon même activité dans les 4 dernières
+                                      × 0.55
+sinon                                 × 1.00
 ```
 
 Les coefficients ne se cumulent pas.
 
+### Pourquoi les familles ne sont pas utilisées
+
+Le catalogue V0 possède actuellement une famille interne distincte par activité. Des pénalités de « même famille » n’auraient donc aucun effet réel.
+
+La V0 préfère supprimer cette complexité plutôt que regrouper artificiellement les activités pour justifier une règle.
+
 ### Conséquence
 
-Une activité réalisée ou proposée deux notifications auparavant reste sélectionnable.
-
-Elle est seulement un peu moins probable.
+Une activité proposée récemment reste toujours éligible. Elle devient seulement moins probable.
 
 ---
 
@@ -796,13 +843,33 @@ Aucune donnée médicale n’est nécessaire.
 13. `Autre activité` exclut uniquement l’activité actuellement affichée.
 14. Une activité vue auparavant peut être reproposée.
 15. Une demande d’alternative ne crée aucune préférence durable.
-16. Les répétitions sont pénalisées, jamais interdites.
-17. `evidence_level` ne modifie pas le score.
+16. Les répétitions d’une même activité sont pénalisées, jamais interdites.
+17. `internal_family` ne modifie pas le score V0.
+18. `evidence_level` ne modifie pas le score.
 18. Le moteur reste indépendant d’Android.
 19. À entrées identiques, le résultat est reproductible.
 20. `C’est parti` signifie accepté, pas vérifié comme réalisé.
 
 ---
+
+21. Un comportement passif ou un événement système ne crée aucun signal comportemental.
+22. Une seule notification d’activité est visible à la fois.
+23. Une nouvelle notification valide remplace l’ancienne notification non traitée.
+24. Modifier les horaires annule tout report actif.
+25. Un report ne traverse jamais minuit.
+
+26. Un utilisateur peut avoir de 1 à 4 créneaux standards actifs.
+27. Aucun jour travaillé sélectionné est un planning valide sans opportunité automatique.
+28. `can_stand=false` impose `can_walk=false`.
+29. Réactiver `can_stand` ne réactive pas automatiquement `can_walk`.
+30. La suspension V0 est uniquement manuelle jusqu'à `Reprendre`.
+31. Une reprise, restauration de permission ou fin d'onboarding ne rattrape jamais un créneau passé.
+32. Toute modification affectant l'éligibilité annule un report actif.
+33. Une notification déjà affichée n'est pas réécrite après un changement de réglage.
+34. Une alternative utilise les derniers réglages disponibles.
+35. Les créneaux sont interprétés en heure locale.
+36. Un changement de fuseau ou d'heure recalcule seulement les opportunités futures.
+37. Une plage de travail traversant minuit n'est pas supportée en V0.
 
 # L. RISQUES
 
@@ -823,7 +890,7 @@ L’option de report conflictuelle n’est pas affichée.
 Avec exclusion de l’activité courante uniquement :
 
 ```text
-A → B → A
+A → B → C
 ```
 
 est possible.
@@ -885,7 +952,7 @@ Inclut :
 - aucune cascade de planning ;
 - aucune règle 90/60 ;
 - alternative excluant seulement l’activité courante ;
-- scoring simple de répétition ;
+- scoring simple fondé uniquement sur la répétition de la même activité ;
 - sélection pondérée reproductible.
 
 ---
@@ -894,7 +961,7 @@ Inclut :
 
 Seulement après retours :
 
-- cooldown léger pour éviter `A → B → A` si nécessaire ;
+- cooldown léger pour éviter `A → B → C` si nécessaire ;
 - favoris ou masquage ;
 - motifs facultatifs de changement ;
 - préférences explicites ;
@@ -1011,3 +1078,24 @@ Le moteur est prêt à implémenter lorsque :
 5. les reports ne sont plus bloqués par déjeuner ou fin de travail ;
 6. l’alternative n’exclut plus toutes les activités vues dans l’interaction ;
 7. aucune règle métier concurrente ne subsiste dans les anciens documents.
+
+
+## Historique temporaire de l’interaction
+
+Pour `Autre activité`, le moteur reçoit l’ensemble des IDs déjà affichés pendant l’interaction courante.
+
+```text
+A → Autre activité → B → Autre activité → C
+```
+
+Au troisième tirage, A et B sont exclus.
+
+Cet ensemble :
+
+- est temporaire ;
+- ne devient pas une préférence ;
+- n’altère aucun poids futur ;
+- est réinitialisé à la fin de l’interaction ;
+- peut être restauré si Android recrée l’écran pendant la même interaction.
+
+Quand tous les candidats compatibles ont été montrés, aucune alternative n’est disponible.

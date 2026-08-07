@@ -1,7 +1,7 @@
 # ActivityCatalogSchema V1
 
 **Statut :** VALIDÉ POUR SIMULATION  
-**Version du contrat :** 1.0.0  
+**Version du contrat :** 1.0.1  
 **Nombre d'activités migrées :** 23
 
 ## 1. Finalité
@@ -14,7 +14,7 @@ Le schéma sépare :
 - les facettes utilisées par le moteur (`internal_family`, contraintes fonctionnelles, poids) ;
 - les métadonnées scientifiques documentaires (`evidence_level`).
 
-Les catégories visibles ne pilotent pas directement la diversité. Le moteur utilise `internal_family`.
+Les catégories visibles ne pilotent pas directement la diversité. `internal_family` est conservé comme métadonnée éditoriale ; le moteur V0 ne l’utilise pas pour le scoring.
 
 ## 2. Décisions V0 intégrées
 
@@ -28,7 +28,9 @@ Les catégories visibles ne pilotent pas directement la diversité. Le moteur ut
 - `safety_flags` et `internal_family` utilisent un vocabulaire contrôlé ;
 - `variant_of` signifie uniquement : « variante reconnaissable de la même activité fondamentale » ;
 - aucune relation seulement thématique n'est stockée ;
-- `evidence_level` ne modifie pas le score du moteur.
+- `evidence_level` ne modifie pas le score du moteur ;
+- `internal_family` ne modifie pas le score du moteur V0 ;
+- la durée d’une activité publiée reste comprise entre 30 secondes et 5 minutes.
 
 ## 3. Champs d'une activité
 
@@ -40,7 +42,7 @@ Les catégories visibles ne pilotent pas directement la diversité. Le moteur ut
 | `title` | chaîne | Titre affiché | Non |
 | `instruction` | chaîne | Consigne affichée | Non |
 | `user_category` | enum | Navigation et réglage explicite | Oui, comme filtre |
-| `internal_family` | enum contrôlé | Diversité et répétition | Oui |
+| `internal_family` | enum contrôlé | Métadonnée éditoriale / diagnostic | Non en V0 |
 | `intensity` | enum | Compatibilité avec les réglages | Oui |
 | `duration_seconds_min/max` | entiers | Fenêtre de durée | Oui |
 | `compatible_postures` | liste | Postures dans lesquelles l'activité est faisable | Oui |
@@ -62,7 +64,7 @@ Les catégories visibles ne pilotent pas directement la diversité. Le moteur ut
 
 1. `activity_count` correspond exactement au nombre de fiches.
 2. Les identifiants sont uniques.
-3. `duration_seconds_min ≤ duration_seconds_max`.
+3. `30 ≤ duration_seconds_min ≤ duration_seconds_max ≤ 300`.
 4. Une posture préférée appartient aux postures compatibles.
 5. `walking_required = true` implique `standing_required = true`.
 6. Une cible `variant_of` existe et n'est pas la fiche elle-même.

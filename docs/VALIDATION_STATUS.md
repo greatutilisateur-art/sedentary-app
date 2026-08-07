@@ -2,52 +2,50 @@
 
 **Mise à jour : 7 août 2026**
 
-## Catalogue
+## Versions
 
-- 23 activités publiées.
-- Schéma V1 conservé.
-- Aucun changement du catalogue requis par la simplification du planning.
-- `policy_compatibility = 1.0.x` reste compatible avec `decision-policy-v1.0.1`.
+- UX : `1.2`
+- catalogue : `1.0.2` — inchangé
+- politique : `decision-policy-v1.0.5`
 
-## Moteur
+## Arbitrage final intégré
 
-Décisions V0 désormais consolidées :
-
-- suppression complète de la règle 90/60 ;
-- créneaux fixes choisis par l'utilisateur ;
-- minimum de 20 minutes entre deux opportunités distinctes ;
-- aucun déplacement automatique des créneaux ;
-- aucun rattrapage ;
-- report +10/+30 conservant la même activité ;
-- report explicitement demandé autorisé pendant la pause déjeuner et après la fin habituelle du travail ;
-- créneau fixe prioritaire si un report créerait un conflit <20 min ;
-- `Autre activité` exclut uniquement l'activité actuellement affichée ;
-- une activité montrée auparavant peut être reproposée.
-
-## Tests
-
-Les anciens résultats :
+`Autre activité` suit désormais une séquence de type :
 
 ```text
-14/14 tests réussis
-120/120 opportunités simulées
+A → B → C
 ```
 
-correspondaient à l'ancienne politique 90/60.
+Toutes les activités déjà montrées pendant l’interaction courante sont exclues des tirages suivants.
 
-Ils sont **historiques et non valides pour la politique actuelle**.
+Cette exclusion :
 
-Statut actuel :
+- est limitée à l’interaction courante ;
+- ne devient pas une préférence persistante ;
+- ne modifie pas les poids futurs ;
+- est réinitialisée lors d’une nouvelle opportunité.
+
+Quand aucune alternative compatible ne reste, aucune nouvelle activité n’est sélectionnée.
+
+## Validation sandbox
+
+- tests Python automatisés : **92/92 OK** ;
+- simulation batch moteur : **OK** ;
+- JSON Schema catalogue : **OK** ;
+- compilation du port Kotlin pur : **OK** ;
+- smoke-test Kotlin `A/B exclus → C seul candidat` : **OK** ;
+- documents UX V1.1 : marqués **LEGACY** ;
+- UX V1.2 : source de vérité courante.
+
+## Statut
 
 ```text
-Spécification : mise à jour
-Politique JSON : mise à jour
-Scénarios de test : mis à jour
-Simulateur Python : À METTRE À JOUR
-Tests automatisés : À RELANCER
-Validation avant Kotlin : NON ENCORE ACQUISE
+UX V1.2 : COHÉRENTE
+Catalogue : INCHANGÉ 1.0.2
+Policy : 1.0.5
+Alternative A→B→C : VALIDÉE
+Tests Python : 92/92
+Simulation : OK
+Port Kotlin : COMPILE
+Rerun dépôt local : À FAIRE
 ```
-
-## Prochaine étape technique
-
-Adapter le simulateur à `decision-policy-v1.0.1`, exécuter les nouveaux scénarios, corriger les écarts éventuels puis seulement déclarer le moteur prêt pour l'implémentation Kotlin.

@@ -77,7 +77,7 @@ Les catégories visibles servent principalement :
 
 Elles ne pilotent pas directement la diversité du moteur.
 
-La diversité est gérée par `internal_family`.
+`internal_family` reste une métadonnée éditoriale utile pour décrire le catalogue, mais le moteur V0 ne l’utilise pas pour son scoring.
 
 ---
 
@@ -105,9 +105,11 @@ Deux activités peuvent appartenir à la même grande catégorie utilisateur tou
 
 ### Décision V0
 
-Le moteur utilise `internal_family` pour la diversité récente.
+`internal_family` est conservé pour l’édition, la recherche de doublons et une éventuelle évolution future.
 
-Il ne force pas une rotation artificielle des catégories.
+Le moteur V0 ne l’utilise pas pour la diversité. Celle-ci repose seulement sur une pénalité temporaire lorsque la même activité vient d’être proposée ou apparaît dans l’historique récent.
+
+Cette simplification évite des règles sans effet réel avec le catalogue actuel.
 
 ---
 
@@ -155,6 +157,14 @@ Exemple :
 
 Le moteur ne doit donc pas exclure l’activité seulement parce que la posture préférée n’est pas disponible.
 
+La formulation de la consigne reste neutre vis-à-vis de la posture lorsque l'activité est faisable assise ou debout.
+
+L'UX traduit les métadonnées en badge contextuel :
+
+- `Debout nécessaire` si la station debout est obligatoire ;
+- `Debout conseillé` si elle est préférée et disponible ;
+- `Assis possible` si elle est préférée mais que l'utilisateur a indiqué ne pas pouvoir généralement se lever.
+
 ### Invariants
 
 - `walking_required = true` implique `standing_required = true` ;
@@ -173,7 +183,7 @@ Les activités sont compatibles avec :
 
 ### V0
 
-Les activités standards sont proposées pendant les quatre créneaux normaux.
+Les activités standards sont proposées pendant les créneaux standards actifs de l'utilisateur (1 à 4 en V0).
 
 Les activités `START01` et `START02` sont réservées au début de journée.
 
@@ -212,11 +222,13 @@ Exemples :
 
 ### `probable`
 
-L’activité se réalise normalement debout.
+L’activité peut parfois être réalisée assis, mais la consigne recommande explicitement de se lever ou la station debout est la manière privilégiée de la réaliser.
+
+La rupture de l’assise est donc attendue si cette recommandation est suivie, mais elle n’est pas garantie.
 
 ### `optional`
 
-L’activité peut être réalisée assis ou debout.
+L’activité peut être réalisée assis ou debout sans recommandation forte de quitter l’assise.
 
 ### `adjacent_only`
 
@@ -227,11 +239,9 @@ Exemples :
 - respiration ;
 - pause visuelle.
 
-### Règle scientifique
+### Nature de la classification
 
-Cette classification décrit l’effet attendu sur l’assise.
-
-Elle ne constitue pas un niveau de preuve.
+Cette classification est une métadonnée de conception décrivant l’effet attendu sur l’assise. Elle ne constitue ni une mesure de comportement réel ni un niveau de preuve scientifique.
 
 ---
 
@@ -475,16 +485,16 @@ Cette distinction doit rester visible dans les consignes.
 
 - `MOUV01` — Une petite marche ?
 - `MOUV02` — Un verre d’eau ?
-- `MOUV03` — Les escaliers cette fois ?
+- `MOUV03` — Un petit tour par les escaliers ?
 - `MOUV04` — Prendre un peu l’air ?
 
 ### Mobilité — 6 standards
 
-- `MOB01` — Déverrouille un peu tes épaules
+- `MOB01` — Quelques cercles d’épaules ?
 - `MOB02` — Tourne doucement le haut du corps
 - `MOB03` — Fais bouger tes chevilles
-- `MOB04` — Étire doucement l’arrière des jambes
-- `MOB05` — Redresse-toi et ouvre un peu le haut du corps
+- `MOB04` — Mobilise doucement l’arrière des jambes
+- `MOB05` — Ouvre doucement le haut du corps
 - `MOB06` — Fais bouger doucement tes hanches
 
 ### Début de journée — 2
@@ -500,10 +510,10 @@ Cette distinction doit rester visible dans les consignes.
 
 ### Activation — 4
 
-- `DYN01` — Envie de bouger un peu plus ?
+- `DYN01` — Quelques squats tranquilles ?
 - `DYN02` — Quelques montées sur la pointe des pieds ?
 - `DYN03` — Quelques levers de chaise ?
-- `DYN04` — Quelques minutes plus dynamiques ?
+- `DYN04` — Une marche un peu plus soutenue ?
 
 ### Bien-être — 2
 
@@ -654,7 +664,7 @@ Le catalogue V0 est acceptable si :
 1. les 23 IDs sont uniques ;
 2. toutes les activités sont conformes au schéma ;
 3. les valeurs appartiennent au vocabulaire contrôlé ;
-4. les durées minimales ne dépassent pas les durées maximales ;
+4. toutes les durées sont comprises entre 30 et 300 secondes et le minimum ne dépasse pas le maximum ;
 5. `walking_required` implique `standing_required` ;
 6. chaque posture préférée est compatible ;
 7. les activités de début de journée sont isolées ;

@@ -1,9 +1,9 @@
 # Catalogue d’activités V1
 
-> Document généré automatiquement depuis `data/activities_v1.json`.
+> Document généré automatiquement depuis `catalog/activities_v1.json`.
 > Ne pas modifier manuellement.
 
-**Version :** 1.0.0  
+**Version :** 1.0.2  
 **Activités :** 23
 
 ## Mouvement (4)
@@ -14,121 +14,111 @@ Et si tu allais marcher 2 à 5 minutes pour te dégourdir les jambes ?
 
 - Durée : 120–300 s
 - Intensité : `active`
-- Famille interne : `walking`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `walking` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `certain`
 
 ### MOUV02 — Un verre d’eau ?
 
-Va boire un verre d’eau. Profites-en pour marcher un peu et te dégourdir les jambes.
+Lève-toi, marche un peu et profite-en pour aller prendre un verre d’eau.
 
 - Durée : 120–300 s
 - Intensité : `gentle`
-- Famille interne : `walking_hydration_anchor`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `walking_hydration_anchor` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `certain`
 
-### MOUV03 — Les escaliers cette fois ?
+### MOUV03 — Un petit tour par les escaliers ?
 
-Si tu dois changer d’étage, prends les escaliers si tu en as envie.
+Si tu as des escaliers à proximité, monte ou descends un étage tranquillement. Tu peux en profiter pour aller prendre l’air ou simplement faire un petit détour.
 
 - Durée : 60–180 s
 - Intensité : `dynamic`
-- Famille interne : `stairs`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `stairs` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `certain`
 
 ### MOUV04 — Prendre un peu l’air ?
 
 Si tu peux sortir quelques minutes, va marcher tranquillement dehors.
 
-- Durée : 180–600 s
+- Durée : 180–300 s
 - Intensité : `gentle`
-- Famille interne : `outdoor_walk`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `outdoor_walk` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `certain`
 
-## Mobilité (8)
+## Mobilité (6)
 
-### MOB01 — Déverrouille un peu tes épaules
+### MOB01 — Quelques cercles d’épaules ?
 
 Fais lentement quelques cercles avec les épaules, puis laisse-les redescendre.
 
 - Durée : 30–60 s
 - Intensité : `gentle`
-- Famille interne : `shoulder_mobility`
-- Opportunité : `standard`
+- Posture préférée : `None`
+- Debout obligatoire : `false`
+- Famille interne : `shoulder_mobility` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `optional`
 
 ### MOB02 — Tourne doucement le haut du corps
 
-Si tu peux te lever, c’est mieux. Regarde derrière toi à droite, reviens au centre, puis à gauche. Répète doucement.
+Tourne doucement le buste vers la droite, reviens au centre, puis vers la gauche. Répète sans forcer.
 
 - Durée : 45–90 s
 - Intensité : `gentle`
-- Famille interne : `thoracic_rotation`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `false`
+- Famille interne : `thoracic_rotation` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `probable`
 
 ### MOB03 — Fais bouger tes chevilles
 
-Si tu peux te lever, c’est mieux. Fais quelques mouvements ou rotations avec chaque cheville, tranquillement.
+Fais quelques mouvements ou rotations avec chaque cheville, tranquillement.
 
 - Durée : 30–60 s
 - Intensité : `gentle`
-- Famille interne : `ankle_mobility`
-- Opportunité : `standard`
-- Rupture de l’assise : `optional`
-
-### MOB04 — Étire doucement l’arrière des jambes
-
-Si tu peux te lever, c’est mieux. Penche-toi progressivement vers l’avant, seulement aussi loin que c’est confortable, puis remonte.
-
-- Durée : 30–60 s
-- Intensité : `gentle`
-- Famille interne : `posterior_chain_mobility`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `false`
+- Famille interne : `ankle_mobility` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `probable`
 
-### MOB05 — Redresse-toi et ouvre un peu le haut du corps
+### MOB04 — Mobilise doucement l’arrière des jambes
 
-Si tu peux te lever, c’est mieux. Ouvre doucement la poitrine, redresse-toi quelques secondes, puis relâche.
+Penche doucement le buste vers l’avant, remonte, puis recommence quelques fois, sans chercher à tenir la position.
 
 - Durée : 30–60 s
 - Intensité : `gentle`
-- Famille interne : `chest_opening`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `false`
+- Famille interne : `posterior_chain_mobility` (éditoriale, hors scoring V0)
+- Rupture de l’assise : `probable`
+
+### MOB05 — Ouvre doucement le haut du corps
+
+Amène doucement les épaules vers l’arrière, ouvre la poitrine quelques secondes, puis relâche.
+
+- Durée : 30–60 s
+- Intensité : `gentle`
+- Posture préférée : `standing`
+- Debout obligatoire : `false`
+- Famille interne : `chest_opening` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `probable`
 
 ### MOB06 — Fais bouger doucement tes hanches
 
-Si tu peux te lever, c’est mieux. Fais quelques mouvements de bassin dans différentes directions, sans forcer.
+Fais quelques petits cercles avec le bassin dans un sens, puis dans l’autre, sans forcer.
 
 - Durée : 30–60 s
 - Intensité : `gentle`
-- Famille interne : `hip_mobility`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `false`
+- Famille interne : `hip_mobility` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `probable`
-
-### START01 — Pour commencer : le haut du corps
-
-Quelques mouvements d’épaules, rotations douces du haut du corps et ouverture de la poitrine.
-
-- Durée : 120–120 s
-- Intensité : `gentle`
-- Famille interne : `start_upper_body`
-- Opportunité : `start_of_day`
-- Rupture de l’assise : `probable`
-
-### START02 — Pour commencer : jambes et hanches
-
-Quelques mouvements de chevilles, mobilisations douces des hanches et flexions/extensions des jambes.
-
-- Durée : 120–120 s
-- Intensité : `gentle`
-- Famille interne : `start_lower_body`
-- Opportunité : `start_of_day`
-- Rupture de l’assise : `certain`
 
 ## Étirements (3)
 
@@ -138,40 +128,44 @@ Place un pied légèrement derrière l’autre et amène doucement le talon arri
 
 - Durée : 30–60 s
 - Intensité : `gentle`
-- Famille interne : `calf_stretch`
-- Opportunité : `standard`
-- Rupture de l’assise : `probable`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `calf_stretch` (éditoriale, hors scoring V0)
+- Rupture de l’assise : `certain`
 
 ### ETIR02 — Un peu d’étirement pour l’arrière des jambes ?
 
-Pose un talon légèrement devant toi et incline doucement le bassin vers l’avant, sans forcer.
+Pose un talon légèrement devant toi et incline doucement le bassin vers l’avant, sans forcer. Puis change de jambe.
 
 - Durée : 30–60 s
 - Intensité : `gentle`
-- Famille interne : `hamstring_stretch`
-- Opportunité : `standard`
-- Rupture de l’assise : `probable`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `hamstring_stretch` (éditoriale, hors scoring V0)
+- Rupture de l’assise : `certain`
 
 ### ETIR03 — Grandis-toi quelques secondes
 
-Si tu peux te lever, c’est mieux. Lève les bras, grandis-toi doucement, puis relâche.
+Lève les bras, grandis-toi doucement, puis relâche.
 
-- Durée : 15–30 s
+- Durée : 30–45 s
 - Intensité : `gentle`
-- Famille interne : `global_reach`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `false`
+- Famille interne : `global_reach` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `probable`
 
-## Dynamique (4)
+## Activation (4)
 
-### DYN01 — Envie de bouger un peu plus ?
+### DYN01 — Quelques squats tranquilles ?
 
 Fais 5 à 8 squats tranquilles, à ton rythme.
 
 - Durée : 30–60 s
 - Intensité : `dynamic`
-- Famille interne : `squat`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `squat` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `certain`
 
 ### DYN02 — Quelques montées sur la pointe des pieds ?
@@ -180,8 +174,9 @@ Monte doucement sur la pointe des pieds, redescends, puis recommence 10 fois.
 
 - Durée : 30–60 s
 - Intensité : `active`
-- Famille interne : `calf_raise`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `calf_raise` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `certain`
 
 ### DYN03 — Quelques levers de chaise ?
@@ -190,18 +185,20 @@ Lève-toi puis rassieds-toi tranquillement 5 à 8 fois.
 
 - Durée : 30–60 s
 - Intensité : `active`
-- Famille interne : `sit_to_stand`
-- Opportunité : `standard`
+- Posture préférée : `None`
+- Debout obligatoire : `true`
+- Famille interne : `sit_to_stand` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `certain`
 
-### DYN04 — Quelques minutes plus dynamiques ?
+### DYN04 — Une marche un peu plus soutenue ?
 
 Marche d’un bon pas pendant environ 2 minutes.
 
 - Durée : 120–180 s
 - Intensité : `dynamic`
-- Famille interne : `brisk_walk`
-- Opportunité : `standard`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `brisk_walk` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `certain`
 
 ## Bien-être (2)
@@ -212,21 +209,23 @@ Respire tranquillement, en laissant l’expiration durer un peu plus longtemps, 
 
 - Durée : 60–60 s
 - Intensité : `gentle`
-- Famille interne : `slow_breathing`
-- Opportunité : `standard`
+- Posture préférée : `None`
+- Debout obligatoire : `false`
+- Famille interne : `slow_breathing` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `adjacent_only`
 
 ### BIEN02 — Relâche un peu les épaules
 
 Monte-les doucement vers les oreilles, puis laisse-les redescendre. Répète quelques fois.
 
-- Durée : 15–30 s
+- Durée : 30–45 s
 - Intensité : `gentle`
-- Famille interne : `shoulder_release`
-- Opportunité : `standard`
+- Posture préférée : `None`
+- Debout obligatoire : `false`
+- Famille interne : `shoulder_release` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `optional`
 
-## Visuel (2)
+## Repos visuel (2)
 
 ### VIS01 — Regarde au loin
 
@@ -234,8 +233,9 @@ Si tu le peux, regarde quelques instants par la fenêtre ou vers un point éloig
 
 - Durée : 30–120 s
 - Intensité : `gentle`
-- Famille interne : `distance_gaze`
-- Opportunité : `standard`
+- Posture préférée : `None`
+- Debout obligatoire : `false`
+- Famille interne : `distance_gaze` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `adjacent_only`
 
 ### VIS02 — Une petite pause pour les yeux
@@ -244,6 +244,31 @@ Ferme les yeux quelques instants, relâche ton regard, puis regarde à nouveau a
 
 - Durée : 30–60 s
 - Intensité : `gentle`
-- Famille interne : `visual_rest`
-- Opportunité : `standard`
+- Posture préférée : `None`
+- Debout obligatoire : `false`
+- Famille interne : `visual_rest` (éditoriale, hors scoring V0)
 - Rupture de l’assise : `adjacent_only`
+
+## Début de journée (2)
+
+### START01 — Pour commencer : le haut du corps
+
+Fais quelques cercles d’épaules, puis tourne doucement le buste de chaque côté et ouvre la poitrine quelques secondes. Recommence tranquillement pendant environ 2 minutes.
+
+- Durée : 120–120 s
+- Intensité : `gentle`
+- Posture préférée : `standing`
+- Debout obligatoire : `false`
+- Famille interne : `start_upper_body` (éditoriale, hors scoring V0)
+- Rupture de l’assise : `probable`
+
+### START02 — Pour commencer : jambes et hanches
+
+Fais quelques mouvements de chevilles, quelques petits cercles de hanches, puis quelques flexions de jambes tranquilles. Recommence à ton rythme pendant environ 2 minutes.
+
+- Durée : 120–120 s
+- Intensité : `gentle`
+- Posture préférée : `standing`
+- Debout obligatoire : `true`
+- Famille interne : `start_lower_body` (éditoriale, hors scoring V0)
+- Rupture de l’assise : `certain`

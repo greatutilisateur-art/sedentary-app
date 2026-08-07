@@ -1,0 +1,129 @@
+{
+  "policy_version": "decision-policy-v1.0.5",
+  "selector_version": "weighted-selector-v1.0.0",
+  "catalog_version": "1.0.2",
+  "runs": [
+    {
+      "profile": "standard_30d",
+      "days": 30,
+      "total": 120,
+      "unique": 21,
+      "immediate_repeats": 0,
+      "counts": {
+        "BIEN01": 3,
+        "BIEN02": 6,
+        "DYN01": 10,
+        "DYN02": 5,
+        "DYN03": 9,
+        "DYN04": 3,
+        "ETIR01": 3,
+        "ETIR02": 3,
+        "ETIR03": 3,
+        "MOB01": 6,
+        "MOB02": 5,
+        "MOB03": 7,
+        "MOB04": 7,
+        "MOB05": 4,
+        "MOB06": 5,
+        "MOUV01": 11,
+        "MOUV02": 6,
+        "MOUV03": 2,
+        "MOUV04": 8,
+        "VIS01": 7,
+        "VIS02": 7
+      },
+      "break_effects": {
+        "adjacent_only": 17,
+        "certain": 60,
+        "optional": 12,
+        "probable": 31
+      }
+    },
+    {
+      "profile": "seated_30d",
+      "days": 30,
+      "total": 120,
+      "unique": 11,
+      "immediate_repeats": 3,
+      "counts": {
+        "BIEN01": 6,
+        "BIEN02": 10,
+        "ETIR03": 12,
+        "MOB01": 12,
+        "MOB02": 11,
+        "MOB03": 12,
+        "MOB04": 12,
+        "MOB05": 13,
+        "MOB06": 8,
+        "VIS01": 15,
+        "VIS02": 9
+      },
+      "break_effects": {
+        "adjacent_only": 30,
+        "optional": 22,
+        "probable": 68
+      }
+    },
+    {
+      "profile": "standard_365d",
+      "days": 365,
+      "total": 1460,
+      "unique": 21,
+      "immediate_repeats": 15,
+      "counts": {
+        "BIEN01": 51,
+        "BIEN02": 41,
+        "DYN01": 84,
+        "DYN02": 74,
+        "DYN03": 85,
+        "DYN04": 110,
+        "ETIR01": 53,
+        "ETIR02": 52,
+        "ETIR03": 52,
+        "MOB01": 75,
+        "MOB02": 68,
+        "MOB03": 65,
+        "MOB04": 50,
+        "MOB05": 68,
+        "MOB06": 55,
+        "MOUV01": 132,
+        "MOUV02": 79,
+        "MOUV03": 63,
+        "MOUV04": 90,
+        "VIS01": 64,
+        "VIS02": 49
+      },
+      "break_effects": {
+        "adjacent_only": 164,
+        "certain": 822,
+        "optional": 116,
+        "probable": 358
+      }
+    },
+    {
+      "profile": "seated_365d",
+      "days": 365,
+      "total": 1460,
+      "unique": 11,
+      "immediate_repeats": 16,
+      "counts": {
+        "BIEN01": 131,
+        "BIEN02": 125,
+        "ETIR03": 114,
+        "MOB01": 174,
+        "MOB02": 130,
+        "MOB03": 138,
+        "MOB04": 106,
+        "MOB05": 153,
+        "MOB06": 112,
+        "VIS01": 149,
+        "VIS02": 128
+      },
+      "break_effects": {
+        "adjacent_only": 408,
+        "optional": 299,
+        "probable": 753
+      }
+    }
+  ]
+}

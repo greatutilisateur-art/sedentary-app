@@ -93,11 +93,11 @@ Plus de notifications ne signifie pas plus d’utilité.
 
 La V0 privilégie :
 
-- quatre créneaux préremplis et modifiables ;
+- jusqu'à quatre créneaux préremplis, avec liberté d'en garder 1 à 4 actifs ;
 - une seule notification active ou planifiée ;
 - aucun rattrapage automatique ;
 - des reports limités ;
-- une suspension simple.
+- une suspension manuelle simple.
 
 Ces paramètres sont des choix de conception à tester, pas une fréquence scientifiquement optimale.
 
@@ -228,8 +228,8 @@ Présenter une heuristique comme prescription scientifique fragiliserait la cré
 Le catalogue distingue :
 
 - `certain` : l’activité impose de quitter l’assise ;
-- `probable` : elle se réalise normalement debout ;
-- `optional` : elle peut être réalisée assis ou debout ;
+- `probable` : elle peut être réalisable assis, mais la consigne recommande explicitement de se lever ou privilégie la station debout ;
+- `optional` : elle peut être réalisée assis ou debout sans recommandation forte de quitter l’assise ;
 - `adjacent_only` : elle ne garantit aucune rupture de l’assise.
 
 Une pause visuelle ou respiratoire n’est donc pas automatiquement équivalente à une marche ou à un lever de chaise.
@@ -306,7 +306,7 @@ Les principales sources sont :
 - vision : `docs/Vision.md` ;
 - science : `docs/Scientific_framework.md` ;
 - UX : `docs/UXSpecification_v1_1.md` ;
-- moteur : `docs/DecisionEngineSpecification_v1_1.md` ;
+- moteur : `docs/DecisionEngine.md` ;
 - catalogue : `catalog/activities_v1.json` ;
 - schéma : `catalog/activity_catalog_schema_v1.json` ;
 - vocabulaire : `catalog/activity_vocabularies_v1.json` ;
@@ -471,3 +471,35 @@ Toute évolution importante doit :
 3. être classée V0, V1 ou V2 ;
 4. mettre à jour les spécifications concernées ;
 5. être versionnée dans Git.
+
+
+## Principe V0 — l’absence d’action n’est pas un signal
+
+Une notification ignorée, un écran éteint, un téléphone indisponible ou tout autre événement passif ne permet pas d’inférer une préférence.
+
+La V0 ne transforme jamais une non-action en :
+
+- rejet ;
+- baisse de poids ;
+- préférence ;
+- relance ;
+- dette de notifications.
+
+Seules les actions explicites nécessaires au fonctionnement du produit ont une signification métier.
+
+
+## Principe V0 — une configuration silencieuse reste valide
+
+La liberté utilisateur prime sur l'objectif de maximiser les propositions.
+
+Sont donc valides :
+
+- un seul créneau actif ;
+- deux ou trois créneaux actifs ;
+- aucun jour de travail sélectionné.
+
+Dans ce dernier cas, l'application ne fait simplement rien automatiquement.
+
+Le produit ne force pas une configuration « utile » selon ses propres critères.
+
+Le futur catalogue consultable manuellement relève de V1 et ne justifie aucune complexité supplémentaire en V0.

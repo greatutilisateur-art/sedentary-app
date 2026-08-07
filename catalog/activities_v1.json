@@ -1,6 +1,6 @@
 {
   "$schema": "./activity_catalog_schema_v1.json",
-  "catalog_version": "1.0.0",
+  "catalog_version": "1.0.2",
   "policy_compatibility": "1.0.x",
   "vocabulary_version": "1.0.0",
   "status": "published",
@@ -8,8 +8,10 @@
   "notes": [
     "activities_v1.json est la source de vérité du catalogue V0.",
     "Le Markdown lisible est généré automatiquement depuis ce fichier.",
-    "Les catégories visibles ne pilotent pas directement la diversité; le moteur utilise internal_family.",
-    "Les niveaux de preuve sont documentaires et ne sont pas des multiplicateurs de score."
+    "internal_family est conservé comme métadonnée éditoriale; le moteur V0 ne l'utilise pas pour le scoring.",
+    "Les niveaux de preuve sont documentaires et ne sont pas des multiplicateurs de score.",
+    "Les activités publiées restent comprises entre 30 secondes et 5 minutes.",
+    "Les recommandations de posture sont affichées par l’UX à partir des métadonnées; elles ne sont pas répétées dans les consignes."
   ],
   "activities": [
     {
@@ -53,10 +55,10 @@
     },
     {
       "id": "MOUV02",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Un verre d’eau ?",
-      "instruction": "Va boire un verre d’eau. Profites-en pour marcher un peu et te dégourdir les jambes.",
+      "instruction": "Lève-toi, marche un peu et profite-en pour aller prendre un verre d’eau.",
       "user_category": "mouvement",
       "internal_family": "walking_hydration_anchor",
       "intensity": "gentle",
@@ -90,10 +92,10 @@
     },
     {
       "id": "MOUV03",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
-      "title": "Les escaliers cette fois ?",
-      "instruction": "Si tu dois changer d’étage, prends les escaliers si tu en as envie.",
+      "title": "Un petit tour par les escaliers ?",
+      "instruction": "Si tu as des escaliers à proximité, monte ou descends un étage tranquillement. Tu peux en profiter pour aller prendre l’air ou simplement faire un petit détour.",
       "user_category": "mouvement",
       "internal_family": "stairs",
       "intensity": "dynamic",
@@ -129,7 +131,7 @@
     },
     {
       "id": "MOUV04",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Prendre un peu l’air ?",
       "instruction": "Si tu peux sortir quelques minutes, va marcher tranquillement dehors.",
@@ -137,7 +139,7 @@
       "internal_family": "outdoor_walk",
       "intensity": "gentle",
       "duration_seconds_min": 180,
-      "duration_seconds_max": 600,
+      "duration_seconds_max": 300,
       "compatible_postures": [
         "standing"
       ],
@@ -166,9 +168,9 @@
     },
     {
       "id": "MOB01",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
-      "title": "Déverrouille un peu tes épaules",
+      "title": "Quelques cercles d’épaules ?",
       "instruction": "Fais lentement quelques cercles avec les épaules, puis laisse-les redescendre.",
       "user_category": "mobilite",
       "internal_family": "shoulder_mobility",
@@ -206,10 +208,10 @@
     },
     {
       "id": "MOB02",
-      "revision": 2,
+      "revision": 4,
       "status": "published",
       "title": "Tourne doucement le haut du corps",
-      "instruction": "Si tu peux te lever, c’est mieux. Regarde derrière toi à droite, reviens au centre, puis à gauche. Répète doucement.",
+      "instruction": "Tourne doucement le buste vers la droite, reviens au centre, puis vers la gauche. Répète sans forcer.",
       "user_category": "mobilite",
       "internal_family": "thoracic_rotation",
       "intensity": "gentle",
@@ -247,10 +249,10 @@
     },
     {
       "id": "MOB03",
-      "revision": 2,
+      "revision": 4,
       "status": "published",
       "title": "Fais bouger tes chevilles",
-      "instruction": "Si tu peux te lever, c’est mieux. Fais quelques mouvements ou rotations avec chaque cheville, tranquillement.",
+      "instruction": "Fais quelques mouvements ou rotations avec chaque cheville, tranquillement.",
       "user_category": "mobilite",
       "internal_family": "ankle_mobility",
       "intensity": "gentle",
@@ -266,7 +268,7 @@
       "eligible_opportunity_types": [
         "standard"
       ],
-      "sedentary_break_effect": "optional",
+      "sedentary_break_effect": "probable",
       "space_required": "desk",
       "discretion": "high",
       "body_focus": [
@@ -286,10 +288,10 @@
     },
     {
       "id": "MOB04",
-      "revision": 2,
+      "revision": 4,
       "status": "published",
-      "title": "Étire doucement l’arrière des jambes",
-      "instruction": "Si tu peux te lever, c’est mieux. Penche-toi progressivement vers l’avant, seulement aussi loin que c’est confortable, puis remonte.",
+      "title": "Mobilise doucement l’arrière des jambes",
+      "instruction": "Penche doucement le buste vers l’avant, remonte, puis recommence quelques fois, sans chercher à tenir la position.",
       "user_category": "mobilite",
       "internal_family": "posterior_chain_mobility",
       "intensity": "gentle",
@@ -330,10 +332,10 @@
     },
     {
       "id": "MOB05",
-      "revision": 2,
+      "revision": 4,
       "status": "published",
-      "title": "Redresse-toi et ouvre un peu le haut du corps",
-      "instruction": "Si tu peux te lever, c’est mieux. Ouvre doucement la poitrine, redresse-toi quelques secondes, puis relâche.",
+      "title": "Ouvre doucement le haut du corps",
+      "instruction": "Amène doucement les épaules vers l’arrière, ouvre la poitrine quelques secondes, puis relâche.",
       "user_category": "mobilite",
       "internal_family": "chest_opening",
       "intensity": "gentle",
@@ -371,10 +373,10 @@
     },
     {
       "id": "MOB06",
-      "revision": 2,
+      "revision": 4,
       "status": "published",
       "title": "Fais bouger doucement tes hanches",
-      "instruction": "Si tu peux te lever, c’est mieux. Fais quelques mouvements de bassin dans différentes directions, sans forcer.",
+      "instruction": "Fais quelques petits cercles avec le bassin dans un sens, puis dans l’autre, sans forcer.",
       "user_category": "mobilite",
       "internal_family": "hip_mobility",
       "intensity": "gentle",
@@ -411,7 +413,7 @@
     },
     {
       "id": "ETIR01",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Un petit étirement des mollets ?",
       "instruction": "Place un pied légèrement derrière l’autre et amène doucement le talon arrière vers le sol. Puis change de côté.",
@@ -429,7 +431,7 @@
       "eligible_opportunity_types": [
         "standard"
       ],
-      "sedentary_break_effect": "probable",
+      "sedentary_break_effect": "certain",
       "space_required": "small",
       "discretion": "medium",
       "body_focus": [
@@ -450,10 +452,10 @@
     },
     {
       "id": "ETIR02",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Un peu d’étirement pour l’arrière des jambes ?",
-      "instruction": "Pose un talon légèrement devant toi et incline doucement le bassin vers l’avant, sans forcer.",
+      "instruction": "Pose un talon légèrement devant toi et incline doucement le bassin vers l’avant, sans forcer. Puis change de jambe.",
       "user_category": "etirement",
       "internal_family": "hamstring_stretch",
       "intensity": "gentle",
@@ -468,7 +470,7 @@
       "eligible_opportunity_types": [
         "standard"
       ],
-      "sedentary_break_effect": "probable",
+      "sedentary_break_effect": "certain",
       "space_required": "small",
       "discretion": "medium",
       "body_focus": [
@@ -489,15 +491,15 @@
     },
     {
       "id": "ETIR03",
-      "revision": 2,
+      "revision": 4,
       "status": "published",
       "title": "Grandis-toi quelques secondes",
-      "instruction": "Si tu peux te lever, c’est mieux. Lève les bras, grandis-toi doucement, puis relâche.",
+      "instruction": "Lève les bras, grandis-toi doucement, puis relâche.",
       "user_category": "etirement",
       "internal_family": "global_reach",
       "intensity": "gentle",
-      "duration_seconds_min": 15,
-      "duration_seconds_max": 30,
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 45,
       "compatible_postures": [
         "seated",
         "standing"
@@ -529,9 +531,9 @@
     },
     {
       "id": "DYN01",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
-      "title": "Envie de bouger un peu plus ?",
+      "title": "Quelques squats tranquilles ?",
       "instruction": "Fais 5 à 8 squats tranquilles, à ton rythme.",
       "user_category": "dynamique",
       "internal_family": "squat",
@@ -649,9 +651,9 @@
     },
     {
       "id": "DYN04",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
-      "title": "Quelques minutes plus dynamiques ?",
+      "title": "Une marche un peu plus soutenue ?",
       "instruction": "Marche d’un bon pas pendant environ 2 minutes.",
       "user_category": "dynamique",
       "internal_family": "brisk_walk",
@@ -725,15 +727,15 @@
     },
     {
       "id": "BIEN02",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Relâche un peu les épaules",
       "instruction": "Monte-les doucement vers les oreilles, puis laisse-les redescendre. Répète quelques fois.",
       "user_category": "bien_etre",
       "internal_family": "shoulder_release",
       "intensity": "gentle",
-      "duration_seconds_min": 15,
-      "duration_seconds_max": 30,
+      "duration_seconds_min": 30,
+      "duration_seconds_max": 45,
       "compatible_postures": [
         "seated",
         "standing"
@@ -835,10 +837,10 @@
     },
     {
       "id": "START01",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Pour commencer : le haut du corps",
-      "instruction": "Quelques mouvements d’épaules, rotations douces du haut du corps et ouverture de la poitrine.",
+      "instruction": "Fais quelques cercles d’épaules, puis tourne doucement le buste de chaque côté et ouvre la poitrine quelques secondes. Recommence tranquillement pendant environ 2 minutes.",
       "user_category": "mobilite",
       "internal_family": "start_upper_body",
       "intensity": "gentle",
@@ -874,10 +876,10 @@
     },
     {
       "id": "START02",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Pour commencer : jambes et hanches",
-      "instruction": "Quelques mouvements de chevilles, mobilisations douces des hanches et flexions/extensions des jambes.",
+      "instruction": "Fais quelques mouvements de chevilles, quelques petits cercles de hanches, puis quelques flexions de jambes tranquilles. Recommence à ton rythme pendant environ 2 minutes.",
       "user_category": "mobilite",
       "internal_family": "start_lower_body",
       "intensity": "gentle",
