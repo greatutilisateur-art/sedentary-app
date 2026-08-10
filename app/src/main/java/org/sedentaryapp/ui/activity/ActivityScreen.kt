@@ -78,6 +78,31 @@ fun ActivityScreen(
                 modifier = Modifier.height(40.dp),
             )
 
+            @Composable
+            fun NoActivityScreen() {
+
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        verticalArrangement =
+                            Arrangement.Center,
+                    ) {
+
+                        Text(
+                            text =
+                                "Aucune activité ne correspond actuellement à ces réglages.",
+                            style =
+                                MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
+
             if (hasAlternative) {
                 Button(
                     modifier = Modifier.fillMaxWidth(),
