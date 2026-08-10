@@ -4,11 +4,15 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import org.sedentaryapp.data.AppStateRepository
 import org.sedentaryapp.data.CatalogActivity
 import org.sedentaryapp.engine.decision.CandidateFilter
 import org.sedentaryapp.engine.decision.DecisionEngine
@@ -24,6 +28,7 @@ data class ActivityUiState(
 class ActivityViewModel(
     private val activities: List<CatalogActivity>,
     private val policy: DecisionPolicy,
+    private val appStateRepository: AppStateRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -38,6 +43,7 @@ class ActivityViewModel(
 
     init {
         restoreState()
+        restorePersistentLastActivity()
     }
 
     fun startDemoProposal() {
@@ -90,6 +96,10 @@ class ActivityViewModel(
             KEY_LAST_ACTIVITY_ID
         ] = selected.definition.id
 
+        persistLastActivity(
+            selected.definition.id
+        )
+
         writeShownActivityIds(
             setOf(selected.definition.id)
         )
@@ -132,6 +142,10 @@ class ActivityViewModel(
         savedStateHandle[
             KEY_ATTEMPT
         ] = newAttempt
+
+        persistLastActivity(
+            selected.definition.id
+        )
 
         writeShownActivityIds(
             alreadyShown +
@@ -181,6 +195,55 @@ class ActivityViewModel(
         publishState()
     }
 
+    private fun restorePersistentLastActivity() {
+        if (
+            savedStateHandle.get<String>(
+                KEY_LAST_ACTIVITY_ID
+            ) != null
+        ) {
+            return
+        }
+
+        viewModelScope.launch {
+            val persistedId =
+                appStateRepository
+                    .lastActivityId
+                    .first()
+
+            val validId =
+                persistedId != null &&
+                        activities.any {
+                            it.definition.id ==
+                                    persistedId
+                        }
+
+            if (
+                validId &&
+                savedStateHandle.get<String>(
+                    KEY_LAST_ACTIVITY_ID
+                ) == null
+            ) {
+                savedStateHandle[
+                    KEY_LAST_ACTIVITY_ID
+                ] = persistedId
+
+                clearActiveProposal()
+                publishState()
+            }
+        }
+    }
+
+    private fun persistLastActivity(
+        activityId: String,
+    ) {
+        viewModelScope.launch {
+            appStateRepository
+                .saveLastActivityId(
+                    activityId
+                )
+        }
+    }
+
     private fun selectActivity(
         excludedIds: Set<String>,
         attempt: Int,
@@ -198,7 +261,8 @@ class ActivityViewModel(
                 seed = "$proposalId-$attempt",
                 filterRequest =
                     CandidateFilterRequest(
-                        opportunityType = "standard",
+                        opportunityType =
+                            "standard",
                         excludedActivityIds =
                             excludedIds,
                     ),
@@ -225,7 +289,6 @@ class ActivityViewModel(
         if (lastActivity == null) {
             _uiState.value =
                 ActivityUiState()
-
             return
         }
 
@@ -338,12 +401,16 @@ class ActivityViewModel(
         fun factory(
             activities: List<CatalogActivity>,
             policy: DecisionPolicy,
+            appStateRepository:
+            AppStateRepository,
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
                     ActivityViewModel(
                         activities = activities,
                         policy = policy,
+                        appStateRepository =
+                            appStateRepository,
                         savedStateHandle =
                             createSavedStateHandle(),
                     )

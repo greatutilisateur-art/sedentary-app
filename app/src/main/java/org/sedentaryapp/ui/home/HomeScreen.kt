@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -20,7 +21,9 @@ import org.sedentaryapp.data.CatalogActivity
 @Composable
 fun HomeScreen(
     lastActivity: CatalogActivity?,
+    scheduleStatusText: String,
     onOpenLastActivity: () -> Unit,
+    onOpenSettings: () -> Unit,
     onSimulateProposal: () -> Unit,
 ) {
     Surface(
@@ -41,10 +44,35 @@ fun HomeScreen(
                         .headlineMedium,
             )
 
+            Spacer(
+                modifier =
+                    Modifier.height(16.dp),
+            )
+
+            Text(
+                text = scheduleStatusText,
+                style =
+                    MaterialTheme.typography
+                        .bodyLarge,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(12.dp),
+            )
+
+            TextButton(
+                onClick = onOpenSettings,
+            ) {
+                Text(
+                    "Modifier mes réglages"
+                )
+            }
+
             if (lastActivity != null) {
                 Spacer(
                     modifier =
-                        Modifier.height(40.dp),
+                        Modifier.height(28.dp),
                 )
 
                 Text(
@@ -88,11 +116,7 @@ fun HomeScreen(
 
                         Text(
                             text =
-                                "Voir l’activité",
-                            style =
-                                MaterialTheme
-                                    .typography
-                                    .bodyMedium,
+                                "Voir l'activité",
                         )
                     }
                 }
