@@ -17,6 +17,7 @@ import org.sedentaryapp.engine.model.DecisionPolicy
 
 data class ActivityUiState(
     val activity: CatalogActivity? = null,
+    val isActiveProposal: Boolean = false,
     val hasAlternative: Boolean = false,
 )
 
@@ -36,23 +37,84 @@ class ActivityViewModel(
         _uiState.asStateFlow()
 
     init {
-        restoreOrCreateInteraction()
+        restoreState()
+    }
+
+    fun startDemoProposal() {
+        val number =
+            (savedStateHandle.get<Int>(
+                KEY_DEMO_PROPOSAL_NUMBER
+            ) ?: 0) + 1
+
+        savedStateHandle[
+            KEY_DEMO_PROPOSAL_NUMBER
+        ] = number
+
+        startNewProposal(
+            proposalId = "demo-proposal-$number"
+        )
+    }
+
+    fun startNewProposal(
+        proposalId: String,
+    ) {
+        savedStateHandle[
+            KEY_PROPOSAL_ID
+        ] = proposalId
+
+        savedStateHandle[
+            KEY_PROPOSAL_ACTIVE
+        ] = true
+
+        savedStateHandle[
+            KEY_ATTEMPT
+        ] = 0
+
+        writeShownActivityIds(
+            emptySet()
+        )
+
+        val selected =
+            selectActivity(
+                excludedIds = emptySet(),
+                attempt = 0,
+            )
+
+        if (selected == null) {
+            clearActiveProposal()
+            publishState()
+            return
+        }
+
+        savedStateHandle[
+            KEY_LAST_ACTIVITY_ID
+        ] = selected.definition.id
+
+        writeShownActivityIds(
+            setOf(selected.definition.id)
+        )
+
+        publishState()
     }
 
     fun onOtherActivity() {
+        if (!isProposalActive()) {
+            return
+        }
 
         val currentId =
             savedStateHandle.get<String>(
-                KEY_CURRENT_ACTIVITY_ID
+                KEY_LAST_ACTIVITY_ID
             ) ?: return
 
         val alreadyShown =
-            readShownActivityIds() + currentId
+            readShownActivityIds() +
+                    currentId
 
         val newAttempt =
-            savedStateHandle.get<Int>(
+            (savedStateHandle.get<Int>(
                 KEY_ATTEMPT
-            )?.plus(1) ?: 1
+            ) ?: 0) + 1
 
         val selected =
             selectActivity(
@@ -63,84 +125,58 @@ class ActivityViewModel(
                 return
             }
 
-        val newShown =
-            alreadyShown + selected.definition.id
+        savedStateHandle[
+            KEY_LAST_ACTIVITY_ID
+        ] = selected.definition.id
 
-        savedStateHandle[KEY_CURRENT_ACTIVITY_ID] =
-            selected.definition.id
-
-        savedStateHandle[KEY_ATTEMPT] =
-            newAttempt
+        savedStateHandle[
+            KEY_ATTEMPT
+        ] = newAttempt
 
         writeShownActivityIds(
-            newShown
+            alreadyShown +
+                    selected.definition.id
         )
 
         publishState()
     }
 
-    private fun restoreOrCreateInteraction() {
-
-        val restoredId =
-            savedStateHandle.get<String>(
-                KEY_CURRENT_ACTIVITY_ID
-            )
-
-        val restoredActivity =
-            activities.firstOrNull {
-                it.definition.id == restoredId
-            }
-
-        if (restoredActivity != null) {
-
-            val shown =
-                readShownActivityIds() +
-                        restoredActivity.definition.id
-
-            writeShownActivityIds(shown)
-
-            publishState()
-
-            return
-        }
-
-        createNewInteraction()
+    fun onNotNow() {
+        clearActiveProposal()
+        publishState()
     }
 
-    private fun createNewInteraction() {
-
-        val selected =
-            selectActivity(
-                excludedIds = emptySet(),
-                attempt = 0,
+    private fun restoreState() {
+        val lastActivityId =
+            savedStateHandle.get<String>(
+                KEY_LAST_ACTIVITY_ID
             )
 
-        savedStateHandle[KEY_ATTEMPT] = 0
+        val lastActivityExists =
+            activities.any {
+                it.definition.id ==
+                        lastActivityId
+            }
 
-        if (selected == null) {
-
+        if (!lastActivityExists) {
             savedStateHandle
                 .remove<String>(
-                    KEY_CURRENT_ACTIVITY_ID
+                    KEY_LAST_ACTIVITY_ID
                 )
 
-            writeShownActivityIds(
-                emptySet()
-            )
-
+            clearActiveProposal()
             publishState()
-
             return
         }
 
-        savedStateHandle[KEY_CURRENT_ACTIVITY_ID] =
-            selected.definition.id
-
-        writeShownActivityIds(
-            setOf(
-                selected.definition.id
+        if (isProposalActive()) {
+            writeShownActivityIds(
+                readShownActivityIds() +
+                        lastActivityId!!
             )
-        )
+        } else {
+            clearActiveProposal()
+        }
 
         publishState()
     }
@@ -149,13 +185,17 @@ class ActivityViewModel(
         excludedIds: Set<String>,
         attempt: Int,
     ): CatalogActivity? {
+        val proposalId =
+            savedStateHandle.get<String>(
+                KEY_PROPOSAL_ID
+            ) ?: return null
 
         val selectedDefinition =
             DecisionEngine.chooseActivity(
                 activities = definitions,
                 history = emptyList(),
                 policy = policy,
-                seed = "activity-screen-$attempt",
+                seed = "$proposalId-$attempt",
                 filterRequest =
                     CandidateFilterRequest(
                         opportunityType = "standard",
@@ -171,43 +211,89 @@ class ActivityViewModel(
     }
 
     private fun publishState() {
-
-        val currentId =
+        val lastActivityId =
             savedStateHandle.get<String>(
-                KEY_CURRENT_ACTIVITY_ID
+                KEY_LAST_ACTIVITY_ID
             )
 
-        val currentActivity =
+        val lastActivity =
             activities.firstOrNull {
-                it.definition.id == currentId
+                it.definition.id ==
+                        lastActivityId
             }
 
-        val shownIds =
-            readShownActivityIds() +
-                    listOfNotNull(currentId)
+        if (lastActivity == null) {
+            _uiState.value =
+                ActivityUiState()
 
-        val alternatives =
-            CandidateFilter.filter(
-                activities = definitions,
-                request =
-                    CandidateFilterRequest(
-                        opportunityType = "standard",
-                        excludedActivityIds =
-                            shownIds,
-                    ),
-            )
+            return
+        }
+
+        val active =
+            isProposalActive() &&
+                    savedStateHandle.get<String>(
+                        KEY_PROPOSAL_ID
+                    ) != null
+
+        val alternativesRemain =
+            if (active) {
+                val shownIds =
+                    readShownActivityIds() +
+                            lastActivity.definition.id
+
+                CandidateFilter.filter(
+                    activities = definitions,
+                    request =
+                        CandidateFilterRequest(
+                            opportunityType =
+                                "standard",
+                            excludedActivityIds =
+                                shownIds,
+                        ),
+                ).isNotEmpty()
+            } else {
+                false
+            }
 
         _uiState.value =
             ActivityUiState(
-                activity = currentActivity,
+                activity = lastActivity,
+                isActiveProposal = active,
                 hasAlternative =
-                    alternatives.isNotEmpty(),
+                    alternativesRemain,
             )
+    }
+
+    private fun isProposalActive():
+            Boolean {
+        return savedStateHandle
+            .get<Boolean>(
+                KEY_PROPOSAL_ACTIVE
+            ) == true
+    }
+
+    private fun clearActiveProposal() {
+        savedStateHandle[
+            KEY_PROPOSAL_ACTIVE
+        ] = false
+
+        savedStateHandle
+            .remove<String>(
+                KEY_PROPOSAL_ID
+            )
+
+        savedStateHandle
+            .remove<Int>(
+                KEY_ATTEMPT
+            )
+
+        writeShownActivityIds(
+            emptySet()
+        )
     }
 
     private fun readShownActivityIds():
             Set<String> {
-
         return savedStateHandle
             .get<ArrayList<String>>(
                 KEY_SHOWN_ACTIVITY_IDS
@@ -219,17 +305,15 @@ class ActivityViewModel(
     private fun writeShownActivityIds(
         ids: Set<String>,
     ) {
-
         savedStateHandle[
             KEY_SHOWN_ACTIVITY_IDS
         ] = ArrayList(ids)
     }
 
     companion object {
-
         private const val
-                KEY_CURRENT_ACTIVITY_ID =
-            "current_activity_id"
+                KEY_LAST_ACTIVITY_ID =
+            "last_activity_id"
 
         private const val
                 KEY_SHOWN_ACTIVITY_IDS =
@@ -239,14 +323,24 @@ class ActivityViewModel(
                 KEY_ATTEMPT =
             "alternative_attempt"
 
+        private const val
+                KEY_PROPOSAL_ID =
+            "proposal_id"
+
+        private const val
+                KEY_PROPOSAL_ACTIVE =
+            "proposal_active"
+
+        private const val
+                KEY_DEMO_PROPOSAL_NUMBER =
+            "demo_proposal_number"
+
         fun factory(
             activities: List<CatalogActivity>,
             policy: DecisionPolicy,
         ): ViewModelProvider.Factory =
             viewModelFactory {
-
                 initializer {
-
                     ActivityViewModel(
                         activities = activities,
                         policy = policy,

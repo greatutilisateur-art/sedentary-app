@@ -21,6 +21,7 @@ import org.sedentaryapp.data.CatalogActivity
 fun ActivityScreen(
     activity: CatalogActivity,
     postureLabel: String?,
+    isActiveProposal: Boolean,
     hasAlternative: Boolean,
     onOtherActivity: () -> Unit,
     onNotNow: () -> Unit,
@@ -31,7 +32,10 @@ fun ActivityScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 32.dp),
+                .padding(
+                    horizontal = 24.dp,
+                    vertical = 32.dp,
+                ),
             verticalArrangement = Arrangement.Center,
         ) {
 
@@ -67,60 +71,41 @@ fun ActivityScreen(
 
             Text(
                 text = formatDuration(
-                    activity.definition.durationSecondsMin,
-                    activity.definition.durationSecondsMax,
+                    minSeconds =
+                        activity.definition.durationSecondsMin,
+                    maxSeconds =
+                        activity.definition.durationSecondsMax,
                 ),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color =
+                    MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Spacer(
-                modifier = Modifier.height(40.dp),
-            )
-
-            @Composable
-            fun NoActivityScreen() {
-
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        verticalArrangement =
-                            Arrangement.Center,
-                    ) {
-
-                        Text(
-                            text =
-                                "Aucune activité ne correspond actuellement à ces réglages.",
-                            style =
-                                MaterialTheme.typography.bodyLarge,
-                        )
-                    }
-                }
-            }
-
-            if (hasAlternative) {
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onOtherActivity,
-                ) {
-                    Text("Autre activité")
-                }
+            if (isActiveProposal) {
 
                 Spacer(
-                    modifier = Modifier.height(8.dp),
+                    modifier = Modifier.height(40.dp),
                 )
-            }
 
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onNotNow,
-            ) {
-                Text("Pas maintenant")
+                if (hasAlternative) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onOtherActivity,
+                    ) {
+                        Text("Autre activité")
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(8.dp),
+                    )
+                }
+
+                TextButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onNotNow,
+                ) {
+                    Text("Pas maintenant")
+                }
             }
         }
     }

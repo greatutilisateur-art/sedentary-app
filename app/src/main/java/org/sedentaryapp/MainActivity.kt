@@ -2,9 +2,13 @@ package org.sedentaryapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
 import org.sedentaryapp.data.CatalogActivity
 import org.sedentaryapp.data.CatalogRepository
@@ -13,7 +17,7 @@ import org.sedentaryapp.engine.model.RepetitionCoefficients
 import org.sedentaryapp.engine.model.ScoringPolicy
 import org.sedentaryapp.ui.activity.ActivityScreen
 import org.sedentaryapp.ui.activity.ActivityViewModel
-import org.sedentaryapp.ui.activity.NoActivityScreen
+import org.sedentaryapp.ui.home.HomeScreen
 import org.sedentaryapp.ui.theme.SedentaryAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -59,34 +63,53 @@ class MainActivity : ComponentActivity() {
             )[ActivityViewModel::class.java]
 
         setContent {
-
             SedentaryAppTheme {
-
                 val uiState by
                 viewModel.uiState
                     .collectAsState()
 
+                var showActivity by
+                rememberSaveable {
+                    mutableStateOf(false)
+                }
+
                 val activity =
                     uiState.activity
 
-                if (activity == null) {
-
-                    NoActivityScreen()
-
-                } else {
+                if (
+                    showActivity &&
+                    activity != null
+                ) {
+                    BackHandler {
+                        showActivity = false
+                    }
 
                     ActivityScreen(
                         activity = activity,
                         postureLabel =
-                            postureLabel(
-                                activity
-                            ),
+                            postureLabel(activity),
+                        isActiveProposal =
+                            uiState.isActiveProposal,
                         hasAlternative =
                             uiState.hasAlternative,
                         onOtherActivity =
                             viewModel::onOtherActivity,
                         onNotNow = {
-                            finish()
+                            viewModel.onNotNow()
+                            showActivity = false
+                        },
+                    )
+                } else {
+                    HomeScreen(
+                        lastActivity = activity,
+                        onOpenLastActivity = {
+                            showActivity = true
+                        },
+                        onSimulateProposal = {
+                            viewModel
+                                .startDemoProposal()
+
+                            showActivity = true
                         },
                     )
                 }
@@ -98,9 +121,7 @@ class MainActivity : ComponentActivity() {
 private fun postureLabel(
     activity: CatalogActivity,
 ): String? {
-
     return when {
-
         activity.definition
             .standingRequired ->
             "Debout nécessaire"
