@@ -52,6 +52,8 @@ data class ActivityUiState(
     val shouldPlayCompletionHaptic: Boolean = false,
     val activityPreferences: ActivityPreferences =
         ActivityPreferences(),
+    val recentProposalActivityIds: List<String> =
+        emptyList(),
 )
 
 class ActivityViewModel(
@@ -63,8 +65,11 @@ class ActivityViewModel(
 
     private var timerJob: Job? = null
     private var futureOverrideJob: Job? = null
+    private var proposalSelectionJob: Job? = null
     private var activityPreferences =
         ActivityPreferences()
+    private var proposalHistoryIds:
+            List<String> = emptyList()
 
     private val definitions =
         activities.map { it.definition }
@@ -82,6 +87,7 @@ class ActivityViewModel(
         restoreGuidedSession()
         restorePersistentLastActivity()
         observeActivityPreferences()
+        observeProposalHistory()
     }
 
     fun startDemoProposal() {
@@ -108,6 +114,8 @@ class ActivityViewModel(
     ) {
 
         clearGuidedSession()
+
+        proposalSelectionJob?.cancel()
 
         savedStateHandle
             .remove<String>(
@@ -141,41 +149,109 @@ class ActivityViewModel(
             KEY_CURRENT_INDEX
         ] = 0
 
-        val selected =
-            selectActivity(
-                excludedIds =
-                    emptySet(),
-                attempt = 0,
-            )
-
-        if (selected == null) {
-            clearActiveProposal()
-            publishState()
-            return
-        }
-
-        val selectedId =
-            selected.definition.id
-
-        savedStateHandle[
-            KEY_LAST_PROPOSED_ACTIVITY_ID
-        ] = selectedId
-
-        persistLastActivity(
-            selectedId
-        )
-
-        writeExploredActivityIds(
-            listOf(
-                selectedId
-            )
-        )
-
-        savedStateHandle[
-            KEY_CURRENT_INDEX
-        ] = 0
-
         publishState()
+
+        proposalSelectionJob =
+            viewModelScope.launch {
+
+                val persistedHistory =
+                    appStateRepository
+                        .proposalHistory
+                        .first()
+
+                proposalHistoryIds =
+                    persistedHistory
+                        .mapNotNull { entry ->
+                            entry.activityId
+                                .takeIf { id ->
+                                    activities.any { activity ->
+                                        activity.definition.id ==
+                                                id
+                                    }
+                                }
+                        }
+                        .takeLast(
+                            policy.scoring
+                                .historyWindowProposals
+                        )
+
+                val existingActivityId =
+                    persistedHistory
+                        .lastOrNull { entry ->
+                            entry.proposalKey ==
+                                    proposalId
+                        }
+                        ?.activityId
+
+                val existingActivity =
+                    existingActivityId
+                        ?.let { id ->
+                            activities
+                                .firstOrNull { activity ->
+                                    activity.definition.id ==
+                                            id
+                                }
+                        }
+
+                val selected =
+                    existingActivity
+                        ?: selectActivity(
+                            excludedIds =
+                                emptySet(),
+                            attempt = 0,
+                        )
+
+                if (selected == null) {
+                    clearActiveProposal()
+                    publishState()
+                    return@launch
+                }
+
+                val selectedId =
+                    selected.definition.id
+
+                if (existingActivity == null) {
+                    appStateRepository
+                        .recordProposal(
+                            proposalKey =
+                                proposalId,
+                            activityId =
+                                selectedId,
+                            maxEntries =
+                                policy.scoring
+                                    .historyWindowProposals,
+                        )
+
+                    proposalHistoryIds =
+                        (
+                                proposalHistoryIds +
+                                        selectedId
+                                ).takeLast(
+                                policy.scoring
+                                    .historyWindowProposals
+                            )
+                }
+
+                savedStateHandle[
+                    KEY_LAST_PROPOSED_ACTIVITY_ID
+                ] = selectedId
+
+                persistLastActivity(
+                    selectedId
+                )
+
+                writeExploredActivityIds(
+                    listOf(
+                        selectedId
+                    )
+                )
+
+                savedStateHandle[
+                    KEY_CURRENT_INDEX
+                ] = 0
+
+                publishState()
+            }
     }
 
     fun onOtherActivity() {
@@ -457,7 +533,7 @@ class ActivityViewModel(
                 activities =
                     definitions,
                 history =
-                    emptyList(),
+                    currentHistoryDefinitions(),
                 policy =
                     policy,
                 seed =
@@ -1281,6 +1357,57 @@ class ActivityViewModel(
         }
     }
 
+    private fun observeProposalHistory() {
+
+        viewModelScope.launch {
+            appStateRepository
+                .proposalHistory
+                .collect { history ->
+
+                    val updatedIds =
+                        history
+                            .mapNotNull { entry ->
+                                entry.activityId
+                                    .takeIf { id ->
+                                        activities.any { activity ->
+                                            activity.definition.id ==
+                                                    id
+                                        }
+                                    }
+                            }
+                            .takeLast(
+                                policy.scoring
+                                    .historyWindowProposals
+                            )
+
+                    if (
+                        updatedIds ==
+                        proposalHistoryIds
+                    ) {
+                        return@collect
+                    }
+
+                    proposalHistoryIds =
+                        updatedIds
+
+                    publishState()
+                }
+        }
+    }
+
+    private fun currentHistoryDefinitions():
+            List<org.sedentaryapp.engine.model.ActivityDefinition> {
+
+        return proposalHistoryIds
+            .mapNotNull { id ->
+                definitions
+                    .firstOrNull { definition ->
+                        definition.id ==
+                                id
+                    }
+            }
+    }
+
     private fun restorePersistentLastActivity() {
 
         if (
@@ -1463,7 +1590,7 @@ class ActivityViewModel(
                 activities =
                     definitions,
                 history =
-                    emptyList(),
+                    currentHistoryDefinitions(),
                 policy =
                     policy,
                 seed =
@@ -1615,6 +1742,8 @@ class ActivityViewModel(
                                 ) != true,
                 activityPreferences =
                     activityPreferences,
+                recentProposalActivityIds =
+                    proposalHistoryIds,
             )
     }
 

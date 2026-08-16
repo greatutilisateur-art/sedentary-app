@@ -54,6 +54,11 @@ data class PlannedActivityOverride(
     val activityId: String,
 )
 
+data class ProposalHistoryEntry(
+    val proposalKey: String,
+    val activityId: String,
+)
+
 class AppStateRepository(
     context: Context,
     defaultSlotTimes: List<LocalTime>,
@@ -132,6 +137,18 @@ class AppStateRepository(
             .map { preferences ->
                 readActivityPreferences(
                     preferences
+                )
+            }
+
+    val proposalHistory:
+            Flow<List<ProposalHistoryEntry>> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                parseProposalHistory(
+                    preferences[
+                        PROPOSAL_HISTORY
+                    ]
                 )
             }
 
@@ -295,6 +312,55 @@ class AppStateRepository(
             preferences.remove(
                 PLANNED_ACTIVITY_OVERRIDE
             )
+        }
+    }
+
+    suspend fun recordProposal(
+        proposalKey: String,
+        activityId: String,
+        maxEntries: Int,
+    ) {
+        if (maxEntries <= 0) {
+            return
+        }
+
+        appContext.appStateDataStore.edit { preferences ->
+
+            val current =
+                parseProposalHistory(
+                    preferences[
+                        PROPOSAL_HISTORY
+                    ]
+                )
+
+            if (
+                current.any { entry ->
+                    entry.proposalKey ==
+                            proposalKey
+                }
+            ) {
+                return@edit
+            }
+
+            val updated =
+                (
+                        current +
+                                ProposalHistoryEntry(
+                                    proposalKey =
+                                        proposalKey,
+                                    activityId =
+                                        activityId,
+                                )
+                        ).takeLast(
+                        maxEntries
+                    )
+
+            preferences[
+                PROPOSAL_HISTORY
+            ] =
+                serializeProposalHistory(
+                    updated
+                )
         }
     }
 
@@ -946,6 +1012,68 @@ class AppStateRepository(
         ] = updated
     }
 
+    private fun parseProposalHistory(
+        value: String?,
+    ): List<ProposalHistoryEntry> {
+
+        if (value.isNullOrBlank()) {
+            return emptyList()
+        }
+
+        return value
+            .lineSequence()
+            .mapNotNull { line ->
+
+                val separatorIndex =
+                    line.indexOf('\t')
+
+                if (
+                    separatorIndex <= 0 ||
+                    separatorIndex >=
+                    line.lastIndex
+                ) {
+                    return@mapNotNull null
+                }
+
+                val proposalKey =
+                    line.substring(
+                        0,
+                        separatorIndex,
+                    )
+
+                val activityId =
+                    line.substring(
+                        separatorIndex + 1
+                    )
+
+                if (
+                    proposalKey.isBlank() ||
+                    activityId.isBlank()
+                ) {
+                    null
+                } else {
+                    ProposalHistoryEntry(
+                        proposalKey =
+                            proposalKey,
+                        activityId =
+                            activityId,
+                    )
+                }
+            }
+            .toList()
+    }
+
+    private fun serializeProposalHistory(
+        entries: List<ProposalHistoryEntry>,
+    ): String {
+
+        return entries.joinToString(
+            separator = "\n"
+        ) { entry ->
+            "${entry.proposalKey}\t${entry.activityId}"
+        }
+    }
+
     private fun parseOpportunityKey(
         value: String,
     ): LocalDateTime? {
@@ -1209,6 +1337,11 @@ class AppStateRepository(
         val LAST_ACTIVITY_ID =
             stringPreferencesKey(
                 "last_activity_id"
+            )
+
+        val PROPOSAL_HISTORY =
+            stringPreferencesKey(
+                "proposal_history"
             )
 
         val PLANNED_ACTIVITY_OVERRIDE =
