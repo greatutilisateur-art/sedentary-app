@@ -164,6 +164,14 @@ class MainActivity : ComponentActivity() {
                                 activityState
                                     .showNotNow,
 
+                            guidedSessionState =
+                                activityState
+                                    .guidedSessionState,
+
+                            remainingSeconds =
+                                activityState
+                                    .remainingSeconds,
+
                             onPreviousActivity =
                                 viewModel::onPreviousActivity,
 
@@ -176,6 +184,27 @@ class MainActivity : ComponentActivity() {
                             onNotNow = {
                                 viewModel.onNotNow()
                                 screen = "home"
+                            },
+
+                            onStartGuidedSession =
+                                viewModel::startGuidedSession,
+
+                            onPauseGuidedSession =
+                                viewModel::pauseGuidedSession,
+
+                            onResumeGuidedSession =
+                                viewModel::resumeGuidedSession,
+
+                            onEndGuidedSession = {
+                                viewModel.endGuidedSessionEarly()
+
+                                finish()
+                            },
+
+                            onCloseGuidedSession = {
+                                viewModel.closeGuidedSession()
+
+                                finish()
                             },
                         )
                     }

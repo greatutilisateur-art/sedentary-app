@@ -1,5 +1,6 @@
 package org.sedentaryapp.ui.activity
 
+import android.os.SystemClock
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -7,10 +8,13 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.sedentaryapp.data.AppStateRepository
 import org.sedentaryapp.data.CatalogActivity
@@ -18,6 +22,13 @@ import org.sedentaryapp.engine.decision.CandidateFilter
 import org.sedentaryapp.engine.decision.DecisionEngine
 import org.sedentaryapp.engine.model.CandidateFilterRequest
 import org.sedentaryapp.engine.model.DecisionPolicy
+
+enum class GuidedSessionState {
+    READY,
+    RUNNING,
+    PAUSED,
+    TIME_ELAPSED,
+}
 
 enum class ActivityDisplayContext {
     CURRENT_PROPOSAL,
@@ -33,6 +44,9 @@ data class ActivityUiState(
     val canGoNext: Boolean = false,
     val canRequestAnother: Boolean = false,
     val showNotNow: Boolean = false,
+    val guidedSessionState: GuidedSessionState =
+        GuidedSessionState.READY,
+    val remainingSeconds: Int = 0,
 )
 
 class ActivityViewModel(
@@ -41,6 +55,8 @@ class ActivityViewModel(
     private val appStateRepository: AppStateRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+
+    private var timerJob: Job? = null
 
     private val definitions =
         activities.map { it.definition }
@@ -55,10 +71,12 @@ class ActivityViewModel(
 
     init {
         restoreState()
+        restoreGuidedSession()
         restorePersistentLastActivity()
     }
 
     fun startDemoProposal() {
+
         val number =
             (
                     savedStateHandle.get<Int>(
@@ -79,6 +97,9 @@ class ActivityViewModel(
     fun startNewProposal(
         proposalId: String,
     ) {
+
+        clearGuidedSession()
+
         savedStateHandle[
             KEY_PROPOSAL_ID
         ] = proposalId
@@ -144,16 +165,22 @@ class ActivityViewModel(
     }
 
     fun onOtherActivity() {
+
+        if (
+            readGuidedSessionState() !=
+            GuidedSessionState.READY
+        ) {
+            return
+        }
+
         val context =
             readDisplayContext()
 
         if (
             context !=
-            ActivityDisplayContext
-                .CURRENT_PROPOSAL &&
+            ActivityDisplayContext.CURRENT_PROPOSAL &&
             context !=
-            ActivityDisplayContext
-                .FUTURE_PREVIEW
+            ActivityDisplayContext.FUTURE_PREVIEW
         ) {
             return
         }
@@ -211,23 +238,18 @@ class ActivityViewModel(
         ] =
             newAttempt
 
-        /*
-         * Important :
-         * on ne modifie PAS
-         * KEY_LAST_PROPOSED_ACTIVITY_ID.
-         *
-         * Explorer une alternative
-         * n'est pas une nouvelle proposition
-         * automatique.
-         *
-         * Le FUTURE_PREVIEW ajoutera plus tard
-         * ici la persistance de l'override.
-         */
-
         publishState()
     }
 
     fun onPreviousActivity() {
+
+        if (
+            readGuidedSessionState() !=
+            GuidedSessionState.READY
+        ) {
+            return
+        }
+
         val explored =
             readExploredActivityIds()
 
@@ -247,17 +269,18 @@ class ActivityViewModel(
         ] =
             current - 1
 
-        /*
-         * FUTURE_PREVIEW :
-         * l'override persistant sera
-         * synchronisé ici dans une
-         * prochaine étape.
-         */
-
         publishState()
     }
 
     fun onNextActivity() {
+
+        if (
+            readGuidedSessionState() !=
+            GuidedSessionState.READY
+        ) {
+            return
+        }
+
         val explored =
             readExploredActivityIds()
 
@@ -280,16 +303,11 @@ class ActivityViewModel(
         ] =
             current + 1
 
-        /*
-         * FUTURE_PREVIEW :
-         * idem, l'override sera
-         * synchronisé plus tard.
-         */
-
         publishState()
     }
 
     fun openLastActivity() {
+
         val lastId =
             savedStateHandle.get<String>(
                 KEY_LAST_PROPOSED_ACTIVITY_ID
@@ -325,7 +343,176 @@ class ActivityViewModel(
         publishState()
     }
 
+    fun startGuidedSession() {
+
+        if (
+            readGuidedSessionState() !=
+            GuidedSessionState.READY
+        ) {
+            return
+        }
+
+        val activity =
+            currentDisplayedActivity()
+                ?: return
+
+        val durationMillis =
+            activity.definition
+                .durationSecondsMax
+                .toLong() *
+                    1000L
+
+        if (durationMillis <= 0L) {
+            return
+        }
+
+        savedStateHandle[
+            KEY_GUIDED_ACTIVITY_ID
+        ] =
+            activity.definition.id
+
+        savedStateHandle[
+            KEY_GUIDED_STATE
+        ] =
+            GuidedSessionState
+                .RUNNING
+                .name
+
+        savedStateHandle[
+            KEY_GUIDED_END_ELAPSED_REALTIME
+        ] =
+            SystemClock.elapsedRealtime() +
+                    durationMillis
+
+        savedStateHandle
+            .remove<Long>(
+                KEY_GUIDED_PAUSED_REMAINING_MILLIS
+            )
+
+        startTimerTicker()
+        publishState()
+    }
+
+    fun pauseGuidedSession() {
+
+        if (
+            readGuidedSessionState() !=
+            GuidedSessionState.RUNNING
+        ) {
+            return
+        }
+
+        val remainingMillis =
+            calculateRunningRemainingMillis()
+
+        if (remainingMillis <= 0L) {
+            finishGuidedSessionNaturally()
+            return
+        }
+
+        timerJob?.cancel()
+        timerJob = null
+
+        savedStateHandle[
+            KEY_GUIDED_PAUSED_REMAINING_MILLIS
+        ] =
+            remainingMillis
+
+        savedStateHandle[
+            KEY_GUIDED_STATE
+        ] =
+            GuidedSessionState
+                .PAUSED
+                .name
+
+        savedStateHandle
+            .remove<Long>(
+                KEY_GUIDED_END_ELAPSED_REALTIME
+            )
+
+        publishState()
+    }
+
+    fun resumeGuidedSession() {
+
+        if (
+            readGuidedSessionState() !=
+            GuidedSessionState.PAUSED
+        ) {
+            return
+        }
+
+        val remainingMillis =
+            savedStateHandle
+                .get<Long>(
+                    KEY_GUIDED_PAUSED_REMAINING_MILLIS
+                )
+                ?: return
+
+        if (remainingMillis <= 0L) {
+            finishGuidedSessionNaturally()
+            return
+        }
+
+        savedStateHandle[
+            KEY_GUIDED_END_ELAPSED_REALTIME
+        ] =
+            SystemClock.elapsedRealtime() +
+                    remainingMillis
+
+        savedStateHandle[
+            KEY_GUIDED_STATE
+        ] =
+            GuidedSessionState
+                .RUNNING
+                .name
+
+        savedStateHandle
+            .remove<Long>(
+                KEY_GUIDED_PAUSED_REMAINING_MILLIS
+            )
+
+        startTimerTicker()
+        publishState()
+    }
+
+    fun endGuidedSessionEarly() {
+
+        val state =
+            readGuidedSessionState()
+
+        if (
+            state != GuidedSessionState.RUNNING &&
+            state != GuidedSessionState.PAUSED
+        ) {
+            return
+        }
+
+        clearGuidedSession()
+        publishState()
+    }
+
+    fun closeGuidedSession() {
+
+        if (
+            readGuidedSessionState() !=
+            GuidedSessionState.TIME_ELAPSED
+        ) {
+            return
+        }
+
+        clearGuidedSession()
+        publishState()
+    }
     fun onNotNow() {
+
+        if (
+            readGuidedSessionState() !=
+            GuidedSessionState.READY
+        ) {
+            return
+        }
+
         if (
             readDisplayContext() !=
             ActivityDisplayContext
@@ -339,6 +526,11 @@ class ActivityViewModel(
         savedStateHandle
             .remove<String>(
                 KEY_LAST_PROPOSED_ACTIVITY_ID
+            )
+
+        savedStateHandle
+            .remove<String>(
+                KEY_DISPLAY_CONTEXT
             )
 
         writeExploredActivityIds(
@@ -393,6 +585,7 @@ class ActivityViewModel(
             ) != null &&
             explored.isNotEmpty()
         ) {
+
             writeExploredActivityIds(
                 explored
             )
@@ -423,6 +616,7 @@ class ActivityViewModel(
         clearActiveProposal()
 
         if (lastExists) {
+
             savedStateHandle[
                 KEY_DISPLAY_CONTEXT
             ] =
@@ -439,7 +633,9 @@ class ActivityViewModel(
             savedStateHandle[
                 KEY_CURRENT_INDEX
             ] = 0
+
         } else {
+
             writeExploredActivityIds(
                 emptyList()
             )
@@ -453,7 +649,303 @@ class ActivityViewModel(
         publishState()
     }
 
+    private fun restoreGuidedSession() {
+
+        val state =
+            readGuidedSessionState()
+
+        if (
+            state ==
+            GuidedSessionState.READY
+        ) {
+            return
+        }
+
+        val guidedActivityId =
+            savedStateHandle
+                .get<String>(
+                    KEY_GUIDED_ACTIVITY_ID
+                )
+
+        val guidedActivity =
+            activities.firstOrNull {
+                it.definition.id ==
+                        guidedActivityId
+            }
+
+        if (guidedActivity == null) {
+            clearGuidedSession()
+            publishState()
+            return
+        }
+
+        when (state) {
+
+            GuidedSessionState.RUNNING -> {
+
+                val remainingMillis =
+                    calculateRunningRemainingMillis()
+
+                val maximumExpectedMillis =
+                    guidedActivity.definition
+                        .durationSecondsMax
+                        .toLong() *
+                            1000L
+
+                /*
+                 * elapsedRealtime repart de zéro
+                 * après un redémarrage complet
+                 * du téléphone.
+                 *
+                 * Si l'échéance restaurée donne
+                 * un temps absurde supérieur à
+                 * la durée de l'activité, on
+                 * abandonne simplement cette
+                 * restauration plutôt que
+                 * relancer un faux chrono.
+                 */
+                if (
+                    remainingMillis >
+                    maximumExpectedMillis +
+                    2000L
+                ) {
+                    clearGuidedSession()
+                    publishState()
+                    return
+                }
+
+                if (
+                    remainingMillis <= 0L
+                ) {
+                    finishGuidedSessionNaturally()
+                } else {
+                    startTimerTicker()
+                    publishState()
+                }
+            }
+
+            GuidedSessionState.PAUSED -> {
+
+                val remainingMillis =
+                    savedStateHandle
+                        .get<Long>(
+                            KEY_GUIDED_PAUSED_REMAINING_MILLIS
+                        )
+                        ?: 0L
+
+                if (
+                    remainingMillis <= 0L
+                ) {
+                    finishGuidedSessionNaturally()
+                } else {
+                    publishState()
+                }
+            }
+
+            GuidedSessionState.TIME_ELAPSED -> {
+                publishState()
+            }
+
+            GuidedSessionState.READY -> {
+                Unit
+            }
+        }
+    }
+
+    private fun startTimerTicker() {
+
+        timerJob?.cancel()
+
+        timerJob =
+            viewModelScope.launch {
+
+                while (
+                    isActive &&
+                    readGuidedSessionState() ==
+                    GuidedSessionState.RUNNING
+                ) {
+
+                    val remainingMillis =
+                        calculateRunningRemainingMillis()
+
+                    if (
+                        remainingMillis <= 0L
+                    ) {
+                        finishGuidedSessionNaturally()
+                        break
+                    }
+
+                    publishState()
+
+                    delay(
+                        250L
+                    )
+                }
+            }
+    }
+
+    private fun finishGuidedSessionNaturally() {
+
+        timerJob?.cancel()
+        timerJob = null
+
+        savedStateHandle[
+            KEY_GUIDED_STATE
+        ] =
+            GuidedSessionState
+                .TIME_ELAPSED
+                .name
+
+        savedStateHandle
+            .remove<Long>(
+                KEY_GUIDED_END_ELAPSED_REALTIME
+            )
+
+        savedStateHandle
+            .remove<Long>(
+                KEY_GUIDED_PAUSED_REMAINING_MILLIS
+            )
+
+        publishState()
+    }
+
+    private fun clearGuidedSession() {
+
+        timerJob?.cancel()
+        timerJob = null
+
+        savedStateHandle
+            .remove<String>(
+                KEY_GUIDED_STATE
+            )
+
+        savedStateHandle
+            .remove<String>(
+                KEY_GUIDED_ACTIVITY_ID
+            )
+
+        savedStateHandle
+            .remove<Long>(
+                KEY_GUIDED_END_ELAPSED_REALTIME
+            )
+
+        savedStateHandle
+            .remove<Long>(
+                KEY_GUIDED_PAUSED_REMAINING_MILLIS
+            )
+    }
+
+    private fun calculateRunningRemainingMillis():
+            Long {
+
+        val end =
+            savedStateHandle
+                .get<Long>(
+                    KEY_GUIDED_END_ELAPSED_REALTIME
+                )
+                ?: return 0L
+
+        return (
+                end -
+                        SystemClock.elapsedRealtime()
+                )
+            .coerceAtLeast(
+                0L
+            )
+    }
+
+    private fun calculateRemainingSeconds():
+            Int {
+
+        val remainingMillis =
+            when (
+                readGuidedSessionState()
+            ) {
+
+                GuidedSessionState.RUNNING ->
+                    calculateRunningRemainingMillis()
+
+                GuidedSessionState.PAUSED ->
+                    savedStateHandle
+                        .get<Long>(
+                            KEY_GUIDED_PAUSED_REMAINING_MILLIS
+                        )
+                        ?: 0L
+
+                GuidedSessionState.TIME_ELAPSED ->
+                    0L
+
+                GuidedSessionState.READY ->
+                    0L
+            }
+
+        if (remainingMillis <= 0L) {
+            return 0
+        }
+
+        return (
+                (
+                        remainingMillis +
+                                999L
+                        ) /
+                        1000L
+                )
+            .coerceAtMost(
+                Int.MAX_VALUE
+                    .toLong()
+            )
+            .toInt()
+    }
+
+    private fun readGuidedSessionState():
+            GuidedSessionState {
+
+        val value =
+            savedStateHandle
+                .get<String>(
+                    KEY_GUIDED_STATE
+                )
+                ?: return GuidedSessionState.READY
+
+        return runCatching {
+            GuidedSessionState
+                .valueOf(
+                    value
+                )
+        }.getOrDefault(
+            GuidedSessionState.READY
+        )
+    }
+
+    private fun currentDisplayedActivity():
+            CatalogActivity? {
+
+        val explored =
+            readExploredActivityIds()
+
+        if (explored.isEmpty()) {
+            return null
+        }
+
+        val index =
+            readCurrentIndex()
+                .coerceIn(
+                    0,
+                    explored.lastIndex,
+                )
+
+        val id =
+            explored[index]
+
+        return activities
+            .firstOrNull {
+                it.definition.id ==
+                        id
+            }
+    }
+
     private fun restorePersistentLastActivity() {
+
         if (
             savedStateHandle.get<String>(
                 KEY_LAST_PROPOSED_ACTIVITY_ID
@@ -482,12 +974,14 @@ class ActivityViewModel(
                     KEY_LAST_PROPOSED_ACTIVITY_ID
                 ) == null
             ) {
+
                 savedStateHandle[
                     KEY_LAST_PROPOSED_ACTIVITY_ID
                 ] =
                     persistedId
 
                 if (!isProposalActive()) {
+
                     savedStateHandle[
                         KEY_DISPLAY_CONTEXT
                     ] =
@@ -589,11 +1083,26 @@ class ActivityViewModel(
                     )
             }
 
+        val guidedState =
+            readGuidedSessionState()
+
         val currentId =
-            explored
-                .getOrNull(
+            if (
+                guidedState ==
+                GuidedSessionState.READY
+            ) {
+                explored.getOrNull(
                     currentIndex
                 )
+            } else {
+                savedStateHandle
+                    .get<String>(
+                        KEY_GUIDED_ACTIVITY_ID
+                    )
+                    ?: explored.getOrNull(
+                        currentIndex
+                    )
+            }
 
         val currentActivity =
             activities
@@ -605,6 +1114,10 @@ class ActivityViewModel(
         val context =
             readDisplayContext()
 
+        val ready =
+            guidedState ==
+                    GuidedSessionState.READY
+
         val atEnd =
             explored.isNotEmpty() &&
                     currentIndex ==
@@ -612,6 +1125,7 @@ class ActivityViewModel(
 
         val alternativesRemain =
             if (
+                ready &&
                 atEnd &&
                 (
                         context ==
@@ -648,17 +1162,24 @@ class ActivityViewModel(
                 context =
                     context,
                 canGoPrevious =
-                    currentIndex > 0,
+                    ready &&
+                            currentIndex > 0,
                 canGoNext =
-                    explored.isNotEmpty() &&
+                    ready &&
+                            explored.isNotEmpty() &&
                             currentIndex <
                             explored.lastIndex,
                 canRequestAnother =
                     alternativesRemain,
                 showNotNow =
-                    context ==
+                    ready &&
+                            context ==
                             ActivityDisplayContext
                                 .CURRENT_PROPOSAL,
+                guidedSessionState =
+                    guidedState,
+                remainingSeconds =
+                    calculateRemainingSeconds(),
             )
     }
 
@@ -682,6 +1203,7 @@ class ActivityViewModel(
 
     private fun isProposalActive():
             Boolean {
+
         return savedStateHandle
             .get<Boolean>(
                 KEY_PROPOSAL_ACTIVE
@@ -707,6 +1229,7 @@ class ActivityViewModel(
 
     private fun readExploredActivityIds():
             List<String> {
+
         return savedStateHandle
             .get<ArrayList<String>>(
                 KEY_EXPLORED_ACTIVITY_IDS
@@ -718,14 +1241,18 @@ class ActivityViewModel(
     private fun writeExploredActivityIds(
         ids: List<String>,
     ) {
+
         savedStateHandle[
             KEY_EXPLORED_ACTIVITY_IDS
         ] =
-            ArrayList(ids)
+            ArrayList(
+                ids
+            )
     }
 
     private fun readCurrentIndex():
             Int {
+
         return savedStateHandle
             .get<Int>(
                 KEY_CURRENT_INDEX
@@ -765,6 +1292,22 @@ class ActivityViewModel(
         private const val
                 KEY_DEMO_PROPOSAL_NUMBER =
             "demo_proposal_number"
+
+        private const val
+                KEY_GUIDED_STATE =
+            "guided_session_state"
+
+        private const val
+                KEY_GUIDED_ACTIVITY_ID =
+            "guided_activity_id"
+
+        private const val
+                KEY_GUIDED_END_ELAPSED_REALTIME =
+            "guided_end_elapsed_realtime"
+
+        private const val
+                KEY_GUIDED_PAUSED_REMAINING_MILLIS =
+            "guided_paused_remaining_millis"
 
         fun factory(
             activities:

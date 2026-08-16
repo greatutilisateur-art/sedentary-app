@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -27,10 +28,18 @@ fun ActivityScreen(
     canGoNext: Boolean,
     canRequestAnother: Boolean,
     showNotNow: Boolean,
+    guidedSessionState: GuidedSessionState,
+    remainingSeconds: Int,
     onPreviousActivity: () -> Unit,
     onNextActivity: () -> Unit,
     onOtherActivity: () -> Unit,
     onNotNow: () -> Unit,
+    onStartGuidedSession: () -> Unit,
+    onPauseGuidedSession: () -> Unit,
+    onResumeGuidedSession: () -> Unit,
+    onEndGuidedSession: () -> Unit,
+    onCloseGuidedSession: () -> Unit,
+
 ) {
     Surface(
         modifier =
@@ -89,107 +98,286 @@ fun ActivityScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(16.dp),
+                    Modifier.height(20.dp),
             )
 
-            Text(
-                text =
-                    formatDuration(
-                        minSeconds =
-                            activity.definition
-                                .durationSecondsMin,
-                        maxSeconds =
-                            activity.definition
-                                .durationSecondsMax,
-                    ),
-                style =
-                    MaterialTheme.typography
-                        .bodyMedium,
-                color =
-                    MaterialTheme.colorScheme
-                        .onSurfaceVariant,
-            )
+            when (guidedSessionState) {
 
-            if (
-                canGoPrevious ||
-                canGoNext ||
-                canRequestAnother
-            ) {
+                GuidedSessionState.READY -> {
 
-                Spacer(
-                    modifier =
-                        Modifier.height(32.dp),
-                )
+                    Text(
+                        text =
+                            formatDuration(
+                                minSeconds =
+                                    activity.definition
+                                        .durationSecondsMin,
+                                maxSeconds =
+                                    activity.definition
+                                        .durationSecondsMax,
+                            ),
+                        style =
+                            MaterialTheme.typography
+                                .bodyMedium,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                    )
 
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    verticalAlignment =
-                        Alignment.CenterVertically,
-                ) {
+                    Spacer(
+                        modifier =
+                            Modifier.height(28.dp),
+                    )
 
-                    if (canGoPrevious) {
+                    Button(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick =
+                            onStartGuidedSession,
+                    ) {
+                        Text(
+                            "C'est parti"
+                        )
+                    }
+
+                    if (
+                        canGoPrevious ||
+                        canGoNext ||
+                        canRequestAnother
+                    ) {
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(20.dp),
+                        )
+
+                        Row(
+                            modifier =
+                                Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.SpaceBetween,
+                            verticalAlignment =
+                                Alignment.CenterVertically,
+                        ) {
+
+                            if (canGoPrevious) {
+                                TextButton(
+                                    onClick =
+                                        onPreviousActivity,
+                                ) {
+                                    Text(
+                                        "← Précédente"
+                                    )
+                                }
+                            } else {
+                                Spacer(
+                                    modifier =
+                                        Modifier.weight(1f),
+                                )
+                            }
+
+                            when {
+
+                                canGoNext -> {
+                                    TextButton(
+                                        onClick =
+                                            onNextActivity,
+                                    ) {
+                                        Text(
+                                            "Suivante →"
+                                        )
+                                    }
+                                }
+
+                                canRequestAnother -> {
+                                    TextButton(
+                                        onClick =
+                                            onOtherActivity,
+                                    ) {
+                                        Text(
+                                            "Autre activité"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (showNotNow) {
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(12.dp),
+                        )
+
                         TextButton(
+                            modifier =
+                                Modifier.fillMaxWidth(),
                             onClick =
-                                onPreviousActivity,
+                                onNotNow,
                         ) {
                             Text(
-                                "← Précédente"
+                                "Pas maintenant"
                             )
                         }
+                    }
+                }
+
+                GuidedSessionState.RUNNING -> {
+
+                    Countdown(
+                        seconds =
+                            remainingSeconds,
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(28.dp),
+                    )
+
+                    Button(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick =
+                            onPauseGuidedSession,
+                    ) {
+                        Text("Pause")
                     }
 
                     Spacer(
                         modifier =
-                            Modifier.weight(1f),
+                            Modifier.height(8.dp),
                     )
 
-                    when {
-                        canGoNext -> {
-                            TextButton(
-                                onClick =
-                                    onNextActivity,
-                            ) {
-                                Text(
-                                    "Suivante →"
-                                )
-                            }
-                        }
-
-                        canRequestAnother -> {
-                            Button(
-                                onClick =
-                                    onOtherActivity,
-                            ) {
-                                Text(
-                                    "Autre activité"
-                                )
-                            }
-                        }
+                    TextButton(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick =
+                            onEndGuidedSession,
+                    ) {
+                        Text("Terminer")
                     }
                 }
-            }
 
-            if (showNotNow) {
+                GuidedSessionState.PAUSED -> {
 
-                Spacer(
-                    modifier =
-                        Modifier.height(12.dp),
-                )
-
-                TextButton(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    onClick =
-                        onNotNow,
-                ) {
-                    Text(
-                        "Pas maintenant"
+                    Countdown(
+                        seconds =
+                            remainingSeconds,
                     )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(12.dp),
+                    )
+
+                    Text(
+                        text = "En pause",
+                        style =
+                            MaterialTheme.typography
+                                .bodyMedium,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(24.dp),
+                    )
+
+                    Button(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick =
+                            onResumeGuidedSession,
+                    ) {
+                        Text("Reprendre")
+                    }
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp),
+                    )
+
+                    TextButton(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick =
+                            onEndGuidedSession,
+                    ) {
+                        Text("Terminer")
+                    }
+                }
+
+                GuidedSessionState.TIME_ELAPSED -> {
+
+                    Countdown(
+                        seconds = 0,
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(16.dp),
+                    )
+
+                    Text(
+                        text = "C'est fini !",
+                        style =
+                            MaterialTheme.typography
+                                .headlineSmall,
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(28.dp),
+                    )
+
+                    Button(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick =
+                            onCloseGuidedSession,
+                    ) {
+                        Text("Fermer")
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun Countdown(
+    seconds: Int,
+) {
+    Text(
+        text =
+            formatCountdown(
+                seconds
+            ),
+        style =
+            MaterialTheme.typography
+                .displayMedium,
+    )
+}
+
+private fun formatCountdown(
+    seconds: Int,
+): String {
+
+    val safeSeconds =
+        seconds.coerceAtLeast(0)
+
+    val minutes =
+        safeSeconds / 60
+
+    val remainingSeconds =
+        safeSeconds % 60
+
+    return "%d:%02d".format(
+        minutes,
+        remainingSeconds,
+    )
 }
 
 private fun formatDuration(
@@ -200,6 +388,7 @@ private fun formatDuration(
     fun format(
         seconds: Int,
     ): String {
+
         return when {
 
             seconds < 60 ->
