@@ -3,12 +3,11 @@ package org.sedentaryapp
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.activity.result.contract.ActivityResultContracts
-import org.sedentaryapp.notification.NotificationPublisher
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,8 +25,10 @@ import org.sedentaryapp.data.CatalogRepository
 import org.sedentaryapp.data.PolicyRepository
 import org.sedentaryapp.data.ScheduleSettings
 import org.sedentaryapp.engine.schedule.NextOpportunityPlanner
+import org.sedentaryapp.notification.NotificationPublisher
 import org.sedentaryapp.ui.activity.ActivityScreen
 import org.sedentaryapp.ui.activity.ActivityViewModel
+import org.sedentaryapp.ui.activity.GuidedSessionState
 import org.sedentaryapp.ui.home.HomeScreen
 import org.sedentaryapp.ui.schedule.ScheduleScreen
 import org.sedentaryapp.ui.theme.SedentaryAppTheme
@@ -120,6 +121,21 @@ class MainActivity : ComponentActivity() {
                                 .defaultScheduleSettings
                     )
 
+                val plannedActivityOverride by
+                appStateRepository
+                    .plannedActivityOverride
+                    .collectAsState(
+                        initial = null
+                    )
+
+                val consumedEarlyOpportunityKeys by
+                appStateRepository
+                    .consumedEarlyOpportunityKeys
+                    .collectAsState(
+                        initial =
+                            emptySet()
+                    )
+
                 val coroutineScope =
                     rememberCoroutineScope()
 
@@ -127,7 +143,50 @@ class MainActivity : ComponentActivity() {
                 rememberSaveable {
                     mutableStateOf("home")
                 }
-                    val activity =
+
+                val nextOpportunity =
+                    nextOpportunity(
+                        settings =
+                            scheduleSettings,
+                        minimumGapMinutes =
+                            minimumGapMinutes,
+                        consumedEarlyOpportunityKeys =
+                            consumedEarlyOpportunityKeys,
+                    )
+
+                val nextOpportunityKey =
+                    nextOpportunity
+                        ?.toString()
+
+                val matchingOverrideActivityId =
+                    if (
+                        nextOpportunityKey != null &&
+                        plannedActivityOverride
+                            ?.opportunityKey ==
+                        nextOpportunityKey
+                    ) {
+                        plannedActivityOverride
+                            ?.activityId
+                    } else {
+                        null
+                    }
+
+                val nextActivity =
+                    if (
+                        nextOpportunityKey != null
+                    ) {
+                        viewModel
+                            .plannedFutureActivity(
+                                opportunityKey =
+                                    nextOpportunityKey,
+                                overrideActivityId =
+                                    matchingOverrideActivityId,
+                            )
+                    } else {
+                        null
+                    }
+
+                val activity =
                     activityState.activity
 
                 when {
@@ -136,6 +195,17 @@ class MainActivity : ComponentActivity() {
                             activity != null -> {
 
                         BackHandler {
+
+                            if (
+                                activityState
+                                    .guidedSessionState ==
+                                GuidedSessionState
+                                    .TIME_ELAPSED
+                            ) {
+                                viewModel
+                                    .closeGuidedSession()
+                            }
+
                             screen = "home"
                         }
 
@@ -172,6 +242,10 @@ class MainActivity : ComponentActivity() {
                                 activityState
                                     .remainingSeconds,
 
+                            shouldPlayCompletionHaptic =
+                                activityState
+                                    .shouldPlayCompletionHaptic,
+
                             onPreviousActivity =
                                 viewModel::onPreviousActivity,
 
@@ -196,16 +270,21 @@ class MainActivity : ComponentActivity() {
                                 viewModel::resumeGuidedSession,
 
                             onEndGuidedSession = {
-                                viewModel.endGuidedSessionEarly()
+                                viewModel
+                                    .endGuidedSessionEarly()
 
                                 finish()
                             },
 
                             onCloseGuidedSession = {
-                                viewModel.closeGuidedSession()
+                                viewModel
+                                    .closeGuidedSession()
 
                                 finish()
                             },
+
+                            onCompletionHapticPlayed =
+                                viewModel::markCompletionHapticDelivered,
                         )
                     }
 
@@ -279,20 +358,46 @@ class MainActivity : ComponentActivity() {
                     else -> {
 
                         HomeScreen(
+                            nextActivity =
+                                nextActivity,
+
+                            nextActivityWhenText =
+                                nextOpportunity
+                                    ?.let {
+                                        opportunityLabel(
+                                            it
+                                        )
+                                    },
+
                             lastActivity =
                                 activityState
                                     .lastProposedActivity,
 
-                            scheduleStatusText =
-                                scheduleStatus(
-                                    settings =
-                                        scheduleSettings,
-                                    minimumGapMinutes =
-                                        minimumGapMinutes,
-                                ),
+                            onOpenNextActivity = {
+
+                                if (
+                                    nextOpportunityKey != null &&
+                                    nextActivity != null
+                                ) {
+                                    viewModel
+                                        .openFuturePreview(
+                                            opportunityKey =
+                                                nextOpportunityKey,
+                                            plannedActivityId =
+                                                nextActivity
+                                                    .definition
+                                                    .id,
+                                        )
+
+                                    screen =
+                                        "activity"
+                                }
+                            },
 
                             onOpenLastActivity = {
-                                viewModel.openLastActivity()
+                                viewModel
+                                    .openLastActivity()
+
                                 screen = "activity"
                             },
 
@@ -301,7 +406,9 @@ class MainActivity : ComponentActivity() {
                             },
 
                             onSimulateProposal = {
-                                viewModel.startDemoProposal()
+                                viewModel
+                                    .startDemoProposal()
+
                                 screen = "activity"
                             },
                         )
@@ -312,16 +419,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private fun scheduleStatus(
+private fun nextOpportunity(
     settings: ScheduleSettings,
     minimumGapMinutes: Long,
-): String {
+    consumedEarlyOpportunityKeys:
+    Set<String>,
+): LocalDateTime? {
 
     if (
         settings.selectedWeekdays
             .isEmpty()
     ) {
-        return "Aucun jour de travail sélectionné.\nAucune proposition prévue."
+        return null
     }
 
     val activeTimes =
@@ -330,10 +439,8 @@ private fun scheduleStatus(
                 it.time
             }
 
-    if (
-        activeTimes.isEmpty()
-    ) {
-        return "Aucun créneau configuré."
+    if (activeTimes.isEmpty()) {
+        return null
     }
 
     val spacingValid =
@@ -346,36 +453,73 @@ private fun scheduleStatus(
             )
 
     if (!spacingValid) {
-        return "Certains créneaux doivent être ajustés."
+        return null
     }
 
-    val now =
+    var cursor =
         LocalDateTime.now()
 
-    val next =
-        NextOpportunityPlanner.next(
-            now = now,
-            selectedWeekdays =
-                settings.selectedWeekdays,
-            activeSlotTimes =
-                activeTimes,
-        ) ?: return "Aucune proposition prévue."
+    repeat(
+        consumedEarlyOpportunityKeys
+            .size + 1
+    ) {
+
+        val candidate =
+            NextOpportunityPlanner
+                .next(
+                    now =
+                        cursor,
+                    selectedWeekdays =
+                        settings.selectedWeekdays,
+                    activeSlotTimes =
+                        activeTimes,
+                )
+                ?: return null
+
+        if (
+            candidate.toString() !in
+            consumedEarlyOpportunityKeys
+        ) {
+            return candidate
+        }
+
+        cursor =
+            candidate
+    }
+
+    return null
+}
+
+private fun opportunityLabel(
+    opportunity: LocalDateTime,
+): String {
 
     val time =
-        "%02d h %02d".format(
-            next.hour,
-            next.minute,
+        "%02d:%02d".format(
+            opportunity.hour,
+            opportunity.minute,
         )
 
-    return if (
-        next.toLocalDate() ==
+    val date =
+        opportunity.toLocalDate()
+
+    if (
+        date ==
         LocalDate.now()
     ) {
-        "Prochaine proposition vers $time"
-    } else {
-        "Prochaine proposition ${weekdayName(next.dayOfWeek)} vers $time"
+        return "Aujourd’hui · $time"
     }
+
+    val dayName =
+        weekdayName(
+            opportunity.dayOfWeek
+        ).replaceFirstChar {
+            it.uppercase()
+        }
+
+    return "$dayName ${date.dayOfMonth} ${monthName(date.monthValue)} · $time"
 }
+
 private fun weekdayName(
     day: DayOfWeek,
 ): String {
@@ -387,6 +531,26 @@ private fun weekdayName(
         DayOfWeek.FRIDAY -> "vendredi"
         DayOfWeek.SATURDAY -> "samedi"
         DayOfWeek.SUNDAY -> "dimanche"
+    }
+}
+
+private fun monthName(
+    month: Int,
+): String {
+    return when (month) {
+        1 -> "janvier"
+        2 -> "février"
+        3 -> "mars"
+        4 -> "avril"
+        5 -> "mai"
+        6 -> "juin"
+        7 -> "juillet"
+        8 -> "août"
+        9 -> "septembre"
+        10 -> "octobre"
+        11 -> "novembre"
+        12 -> "décembre"
+        else -> ""
     }
 }
 

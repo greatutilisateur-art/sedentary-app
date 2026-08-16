@@ -20,22 +20,26 @@ import org.sedentaryapp.data.CatalogActivity
 
 @Composable
 fun HomeScreen(
+    nextActivity: CatalogActivity?,
+    nextActivityWhenText: String?,
     lastActivity: CatalogActivity?,
-    scheduleStatusText: String,
+    onOpenNextActivity: () -> Unit,
     onOpenLastActivity: () -> Unit,
     onOpenSettings: () -> Unit,
     onSimulateProposal: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier =
+            Modifier.fillMaxSize(),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    horizontal = 24.dp,
-                    vertical = 40.dp,
-                ),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(
+                        horizontal = 24.dp,
+                        vertical = 40.dp,
+                    ),
         ) {
             Text(
                 text = "Mes pauses",
@@ -49,35 +53,12 @@ fun HomeScreen(
                     Modifier.height(16.dp),
             )
 
-            Text(
-                text = scheduleStatusText,
-                style =
-                    MaterialTheme.typography
-                        .bodyLarge,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(12.dp),
-            )
-
-            TextButton(
-                onClick = onOpenSettings,
+            if (
+                nextActivity != null &&
+                nextActivityWhenText != null
             ) {
                 Text(
-                    "Modifier mes réglages"
-                )
-            }
-
-            if (lastActivity != null) {
-                Spacer(
-                    modifier =
-                        Modifier.height(28.dp),
-                )
-
-                Text(
-                    text =
-                        "Dernière activité proposée",
+                    text = "Prochaine activité",
                     style =
                         MaterialTheme.typography
                             .titleMedium,
@@ -89,12 +70,13 @@ fun HomeScreen(
                 )
 
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            onClick =
-                                onOpenLastActivity
-                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                onClick =
+                                    onOpenNextActivity
+                            ),
                 ) {
                     Column(
                         modifier =
@@ -102,10 +84,9 @@ fun HomeScreen(
                     ) {
                         Text(
                             text =
-                                lastActivity.title,
+                                nextActivity.title,
                             style =
-                                MaterialTheme
-                                    .typography
+                                MaterialTheme.typography
                                     .titleLarge,
                         )
 
@@ -116,7 +97,101 @@ fun HomeScreen(
 
                         Text(
                             text =
-                                "Voir l'activité",
+                                formatDuration(
+                                    minSeconds =
+                                        nextActivity
+                                            .definition
+                                            .durationSecondsMin,
+                                    maxSeconds =
+                                        nextActivity
+                                            .definition
+                                            .durationSecondsMax,
+                                ),
+                            style =
+                                MaterialTheme.typography
+                                    .bodyMedium,
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(6.dp),
+                        )
+
+                        Text(
+                            text =
+                                nextActivityWhenText,
+                            style =
+                                MaterialTheme.typography
+                                    .bodyMedium,
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                Text(
+                    text =
+                        "Aucune proposition prévue.",
+                    style =
+                        MaterialTheme.typography
+                            .bodyLarge,
+                )
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(12.dp),
+            )
+
+            TextButton(
+                onClick =
+                    onOpenSettings,
+            ) {
+                Text(
+                    "Modifier mes réglages"
+                )
+            }
+
+            if (lastActivity != null) {
+
+                Spacer(
+                    modifier =
+                        Modifier.height(28.dp),
+                )
+
+                Text(
+                    text =
+                        "Dernière activité",
+                    style =
+                        MaterialTheme.typography
+                            .titleMedium,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(12.dp),
+                )
+
+                Card(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                onClick =
+                                    onOpenLastActivity
+                            ),
+                ) {
+                    Column(
+                        modifier =
+                            Modifier.padding(20.dp),
+                    ) {
+                        Text(
+                            text =
+                                lastActivity.title,
+                            style =
+                                MaterialTheme.typography
+                                    .titleLarge,
                         )
                     }
                 }
@@ -150,5 +225,39 @@ fun HomeScreen(
                 )
             }
         }
+    }
+}
+
+private fun formatDuration(
+    minSeconds: Int,
+    maxSeconds: Int,
+): String {
+
+    fun format(
+        seconds: Int,
+    ): String {
+
+        return when {
+
+            seconds < 60 ->
+                "$seconds s"
+
+            seconds % 60 == 0 ->
+                "${seconds / 60} min"
+
+            else ->
+                "${seconds / 60} min ${seconds % 60} s"
+        }
+    }
+
+    return if (
+        minSeconds ==
+        maxSeconds
+    ) {
+        format(
+            minSeconds
+        )
+    } else {
+        "${format(minSeconds)} – ${format(maxSeconds)}"
     }
 }

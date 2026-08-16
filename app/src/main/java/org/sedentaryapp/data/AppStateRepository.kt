@@ -11,6 +11,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import java.io.IOException
 import java.time.DayOfWeek
+import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -35,6 +36,11 @@ data class ScheduleSettings(
     val lunchStart: LocalTime,
     val lunchEnd: LocalTime,
     val slots: List<StandardSlotSetting>,
+)
+
+data class PlannedActivityOverride(
+    val opportunityKey: String,
+    val activityId: String,
 )
 
 class AppStateRepository(
@@ -84,6 +90,28 @@ class AppStateRepository(
                 preferences[
                     LAST_ACTIVITY_ID
                 ]
+            }
+
+    val plannedActivityOverride:
+            Flow<PlannedActivityOverride?> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                parsePlannedActivityOverride(
+                    preferences[
+                        PLANNED_ACTIVITY_OVERRIDE
+                    ]
+                )
+            }
+
+    val consumedEarlyOpportunityKeys:
+            Flow<Set<String>> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                preferences[
+                    CONSUMED_EARLY_OPPORTUNITY_KEYS
+                ] ?: emptySet()
             }
 
     val scheduleSettings:
@@ -219,16 +247,32 @@ class AppStateRepository(
                 settings.lunchEnd
                     .toString()
 
+            val activeTimes =
+                settings.slots
+                    .filter {
+                        it.enabled
+                    }
+                    .map {
+                        it.time
+                    }
+
             writeSlotTimes(
                 preferences = preferences,
                 times =
-                    settings.slots
-                        .filter {
-                            it.enabled
-                        }
-                        .map {
-                            it.time
-                        },
+                    activeTimes,
+            )
+
+            pruneConsumedEarlyToSchedule(
+                preferences =
+                    preferences,
+                selectedWeekdays =
+                    settings.selectedWeekdays,
+                slotTimes =
+                    activeTimes,
+            )
+
+            preferences.remove(
+                PLANNED_ACTIVITY_OVERRIDE
             )
         }
     }
@@ -251,6 +295,66 @@ class AppStateRepository(
             )
         }
     }
+
+    suspend fun savePlannedActivityOverride(
+        opportunityKey: String,
+        activityId: String,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                PLANNED_ACTIVITY_OVERRIDE
+            ] =
+                "$opportunityKey|$activityId"
+        }
+    }
+
+    suspend fun clearPlannedActivityOverride() {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences.remove(
+                PLANNED_ACTIVITY_OVERRIDE
+            )
+        }
+    }
+
+    suspend fun markOpportunityConsumedEarly(
+        opportunityKey: String,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+
+            val consumed =
+                preferences[
+                    CONSUMED_EARLY_OPPORTUNITY_KEYS
+                ]
+                    ?.toMutableSet()
+                    ?: mutableSetOf()
+
+            consumed.add(
+                opportunityKey
+            )
+
+            preferences[
+                CONSUMED_EARLY_OPPORTUNITY_KEYS
+            ] = consumed
+
+            val currentOverride =
+                parsePlannedActivityOverride(
+                    preferences[
+                        PLANNED_ACTIVITY_OVERRIDE
+                    ]
+                )
+
+            if (
+                currentOverride
+                    ?.opportunityKey ==
+                opportunityKey
+            ) {
+                preferences.remove(
+                    PLANNED_ACTIVITY_OVERRIDE
+                )
+            }
+        }
+    }
+
     suspend fun setWeekdayEnabled(
         day: DayOfWeek,
         enabled: Boolean,
@@ -289,6 +393,19 @@ class AppStateRepository(
             preferences[
                 SELECTED_WEEKDAYS
             ] = days
+
+            if (!enabled) {
+                removeConsumedEarlyForDay(
+                    preferences =
+                        preferences,
+                    day =
+                        day,
+                )
+            }
+
+            preferences.remove(
+                PLANNED_ACTIVITY_OVERRIDE
+            )
         }
     }
 
@@ -365,8 +482,18 @@ class AppStateRepository(
                     return@edit
                 }
 
+                val removedTime =
+                    times[index]
+
                 times.removeAt(
                     index
+                )
+
+                removeConsumedEarlyForTime(
+                    preferences =
+                        preferences,
+                    time =
+                        removedTime,
                 )
             }
 
@@ -395,13 +522,32 @@ class AppStateRepository(
                 index in times.indices
             )
 
+            val previousTime =
+                times[index]
+
             times[index] =
                 time
+
+            if (
+                previousTime !=
+                time
+            ) {
+                removeConsumedEarlyForTime(
+                    preferences =
+                        preferences,
+                    time =
+                        previousTime,
+                )
+            }
 
             writeSlotTimes(
                 preferences =
                     preferences,
                 times = times,
+            )
+
+            preferences.remove(
+                PLANNED_ACTIVITY_OVERRIDE
             )
         }
     }
@@ -438,6 +584,10 @@ class AppStateRepository(
                 times = times,
             )
 
+            preferences.remove(
+                PLANNED_ACTIVITY_OVERRIDE
+            )
+
             added = true
         }
 
@@ -466,8 +616,18 @@ class AppStateRepository(
                 return@edit
             }
 
+            val removedTime =
+                times[index]
+
             times.removeAt(
                 index
+            )
+
+            removeConsumedEarlyForTime(
+                preferences =
+                    preferences,
+                time =
+                    removedTime,
             )
 
             writeSlotTimes(
@@ -476,10 +636,157 @@ class AppStateRepository(
                 times = times,
             )
 
+            preferences.remove(
+                PLANNED_ACTIVITY_OVERRIDE
+            )
+
             removed = true
         }
 
         return removed
+    }
+
+    private fun parsePlannedActivityOverride(
+        value: String?,
+    ): PlannedActivityOverride? {
+
+        if (value == null) {
+            return null
+        }
+
+        val separatorIndex =
+            value.indexOf("|")
+
+        if (
+            separatorIndex <= 0 ||
+            separatorIndex >=
+            value.lastIndex
+        ) {
+            return null
+        }
+
+        val opportunityKey =
+            value.substring(
+                0,
+                separatorIndex,
+            )
+
+        val activityId =
+            value.substring(
+                separatorIndex + 1
+            )
+
+        if (
+            opportunityKey.isBlank() ||
+            activityId.isBlank()
+        ) {
+            return null
+        }
+
+        return PlannedActivityOverride(
+            opportunityKey =
+                opportunityKey,
+            activityId =
+                activityId,
+        )
+    }
+
+    private fun removeConsumedEarlyForDay(
+        preferences:
+        androidx.datastore.preferences.core.MutablePreferences,
+        day: DayOfWeek,
+    ) {
+
+        val updated =
+            preferences[
+                CONSUMED_EARLY_OPPORTUNITY_KEYS
+            ]
+                ?.filterNot { key ->
+                    parseOpportunityKey(
+                        key
+                    )
+                        ?.dayOfWeek ==
+                            day
+                }
+                ?.toSet()
+                ?: emptySet()
+
+        preferences[
+            CONSUMED_EARLY_OPPORTUNITY_KEYS
+        ] = updated
+    }
+
+    private fun removeConsumedEarlyForTime(
+        preferences:
+        androidx.datastore.preferences.core.MutablePreferences,
+        time: LocalTime,
+    ) {
+
+        val updated =
+            preferences[
+                CONSUMED_EARLY_OPPORTUNITY_KEYS
+            ]
+                ?.filterNot { key ->
+                    parseOpportunityKey(
+                        key
+                    )
+                        ?.toLocalTime() ==
+                            time
+                }
+                ?.toSet()
+                ?: emptySet()
+
+        preferences[
+            CONSUMED_EARLY_OPPORTUNITY_KEYS
+        ] = updated
+    }
+
+    private fun pruneConsumedEarlyToSchedule(
+        preferences:
+        androidx.datastore.preferences.core.MutablePreferences,
+        selectedWeekdays:
+        Set<DayOfWeek>,
+        slotTimes:
+        List<LocalTime>,
+    ) {
+
+        val validTimes =
+            slotTimes.toSet()
+
+        val updated =
+            preferences[
+                CONSUMED_EARLY_OPPORTUNITY_KEYS
+            ]
+                ?.filter { key ->
+
+                    val opportunity =
+                        parseOpportunityKey(
+                            key
+                        )
+                            ?: return@filter false
+
+                    opportunity.dayOfWeek in
+                            selectedWeekdays &&
+                            opportunity.toLocalTime() in
+                            validTimes
+                }
+                ?.toSet()
+                ?: emptySet()
+
+        preferences[
+            CONSUMED_EARLY_OPPORTUNITY_KEYS
+        ] = updated
+    }
+
+    private fun parseOpportunityKey(
+        value: String,
+    ): LocalDateTime? {
+
+        return runCatching {
+            LocalDateTime.parse(
+                value
+            )
+        }.getOrNull()
     }
 
     private fun readSlotTimes(
@@ -734,6 +1041,16 @@ class AppStateRepository(
         val LAST_ACTIVITY_ID =
             stringPreferencesKey(
                 "last_activity_id"
+            )
+
+        val PLANNED_ACTIVITY_OVERRIDE =
+            stringPreferencesKey(
+                "planned_activity_override"
+            )
+
+        val CONSUMED_EARLY_OPPORTUNITY_KEYS =
+            stringSetPreferencesKey(
+                "consumed_early_opportunity_keys"
             )
 
         val SELECTED_WEEKDAYS =

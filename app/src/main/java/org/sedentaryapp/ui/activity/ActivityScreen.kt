@@ -19,6 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.sedentaryapp.data.CatalogActivity
+import android.os.Build
+import android.view.HapticFeedbackConstants
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalView
 
 @Composable
 fun ActivityScreen(
@@ -30,6 +34,7 @@ fun ActivityScreen(
     showNotNow: Boolean,
     guidedSessionState: GuidedSessionState,
     remainingSeconds: Int,
+    shouldPlayCompletionHaptic: Boolean,
     onPreviousActivity: () -> Unit,
     onNextActivity: () -> Unit,
     onOtherActivity: () -> Unit,
@@ -39,8 +44,40 @@ fun ActivityScreen(
     onResumeGuidedSession: () -> Unit,
     onEndGuidedSession: () -> Unit,
     onCloseGuidedSession: () -> Unit,
+    onCompletionHapticPlayed: () -> Unit,
 
 ) {
+    val view =
+        LocalView.current
+
+    LaunchedEffect(
+        guidedSessionState,
+        shouldPlayCompletionHaptic,
+    ) {
+
+        if (
+            guidedSessionState ==
+            GuidedSessionState.TIME_ELAPSED &&
+            shouldPlayCompletionHaptic
+        ) {
+
+            val feedbackType =
+                if (
+                    Build.VERSION.SDK_INT >=
+                    Build.VERSION_CODES.R
+                ) {
+                    HapticFeedbackConstants.CONFIRM
+                } else {
+                    HapticFeedbackConstants.CLOCK_TICK
+                }
+
+            view.performHapticFeedback(
+                feedbackType
+            )
+
+            onCompletionHapticPlayed()
+        }
+    }
     Surface(
         modifier =
             Modifier.fillMaxSize(),

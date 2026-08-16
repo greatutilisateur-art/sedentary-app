@@ -1,6 +1,7 @@
 package org.sedentaryapp.ui.activity
 
 import android.os.SystemClock
+import java.time.LocalDateTime
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -47,6 +48,7 @@ data class ActivityUiState(
     val guidedSessionState: GuidedSessionState =
         GuidedSessionState.READY,
     val remainingSeconds: Int = 0,
+    val shouldPlayCompletionHaptic: Boolean = false,
 )
 
 class ActivityViewModel(
@@ -57,6 +59,7 @@ class ActivityViewModel(
 ) : ViewModel() {
 
     private var timerJob: Job? = null
+    private var futureOverrideJob: Job? = null
 
     private val definitions =
         activities.map { it.definition }
@@ -99,6 +102,11 @@ class ActivityViewModel(
     ) {
 
         clearGuidedSession()
+
+        savedStateHandle
+            .remove<String>(
+                KEY_FUTURE_OPPORTUNITY_KEY
+            )
 
         savedStateHandle[
             KEY_PROPOSAL_ID
@@ -238,6 +246,15 @@ class ActivityViewModel(
         ] =
             newAttempt
 
+        if (
+            context ==
+            ActivityDisplayContext.FUTURE_PREVIEW
+        ) {
+            persistFutureOverride(
+                updated.last()
+            )
+        }
+
         publishState()
     }
 
@@ -249,6 +266,9 @@ class ActivityViewModel(
         ) {
             return
         }
+
+        val context =
+            readDisplayContext()
 
         val explored =
             readExploredActivityIds()
@@ -264,10 +284,22 @@ class ActivityViewModel(
             return
         }
 
+        val newIndex =
+            current - 1
+
         savedStateHandle[
             KEY_CURRENT_INDEX
         ] =
-            current - 1
+            newIndex
+
+        if (
+            context ==
+            ActivityDisplayContext.FUTURE_PREVIEW
+        ) {
+            persistFutureOverride(
+                explored[newIndex]
+            )
+        }
 
         publishState()
     }
@@ -280,6 +312,9 @@ class ActivityViewModel(
         ) {
             return
         }
+
+        val context =
+            readDisplayContext()
 
         val explored =
             readExploredActivityIds()
@@ -298,10 +333,22 @@ class ActivityViewModel(
             return
         }
 
+        val newIndex =
+            current + 1
+
         savedStateHandle[
             KEY_CURRENT_INDEX
         ] =
-            current + 1
+            newIndex
+
+        if (
+            context ==
+            ActivityDisplayContext.FUTURE_PREVIEW
+        ) {
+            persistFutureOverride(
+                explored[newIndex]
+            )
+        }
 
         publishState()
     }
@@ -323,6 +370,11 @@ class ActivityViewModel(
             return
         }
 
+        savedStateHandle
+            .remove<String>(
+                KEY_FUTURE_OPPORTUNITY_KEY
+            )
+
         savedStateHandle[
             KEY_DISPLAY_CONTEXT
         ] =
@@ -333,6 +385,128 @@ class ActivityViewModel(
         writeExploredActivityIds(
             listOf(
                 lastId
+            )
+        )
+
+        savedStateHandle[
+            KEY_CURRENT_INDEX
+        ] = 0
+
+        publishState()
+    }
+
+    fun plannedFutureActivity(
+        opportunityKey: String,
+        overrideActivityId: String?,
+    ): CatalogActivity? {
+
+        val eligibleDefinitions =
+            CandidateFilter.filter(
+                activities =
+                    definitions,
+                request =
+                    CandidateFilterRequest(
+                        opportunityType =
+                            "standard",
+                        excludedActivityIds =
+                            emptySet(),
+                    ),
+            )
+
+        if (overrideActivityId != null) {
+
+            val overrideEligible =
+                eligibleDefinitions.any {
+                    it.id ==
+                            overrideActivityId
+                }
+
+            if (overrideEligible) {
+                return activities
+                    .firstOrNull {
+                        it.definition.id ==
+                                overrideActivityId
+                    }
+            }
+        }
+
+        val selectedDefinition =
+            DecisionEngine.chooseActivity(
+                activities =
+                    definitions,
+                history =
+                    emptyList(),
+                policy =
+                    policy,
+                seed =
+                    "future-$opportunityKey-0",
+                filterRequest =
+                    CandidateFilterRequest(
+                        opportunityType =
+                            "standard",
+                        excludedActivityIds =
+                            emptySet(),
+                    ),
+            )
+                ?: return null
+
+        return activities
+            .firstOrNull {
+                it.definition.id ==
+                        selectedDefinition.id
+            }
+    }
+
+    fun openFuturePreview(
+        opportunityKey: String,
+        plannedActivityId: String,
+    ) {
+
+        val plannedActivity =
+            plannedFutureActivity(
+                opportunityKey =
+                    opportunityKey,
+                overrideActivityId =
+                    plannedActivityId,
+            ) ?: return
+
+        if (
+            plannedActivity.definition.id !=
+            plannedActivityId
+        ) {
+            return
+        }
+
+        clearGuidedSession()
+
+        savedStateHandle[
+            KEY_PROPOSAL_ACTIVE
+        ] = false
+
+        savedStateHandle
+            .remove<String>(
+                KEY_PROPOSAL_ID
+            )
+
+        savedStateHandle[
+            KEY_FUTURE_OPPORTUNITY_KEY
+        ] =
+            opportunityKey
+
+        savedStateHandle[
+            KEY_DISPLAY_CONTEXT
+        ] =
+            ActivityDisplayContext
+                .FUTURE_PREVIEW
+                .name
+
+        savedStateHandle[
+            KEY_ATTEMPT
+        ] = 0
+
+        writeExploredActivityIds(
+            listOf(
+                plannedActivityId
             )
         )
 
@@ -365,6 +539,9 @@ class ActivityViewModel(
         if (durationMillis <= 0L) {
             return
         }
+        savedStateHandle[
+            KEY_COMPLETION_HAPTIC_DELIVERED
+        ] = false
 
         savedStateHandle[
             KEY_GUIDED_ACTIVITY_ID
@@ -504,6 +681,22 @@ class ActivityViewModel(
         clearGuidedSession()
         publishState()
     }
+
+    fun markCompletionHapticDelivered() {
+
+        if (
+            readGuidedSessionState() !=
+            GuidedSessionState.TIME_ELAPSED
+        ) {
+            return
+        }
+
+        savedStateHandle[
+            KEY_COMPLETION_HAPTIC_DELIVERED
+        ] = true
+
+        publishState()
+    }
     fun onNotNow() {
 
         if (
@@ -531,6 +724,11 @@ class ActivityViewModel(
         savedStateHandle
             .remove<String>(
                 KEY_DISPLAY_CONTEXT
+            )
+
+        savedStateHandle
+            .remove<String>(
+                KEY_FUTURE_OPPORTUNITY_KEY
             )
 
         writeExploredActivityIds(
@@ -577,6 +775,81 @@ class ActivityViewModel(
                                 id
                     }
                 }
+
+        val restoredContext =
+            readDisplayContext()
+
+        val futureOpportunityKey =
+            savedStateHandle
+                .get<String>(
+                    KEY_FUTURE_OPPORTUNITY_KEY
+                )
+
+        val guidedState =
+            readGuidedSessionState()
+
+        val futureOpportunityStillValid =
+            if (
+                restoredContext ==
+                ActivityDisplayContext.FUTURE_PREVIEW &&
+                futureOpportunityKey != null
+            ) {
+                val opportunityStillFuture =
+                    runCatching {
+                        LocalDateTime.parse(
+                            futureOpportunityKey
+                        )
+                    }
+                        .getOrNull()
+                        ?.isAfter(
+                            LocalDateTime.now()
+                        ) == true
+
+                opportunityStillFuture ||
+                        guidedState !=
+                        GuidedSessionState.READY
+            } else {
+                false
+            }
+
+        if (
+            futureOpportunityStillValid &&
+            explored.isNotEmpty()
+        ) {
+
+            writeExploredActivityIds(
+                explored
+            )
+
+            val safeIndex =
+                readCurrentIndex()
+                    .coerceIn(
+                        0,
+                        explored.lastIndex,
+                    )
+
+            savedStateHandle[
+                KEY_CURRENT_INDEX
+            ] =
+                safeIndex
+
+            savedStateHandle[
+                KEY_PROPOSAL_ACTIVE
+            ] = false
+
+            savedStateHandle
+                .remove<String>(
+                    KEY_PROPOSAL_ID
+                )
+
+            publishState()
+            return
+        }
+
+        savedStateHandle
+            .remove<String>(
+                KEY_FUTURE_OPPORTUNITY_KEY
+            )
 
         if (
             isProposalActive() &&
@@ -743,6 +1016,15 @@ class ActivityViewModel(
             }
 
             GuidedSessionState.TIME_ELAPSED -> {
+
+                if (
+                    readDisplayContext() ==
+                    ActivityDisplayContext
+                        .FUTURE_PREVIEW
+                ) {
+                    markFutureOpportunityConsumedEarly()
+                }
+
                 publishState()
             }
 
@@ -806,6 +1088,14 @@ class ActivityViewModel(
                 KEY_GUIDED_PAUSED_REMAINING_MILLIS
             )
 
+        if (
+            readDisplayContext() ==
+            ActivityDisplayContext
+                .FUTURE_PREVIEW
+        ) {
+            markFutureOpportunityConsumedEarly()
+        }
+
         publishState()
     }
 
@@ -832,6 +1122,11 @@ class ActivityViewModel(
         savedStateHandle
             .remove<Long>(
                 KEY_GUIDED_PAUSED_REMAINING_MILLIS
+            )
+
+        savedStateHandle
+            .remove<Boolean>(
+                KEY_COMPLETION_HAPTIC_DELIVERED
             )
     }
 
@@ -1005,6 +1300,48 @@ class ActivityViewModel(
         }
     }
 
+    private fun markFutureOpportunityConsumedEarly() {
+
+        val opportunityKey =
+            savedStateHandle
+                .get<String>(
+                    KEY_FUTURE_OPPORTUNITY_KEY
+                )
+                ?: return
+
+        viewModelScope.launch {
+            appStateRepository
+                .markOpportunityConsumedEarly(
+                    opportunityKey
+                )
+        }
+    }
+
+    private fun persistFutureOverride(
+        activityId: String,
+    ) {
+
+        val opportunityKey =
+            savedStateHandle
+                .get<String>(
+                    KEY_FUTURE_OPPORTUNITY_KEY
+                )
+                ?: return
+
+        futureOverrideJob?.cancel()
+
+        futureOverrideJob =
+            viewModelScope.launch {
+                appStateRepository
+                    .savePlannedActivityOverride(
+                        opportunityKey =
+                            opportunityKey,
+                        activityId =
+                            activityId,
+                    )
+            }
+    }
+
     private fun persistLastActivity(
         activityId: String,
     ) {
@@ -1021,11 +1358,29 @@ class ActivityViewModel(
         attempt: Int,
     ): CatalogActivity? {
 
-        val proposalId =
-            savedStateHandle
-                .get<String>(
-                    KEY_PROPOSAL_ID
-                )
+        val seedBase =
+            when (
+                readDisplayContext()
+            ) {
+
+                ActivityDisplayContext.CURRENT_PROPOSAL ->
+                    savedStateHandle
+                        .get<String>(
+                            KEY_PROPOSAL_ID
+                        )
+
+                ActivityDisplayContext.FUTURE_PREVIEW ->
+                    savedStateHandle
+                        .get<String>(
+                            KEY_FUTURE_OPPORTUNITY_KEY
+                        )
+                        ?.let {
+                            "future-$it"
+                        }
+
+                else ->
+                    null
+            }
                 ?: return null
 
         val selectedDefinition =
@@ -1037,7 +1392,7 @@ class ActivityViewModel(
                 policy =
                     policy,
                 seed =
-                    "$proposalId-$attempt",
+                    "$seedBase-$attempt",
                 filterRequest =
                     CandidateFilterRequest(
                         opportunityType =
@@ -1180,6 +1535,13 @@ class ActivityViewModel(
                     guidedState,
                 remainingSeconds =
                     calculateRemainingSeconds(),
+                shouldPlayCompletionHaptic =
+                    guidedState ==
+                            GuidedSessionState.TIME_ELAPSED &&
+                            savedStateHandle
+                                .get<Boolean>(
+                                    KEY_COMPLETION_HAPTIC_DELIVERED
+                                ) != true,
             )
     }
 
@@ -1266,6 +1628,9 @@ class ActivityViewModel(
             "last_activity_id"
 
         private const val
+                KEY_COMPLETION_HAPTIC_DELIVERED =
+            "completion_haptic_delivered"
+        private const val
                 KEY_EXPLORED_ACTIVITY_IDS =
             "explored_activity_ids"
 
@@ -1288,6 +1653,10 @@ class ActivityViewModel(
         private const val
                 KEY_DISPLAY_CONTEXT =
             "activity_display_context"
+
+        private const val
+                KEY_FUTURE_OPPORTUNITY_KEY =
+            "future_opportunity_key"
 
         private const val
                 KEY_DEMO_PROPOSAL_NUMBER =
