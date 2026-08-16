@@ -38,6 +38,17 @@ data class ScheduleSettings(
     val slots: List<StandardSlotSetting>,
 )
 
+data class ActivityPreferences(
+    val enabledIntensities: Set<String> =
+        setOf(
+            "gentle",
+            "active",
+            "dynamic",
+        ),
+    val stationaryEnabled: Boolean = true,
+    val movingEnabled: Boolean = true,
+)
+
 data class PlannedActivityOverride(
     val opportunityKey: String,
     val activityId: String,
@@ -112,6 +123,16 @@ class AppStateRepository(
                 preferences[
                     CONSUMED_EARLY_OPPORTUNITY_KEYS
                 ] ?: emptySet()
+            }
+
+    val activityPreferences:
+            Flow<ActivityPreferences> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                readActivityPreferences(
+                    preferences
+                )
             }
 
     val scheduleSettings:
@@ -352,6 +373,91 @@ class AppStateRepository(
                     PLANNED_ACTIVITY_OVERRIDE
                 )
             }
+        }
+    }
+
+    suspend fun setIntensityEnabled(
+        intensity: String,
+        enabled: Boolean,
+    ) {
+        require(
+            intensity in
+                    SUPPORTED_INTENSITIES
+        )
+
+        appContext.appStateDataStore.edit { preferences ->
+
+            val current =
+                readEnabledIntensities(
+                    preferences
+                ).toMutableSet()
+
+            if (enabled) {
+                current.add(
+                    intensity
+                )
+            } else {
+                if (
+                    current.size <= 1 ||
+                    intensity !in current
+                ) {
+                    return@edit
+                }
+
+                current.remove(
+                    intensity
+                )
+            }
+
+            preferences[
+                ENABLED_INTENSITIES
+            ] = current
+        }
+    }
+
+    suspend fun setStationaryEnabled(
+        enabled: Boolean,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+
+            val current =
+                readActivityPreferences(
+                    preferences
+                )
+
+            if (
+                !enabled &&
+                !current.movingEnabled
+            ) {
+                return@edit
+            }
+
+            preferences[
+                STATIONARY_ENABLED
+            ] = enabled
+        }
+    }
+
+    suspend fun setMovingEnabled(
+        enabled: Boolean,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+
+            val current =
+                readActivityPreferences(
+                    preferences
+                )
+
+            if (
+                !enabled &&
+                !current.stationaryEnabled
+            ) {
+                return@edit
+            }
+
+            preferences[
+                MOVING_ENABLED
+            ] = enabled
         }
     }
 
@@ -644,6 +750,68 @@ class AppStateRepository(
         }
 
         return removed
+    }
+
+    private fun readActivityPreferences(
+        preferences: Preferences,
+    ): ActivityPreferences {
+
+        val enabledIntensities =
+            readEnabledIntensities(
+                preferences
+            )
+
+        val stationaryEnabled =
+            preferences[
+                STATIONARY_ENABLED
+            ] ?: true
+
+        val movingEnabled =
+            preferences[
+                MOVING_ENABLED
+            ] ?: true
+
+        return if (
+            !stationaryEnabled &&
+            !movingEnabled
+        ) {
+            ActivityPreferences(
+                enabledIntensities =
+                    enabledIntensities,
+            )
+        } else {
+            ActivityPreferences(
+                enabledIntensities =
+                    enabledIntensities,
+                stationaryEnabled =
+                    stationaryEnabled,
+                movingEnabled =
+                    movingEnabled,
+            )
+        }
+    }
+
+    private fun readEnabledIntensities(
+        preferences: Preferences,
+    ): Set<String> {
+
+        val stored =
+            preferences[
+                ENABLED_INTENSITIES
+            ]
+                ?.filter {
+                    it in
+                            SUPPORTED_INTENSITIES
+                }
+                ?.toSet()
+
+        return if (
+            stored.isNullOrEmpty()
+        ) {
+            SUPPORTED_INTENSITIES
+        } else {
+            stored
+        }
     }
 
     private fun parsePlannedActivityOverride(
@@ -1051,6 +1219,28 @@ class AppStateRepository(
         val CONSUMED_EARLY_OPPORTUNITY_KEYS =
             stringSetPreferencesKey(
                 "consumed_early_opportunity_keys"
+            )
+
+        val SUPPORTED_INTENSITIES =
+            setOf(
+                "gentle",
+                "active",
+                "dynamic",
+            )
+
+        val ENABLED_INTENSITIES =
+            stringSetPreferencesKey(
+                "enabled_intensities"
+            )
+
+        val STATIONARY_ENABLED =
+            booleanPreferencesKey(
+                "stationary_enabled"
+            )
+
+        val MOVING_ENABLED =
+            booleanPreferencesKey(
+                "moving_enabled"
             )
 
         val SELECTED_WEEKDAYS =

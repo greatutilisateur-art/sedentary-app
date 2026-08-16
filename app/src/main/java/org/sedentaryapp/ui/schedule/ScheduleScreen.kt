@@ -30,17 +30,22 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import java.time.DayOfWeek
 import java.time.LocalTime
+import org.sedentaryapp.data.ActivityPreferences
 import org.sedentaryapp.data.ScheduleSettings
 import org.sedentaryapp.engine.schedule.NextOpportunityPlanner
 
 @Composable
 fun ScheduleScreen(
     settings: ScheduleSettings,
+    activityPreferences: ActivityPreferences,
     minimumGapMinutes: Long,
     onWeekdayChanged: (DayOfWeek, Boolean) -> Unit,
     onSlotTimeChanged: (Int, LocalTime) -> Unit,
     onAddSlot: (LocalTime) -> Unit,
     onRemoveSlot: (Int) -> Unit,
+    onIntensityChanged: (String, Boolean) -> Unit,
+    onStationaryChanged: (Boolean) -> Unit,
+    onMovingChanged: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
 
@@ -325,6 +330,135 @@ fun ScheduleScreen(
 
             Spacer(
                 modifier =
+                    Modifier.height(28.dp),
+            )
+
+            Text(
+                text = "Intensité",
+                style =
+                    MaterialTheme.typography
+                        .titleMedium,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp),
+            )
+
+            Row(
+                horizontalArrangement =
+                    Arrangement.spacedBy(8.dp),
+            ) {
+                PreferenceChip(
+                    label = "Douce",
+                    selected =
+                        "gentle" in
+                                activityPreferences
+                                    .enabledIntensities,
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "gentle",
+                            it,
+                        )
+                    },
+                )
+
+                PreferenceChip(
+                    label = "Intermédiaire",
+                    selected =
+                        "active" in
+                                activityPreferences
+                                    .enabledIntensities,
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "active",
+                            it,
+                        )
+                    },
+                )
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp),
+            )
+
+            Row {
+                PreferenceChip(
+                    label = "Dynamique",
+                    selected =
+                        "dynamic" in
+                                activityPreferences
+                                    .enabledIntensities,
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "dynamic",
+                            it,
+                        )
+                    },
+                )
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(28.dp),
+            )
+
+            Text(
+                text = "Type de mouvement",
+                style =
+                    MaterialTheme.typography
+                        .titleMedium,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp),
+            )
+
+            Row(
+                horizontalArrangement =
+                    Arrangement.spacedBy(8.dp),
+            ) {
+                PreferenceChip(
+                    label = "Sur place",
+                    selected =
+                        activityPreferences
+                            .stationaryEnabled,
+                    canDisable =
+                        activityPreferences
+                            .movingEnabled,
+                    onChanged =
+                        onStationaryChanged,
+                )
+
+                PreferenceChip(
+                    label = "En mouvement",
+                    selected =
+                        activityPreferences
+                            .movingEnabled,
+                    canDisable =
+                        activityPreferences
+                            .stationaryEnabled,
+                    onChanged =
+                        onMovingChanged,
+                )
+            }
+
+            Spacer(
+                modifier =
                     Modifier.height(32.dp),
             )
 
@@ -338,6 +472,34 @@ fun ScheduleScreen(
             }
         }
     }
+}
+
+@Composable
+private fun PreferenceChip(
+    label: String,
+    selected: Boolean,
+    canDisable: Boolean,
+    onChanged: (Boolean) -> Unit,
+) {
+    FilterChip(
+        selected =
+            selected,
+        onClick = {
+            if (
+                !selected ||
+                canDisable
+            ) {
+                onChanged(
+                    !selected
+                )
+            }
+        },
+        label = {
+            Text(
+                label
+            )
+        },
+    )
 }
 
 @Composable

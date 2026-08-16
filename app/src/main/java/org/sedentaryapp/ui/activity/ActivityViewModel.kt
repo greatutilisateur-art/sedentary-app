@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.sedentaryapp.data.ActivityPreferences
 import org.sedentaryapp.data.AppStateRepository
 import org.sedentaryapp.data.CatalogActivity
 import org.sedentaryapp.engine.decision.CandidateFilter
@@ -49,6 +50,8 @@ data class ActivityUiState(
         GuidedSessionState.READY,
     val remainingSeconds: Int = 0,
     val shouldPlayCompletionHaptic: Boolean = false,
+    val activityPreferences: ActivityPreferences =
+        ActivityPreferences(),
 )
 
 class ActivityViewModel(
@@ -60,6 +63,8 @@ class ActivityViewModel(
 
     private var timerJob: Job? = null
     private var futureOverrideJob: Job? = null
+    private var activityPreferences =
+        ActivityPreferences()
 
     private val definitions =
         activities.map { it.definition }
@@ -76,6 +81,7 @@ class ActivityViewModel(
         restoreState()
         restoreGuidedSession()
         restorePersistentLastActivity()
+        observeActivityPreferences()
     }
 
     fun startDemoProposal() {
@@ -395,6 +401,24 @@ class ActivityViewModel(
         publishState()
     }
 
+    fun isActivityEligible(
+        activityId: String,
+    ): Boolean {
+
+        return CandidateFilter.filter(
+            activities =
+                definitions,
+            request =
+                standardFilterRequest(
+                    excludedIds =
+                        emptySet()
+                ),
+        ).any {
+            it.id ==
+                    activityId
+        }
+    }
+
     fun plannedFutureActivity(
         opportunityKey: String,
         overrideActivityId: String?,
@@ -405,11 +429,9 @@ class ActivityViewModel(
                 activities =
                     definitions,
                 request =
-                    CandidateFilterRequest(
-                        opportunityType =
-                            "standard",
-                        excludedActivityIds =
-                            emptySet(),
+                    standardFilterRequest(
+                        excludedIds =
+                            emptySet()
                     ),
             )
 
@@ -441,11 +463,9 @@ class ActivityViewModel(
                 seed =
                     "future-$opportunityKey-0",
                 filterRequest =
-                    CandidateFilterRequest(
-                        opportunityType =
-                            "standard",
-                        excludedActivityIds =
-                            emptySet(),
+                    standardFilterRequest(
+                        excludedIds =
+                            emptySet()
                     ),
             )
                 ?: return null
@@ -1239,6 +1259,28 @@ class ActivityViewModel(
             }
     }
 
+    private fun observeActivityPreferences() {
+
+        viewModelScope.launch {
+            appStateRepository
+                .activityPreferences
+                .collect { preferences ->
+
+                    if (
+                        preferences ==
+                        activityPreferences
+                    ) {
+                        return@collect
+                    }
+
+                    activityPreferences =
+                        preferences
+
+                    publishState()
+                }
+        }
+    }
+
     private fun restorePersistentLastActivity() {
 
         if (
@@ -1353,6 +1395,39 @@ class ActivityViewModel(
         }
     }
 
+    private fun standardFilterRequest(
+        excludedIds: Set<String>,
+    ): CandidateFilterRequest {
+
+        val requiredWalking =
+            when {
+                activityPreferences
+                    .stationaryEnabled &&
+                        activityPreferences
+                            .movingEnabled ->
+                    null
+
+                activityPreferences
+                    .movingEnabled ->
+                    true
+
+                else ->
+                    false
+            }
+
+        return CandidateFilterRequest(
+            enabledIntensities =
+                activityPreferences
+                    .enabledIntensities,
+            requiredWalking =
+                requiredWalking,
+            opportunityType =
+                "standard",
+            excludedActivityIds =
+                excludedIds,
+        )
+    }
+
     private fun selectActivity(
         excludedIds: Set<String>,
         attempt: Int,
@@ -1394,11 +1469,9 @@ class ActivityViewModel(
                 seed =
                     "$seedBase-$attempt",
                 filterRequest =
-                    CandidateFilterRequest(
-                        opportunityType =
-                            "standard",
-                        excludedActivityIds =
-                            excludedIds,
+                    standardFilterRequest(
+                        excludedIds =
+                            excludedIds
                     ),
             )
 
@@ -1496,11 +1569,9 @@ class ActivityViewModel(
                     activities =
                         definitions,
                     request =
-                        CandidateFilterRequest(
-                            opportunityType =
-                                "standard",
-                            excludedActivityIds =
-                                explored.toSet(),
+                        standardFilterRequest(
+                            excludedIds =
+                                explored.toSet()
                         ),
                 ).isNotEmpty()
 
@@ -1542,6 +1613,8 @@ class ActivityViewModel(
                                 .get<Boolean>(
                                     KEY_COMPLETION_HAPTIC_DELIVERED
                                 ) != true,
+                activityPreferences =
+                    activityPreferences,
             )
     }
 

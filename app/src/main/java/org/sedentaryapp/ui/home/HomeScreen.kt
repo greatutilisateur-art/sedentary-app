@@ -21,6 +21,7 @@ import org.sedentaryapp.data.CatalogActivity
 @Composable
 fun HomeScreen(
     nextActivity: CatalogActivity?,
+    noEligibleActivity: Boolean,
     nextActivityWhenText: String?,
     lastActivity: CatalogActivity?,
     onOpenNextActivity: () -> Unit,
@@ -132,7 +133,13 @@ fun HomeScreen(
             } else {
                 Text(
                     text =
-                        "Aucune proposition prévue.",
+                        if (
+                            noEligibleActivity
+                        ) {
+                            "Aucune activité ne correspond actuellement à tes réglages."
+                        } else {
+                            "Aucune proposition prévue."
+                        },
                     style =
                         MaterialTheme.typography
                             .bodyLarge,

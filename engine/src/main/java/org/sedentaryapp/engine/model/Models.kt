@@ -36,6 +36,7 @@ data class CandidateFilterRequest(
     val enabledIntensities: Set<String>? = null,
     val canStand: Boolean = true,
     val canWalk: Boolean = true,
+    val requiredWalking: Boolean? = null,
     val opportunityType: String = "standard",
     val availableSeconds: Int? = null,
     val currentActivityId: String? = null,

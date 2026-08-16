@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -171,6 +172,38 @@ class MainActivity : ComponentActivity() {
                         null
                     }
 
+                val matchingOverrideIsEligible =
+                    matchingOverrideActivityId
+                        ?.let {
+                            viewModel
+                                .isActivityEligible(
+                                    it
+                                )
+                        } == true
+
+                LaunchedEffect(
+                    nextOpportunityKey,
+                    matchingOverrideActivityId,
+                    activityState.activityPreferences,
+                ) {
+                    if (
+                        matchingOverrideActivityId != null &&
+                        !matchingOverrideIsEligible
+                    ) {
+                        appStateRepository
+                            .clearPlannedActivityOverride()
+                    }
+                }
+
+                val effectiveOverrideActivityId =
+                    if (
+                        matchingOverrideIsEligible
+                    ) {
+                        matchingOverrideActivityId
+                    } else {
+                        null
+                    }
+
                 val nextActivity =
                     if (
                         nextOpportunityKey != null
@@ -180,7 +213,7 @@ class MainActivity : ComponentActivity() {
                                 opportunityKey =
                                     nextOpportunityKey,
                                 overrideActivityId =
-                                    matchingOverrideActivityId,
+                                    effectiveOverrideActivityId,
                             )
                     } else {
                         null
@@ -298,6 +331,10 @@ class MainActivity : ComponentActivity() {
                             settings =
                                 scheduleSettings,
 
+                            activityPreferences =
+                                activityState
+                                    .activityPreferences,
+
                             minimumGapMinutes =
                                 minimumGapMinutes,
 
@@ -349,6 +386,46 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
 
+                            onIntensityChanged = {
+                                    intensity,
+                                    enabled,
+                                ->
+
+                                coroutineScope.launch {
+                                    appStateRepository
+                                        .setIntensityEnabled(
+                                            intensity =
+                                                intensity,
+                                            enabled =
+                                                enabled,
+                                        )
+                                }
+                            },
+
+                            onStationaryChanged = {
+                                    enabled,
+                                ->
+
+                                coroutineScope.launch {
+                                    appStateRepository
+                                        .setStationaryEnabled(
+                                            enabled
+                                        )
+                                }
+                            },
+
+                            onMovingChanged = {
+                                    enabled,
+                                ->
+
+                                coroutineScope.launch {
+                                    appStateRepository
+                                        .setMovingEnabled(
+                                            enabled
+                                        )
+                                }
+                            },
+
                             onBack = {
                                 screen = "home"
                             },
@@ -360,6 +437,10 @@ class MainActivity : ComponentActivity() {
                         HomeScreen(
                             nextActivity =
                                 nextActivity,
+
+                            noEligibleActivity =
+                                nextOpportunity != null &&
+                                        nextActivity == null,
 
                             nextActivityWhenText =
                                 nextOpportunity

@@ -16,15 +16,19 @@ object CandidateFilter {
     ): List<ActivityDefinition> {
         val excludedActivityIds = request.excludedActivityIds + listOfNotNull(request.currentActivityId)
         return activities.filter activityFilter@ { activity ->
-        if (activity.status != "published") return@activityFilter false
-        if (request.enabledCategories != null && activity.userCategory !in request.enabledCategories) return@activityFilter false
-        if (request.enabledIntensities != null && activity.intensity !in request.enabledIntensities) return@activityFilter false
-        if (activity.standingRequired && !request.canStand) return@activityFilter false
-        if (activity.walkingRequired && !request.canWalk) return@activityFilter false
-        if (request.opportunityType !in activity.eligibleOpportunityTypes) return@activityFilter false
-        if (request.availableSeconds != null && activity.durationSecondsMin > request.availableSeconds) return@activityFilter false
-        if (activity.id in excludedActivityIds) return@activityFilter false
-        true
+            if (activity.status != "published") return@activityFilter false
+            if (request.enabledCategories != null && activity.userCategory !in request.enabledCategories) return@activityFilter false
+            if (request.enabledIntensities != null && activity.intensity !in request.enabledIntensities) return@activityFilter false
+            if (activity.standingRequired && !request.canStand) return@activityFilter false
+            if (activity.walkingRequired && !request.canWalk) return@activityFilter false
+            if (
+                request.requiredWalking != null &&
+                activity.walkingRequired != request.requiredWalking
+            ) return@activityFilter false
+            if (request.opportunityType !in activity.eligibleOpportunityTypes) return@activityFilter false
+            if (request.availableSeconds != null && activity.durationSecondsMin > request.availableSeconds) return@activityFilter false
+            if (activity.id in excludedActivityIds) return@activityFilter false
+            true
         }
     }
 }
