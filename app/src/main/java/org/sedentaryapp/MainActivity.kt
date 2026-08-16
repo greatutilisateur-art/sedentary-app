@@ -1,5 +1,10 @@
 package org.sedentaryapp
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import org.sedentaryapp.notification.NotificationPublisher
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -10,7 +15,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModelProvider
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -22,8 +26,6 @@ import org.sedentaryapp.data.CatalogRepository
 import org.sedentaryapp.data.PolicyRepository
 import org.sedentaryapp.data.ScheduleSettings
 import org.sedentaryapp.engine.schedule.NextOpportunityPlanner
-import org.sedentaryapp.engine.schedule.ScheduleValidator
-import org.sedentaryapp.engine.schedule.SlotValidation
 import org.sedentaryapp.ui.activity.ActivityScreen
 import org.sedentaryapp.ui.activity.ActivityViewModel
 import org.sedentaryapp.ui.home.HomeScreen
@@ -36,6 +38,32 @@ class MainActivity : ComponentActivity() {
         savedInstanceState: Bundle?,
     ) {
         super.onCreate(savedInstanceState)
+
+        var pendingNotificationActivity:
+                CatalogActivity? = null
+
+        val notificationPermissionLauncher =
+            registerForActivityResult(
+                ActivityResultContracts
+                    .RequestPermission()
+            ) { granted ->
+
+                val activityToShow =
+                    pendingNotificationActivity
+
+                pendingNotificationActivity =
+                    null
+
+                if (
+                    granted &&
+                    activityToShow != null
+                ) {
+                    NotificationPublisher.show(
+                        context = this,
+                        activity = activityToShow,
+                    )
+                }
+            }
 
         val activities =
             CatalogRepository(this)
@@ -99,13 +127,7 @@ class MainActivity : ComponentActivity() {
                 rememberSaveable {
                     mutableStateOf("home")
                 }
-                var scheduleDraft by
-                remember {
-                    mutableStateOf<ScheduleSettings?>(
-                        null
-                    )
-                }
-                val activity =
+                    val activity =
                     activityState.activity
 
                 when {
@@ -138,126 +160,77 @@ class MainActivity : ComponentActivity() {
 
                     screen == "schedule" -> {
 
-                        val draft =
-                            scheduleDraft ?: scheduleSettings
-
                         BackHandler {
-                            scheduleDraft = null
                             screen = "home"
                         }
 
                         ScheduleScreen(
-                            settings = draft,
-                            minimumGapMinutes = minimumGapMinutes,
+                            settings =
+                                scheduleSettings,
 
-                            onWeekdayChanged = { day, enabled ->
-                                scheduleDraft =
-                                    draft.copy(
-                                        selectedWeekdays =
-                                            if (enabled) {
-                                                draft.selectedWeekdays + day
-                                            } else {
-                                                draft.selectedWeekdays - day
-                                            }
-                                    )
-                            },
+                            minimumGapMinutes =
+                                minimumGapMinutes,
 
-                            onWorkStartChanged = { time ->
-                                scheduleDraft =
-                                    draft.copy(
-                                        workStart = time
-                                    )
-                            },
+                            onWeekdayChanged = {
+                                    day,
+                                    enabled,
+                                ->
 
-                            onWorkEndChanged = { time ->
-                                scheduleDraft =
-                                    draft.copy(
-                                        workEnd = time
-                                    )
-                            },
-
-                            onLunchEnabledChanged = { enabled ->
-                                scheduleDraft =
-                                    draft.copy(
-                                        lunchEnabled = enabled
-                                    )
-                            },
-
-                            onLunchStartChanged = { time ->
-                                scheduleDraft =
-                                    draft.copy(
-                                        lunchStart = time
-                                    )
-                            },
-
-                            onLunchEndChanged = { time ->
-                                scheduleDraft =
-                                    draft.copy(
-                                        lunchEnd = time
-                                    )
-                            },
-
-                            onSlotEnabledChanged = { index, enabled ->
-
-                                val currentlyActive =
-                                    draft.slots.count { slot ->
-                                        slot.enabled
-                                    }
-
-                                if (
-                                    enabled ||
-                                    currentlyActive > 1
-                                ) {
-                                    scheduleDraft =
-                                        draft.copy(
-                                            slots =
-                                                draft.slots.map { slot ->
-                                                    if (slot.index == index) {
-                                                        slot.copy(
-                                                            enabled = enabled
-                                                        )
-                                                    } else {
-                                                        slot
-                                                    }
-                                                }
-                                        )
-                                }
-                            },
-
-                            onSlotTimeChanged = { index, time ->
-                                scheduleDraft =
-                                    draft.copy(
-                                        slots =
-                                            draft.slots.map { slot ->
-                                                if (slot.index == index) {
-                                                    slot.copy(
-                                                        time = time
-                                                    )
-                                                } else {
-                                                    slot
-                                                }
-                                            }
-                                    )
-                            },
-
-                            onValidate = {
                                 coroutineScope.launch {
                                     appStateRepository
-                                        .saveScheduleSettings(
-                                            draft
+                                        .setWeekdayEnabled(
+                                            day,
+                                            enabled,
                                         )
-
-                                    scheduleDraft = null
-                                    screen = "home"
                                 }
+                            },
+
+                            onSlotTimeChanged = {
+                                    index,
+                                    time,
+                                ->
+
+                                coroutineScope.launch {
+                                    appStateRepository
+                                        .setSlotTime(
+                                            index,
+                                            time,
+                                        )
+                                }
+                            },
+
+                            onAddSlot = { time ->
+
+                                coroutineScope.launch {
+                                    appStateRepository
+                                        .addSlot(
+                                            time
+                                        )
+                                }
+                            },
+
+                            onRemoveSlot = { index ->
+
+                                coroutineScope.launch {
+                                    appStateRepository
+                                        .removeSlot(
+                                            index
+                                        )
+                                }
+                            },
+
+                            onBack = {
+                                screen = "home"
                             },
                         )
                     }
+
                     else -> {
 
                         HomeScreen(
                             lastActivity =
                                 activity,
+
                             scheduleStatusText =
                                 scheduleStatus(
                                     settings =
@@ -265,20 +238,56 @@ class MainActivity : ComponentActivity() {
                                     minimumGapMinutes =
                                         minimumGapMinutes,
                                 ),
+
                             onOpenLastActivity = {
                                 screen = "activity"
                             },
-                            onOpenSettings = {
-                                scheduleDraft =
-                                    scheduleSettings
 
+                            onOpenSettings = {
                                 screen = "schedule"
                             },
-                            onSimulateProposal = {
-                                viewModel
-                                    .startDemoProposal()
 
-                                screen = "activity"
+                            onSimulateProposal = {
+
+                                viewModel.startDemoProposal()
+
+                                val proposedActivity =
+                                    viewModel.uiState
+                                        .value
+                                        .activity
+
+                                if (proposedActivity != null) {
+
+                                    val needsPermission =
+                                        Build.VERSION.SDK_INT >=
+                                                Build.VERSION_CODES.TIRAMISU &&
+                                                checkSelfPermission(
+                                                    Manifest.permission
+                                                        .POST_NOTIFICATIONS
+                                                ) !=
+                                                PackageManager.PERMISSION_GRANTED
+
+                                    if (needsPermission) {
+
+                                        pendingNotificationActivity =
+                                            proposedActivity
+
+                                        notificationPermissionLauncher
+                                            .launch(
+                                                Manifest.permission
+                                                    .POST_NOTIFICATIONS
+                                            )
+
+                                    } else {
+
+                                        NotificationPublisher.show(
+                                            context =
+                                                this@MainActivity,
+                                            activity =
+                                                proposedActivity,
+                                        )
+                                    }
+                                }
                             },
                         )
                     }
@@ -300,61 +309,17 @@ private fun scheduleStatus(
         return "Aucun jour de travail sélectionné.\nAucune proposition prévue."
     }
 
-    val workdayValid =
-        ScheduleValidator.isWorkdayValid(
-            workStart =
-                settings.workStart,
-            workEnd =
-                settings.workEnd,
-        )
-
-    val lunchValid =
-        ScheduleValidator.isLunchValid(
-            workStart =
-                settings.workStart,
-            workEnd =
-                settings.workEnd,
-            lunchEnabled =
-                settings.lunchEnabled,
-            lunchStart =
-                settings.lunchStart,
-            lunchEnd =
-                settings.lunchEnd,
-        )
+    val activeTimes =
+        settings.slots
+            .map {
+                it.time
+            }
 
     if (
-        !workdayValid ||
-        !lunchValid
+        activeTimes.isEmpty()
     ) {
-        return "Tes horaires doivent être ajustés."
+        return "Aucun créneau configuré."
     }
-
-    val activeSlots =
-        settings.slots
-            .filter { it.enabled }
-
-    val invalidSlotExists =
-        activeSlots.any { slot ->
-
-            ScheduleValidator.validateSlot(
-                slotTime = slot.time,
-                workStart =
-                    settings.workStart,
-                workEnd =
-                    settings.workEnd,
-                lunchEnabled =
-                    settings.lunchEnabled,
-                lunchStart =
-                    settings.lunchStart,
-                lunchEnd =
-                    settings.lunchEnd,
-            ) != SlotValidation.VALID
-        }
-
-    val activeTimes =
-        activeSlots.map {
-            it.time
-        }
 
     val spacingValid =
         NextOpportunityPlanner
@@ -365,10 +330,7 @@ private fun scheduleStatus(
                     minimumGapMinutes,
             )
 
-    if (
-        invalidSlotExists ||
-        !spacingValid
-    ) {
+    if (!spacingValid) {
         return "Certains créneaux doivent être ajustés."
     }
 
@@ -399,7 +361,6 @@ private fun scheduleStatus(
         "Prochaine proposition ${weekdayName(next.dayOfWeek)} vers $time"
     }
 }
-
 private fun weekdayName(
     day: DayOfWeek,
 ): String {

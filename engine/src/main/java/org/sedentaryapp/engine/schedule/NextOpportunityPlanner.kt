@@ -14,7 +14,6 @@ object NextOpportunityPlanner {
 
         val sorted =
             activeSlotTimes
-                .distinct()
                 .sorted()
 
         return sorted

@@ -3,9 +3,9 @@
   "selector_version": "weighted-selector-v1.0.0",
   "default_slots": [
     "10:10",
-    "11:50",
-    "15:10",
-    "17:00"
+    "11:30",
+    "15:00",
+    "16:30"
   ],
   "technical_lateness_tolerance_minutes": 15,
   "scheduling": {
@@ -67,7 +67,7 @@
   },
   "slot_configuration": {
     "min_active_standard_slots": 1,
-    "max_active_standard_slots": 4,
+    "max_active_standard_slots": 6,
     "validate_only_active_slots": true,
     "inactive_slots_create_opportunities": false
   },
