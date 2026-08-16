@@ -140,17 +140,39 @@ class MainActivity : ComponentActivity() {
                         }
 
                         ActivityScreen(
-                            activity = activity,
+                            activity =
+                                activity,
+
                             postureLabel =
-                                postureLabel(activity),
-                            isActiveProposal =
+                                postureLabel(
+                                    activity
+                                ),
+
+                            canGoPrevious =
                                 activityState
-                                    .isActiveProposal,
-                            hasAlternative =
+                                    .canGoPrevious,
+
+                            canGoNext =
                                 activityState
-                                    .hasAlternative,
+                                    .canGoNext,
+
+                            canRequestAnother =
+                                activityState
+                                    .canRequestAnother,
+
+                            showNotNow =
+                                activityState
+                                    .showNotNow,
+
+                            onPreviousActivity =
+                                viewModel::onPreviousActivity,
+
+                            onNextActivity =
+                                viewModel::onNextActivity,
+
                             onOtherActivity =
                                 viewModel::onOtherActivity,
+
                             onNotNow = {
                                 viewModel.onNotNow()
                                 screen = "home"
@@ -229,7 +251,8 @@ class MainActivity : ComponentActivity() {
 
                         HomeScreen(
                             lastActivity =
-                                activity,
+                                activityState
+                                    .lastProposedActivity,
 
                             scheduleStatusText =
                                 scheduleStatus(
@@ -240,6 +263,7 @@ class MainActivity : ComponentActivity() {
                                 ),
 
                             onOpenLastActivity = {
+                                viewModel.openLastActivity()
                                 screen = "activity"
                             },
 
@@ -248,46 +272,8 @@ class MainActivity : ComponentActivity() {
                             },
 
                             onSimulateProposal = {
-
                                 viewModel.startDemoProposal()
-
-                                val proposedActivity =
-                                    viewModel.uiState
-                                        .value
-                                        .activity
-
-                                if (proposedActivity != null) {
-
-                                    val needsPermission =
-                                        Build.VERSION.SDK_INT >=
-                                                Build.VERSION_CODES.TIRAMISU &&
-                                                checkSelfPermission(
-                                                    Manifest.permission
-                                                        .POST_NOTIFICATIONS
-                                                ) !=
-                                                PackageManager.PERMISSION_GRANTED
-
-                                    if (needsPermission) {
-
-                                        pendingNotificationActivity =
-                                            proposedActivity
-
-                                        notificationPermissionLauncher
-                                            .launch(
-                                                Manifest.permission
-                                                    .POST_NOTIFICATIONS
-                                            )
-
-                                    } else {
-
-                                        NotificationPublisher.show(
-                                            context =
-                                                this@MainActivity,
-                                            activity =
-                                                proposedActivity,
-                                        )
-                                    }
-                                }
+                                screen = "activity"
                             },
                         )
                     }

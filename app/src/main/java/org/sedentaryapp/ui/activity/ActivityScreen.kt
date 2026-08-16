@@ -2,6 +2,7 @@ package org.sedentaryapp.ui.activity
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.sedentaryapp.data.CatalogActivity
@@ -21,90 +23,169 @@ import org.sedentaryapp.data.CatalogActivity
 fun ActivityScreen(
     activity: CatalogActivity,
     postureLabel: String?,
-    isActiveProposal: Boolean,
-    hasAlternative: Boolean,
+    canGoPrevious: Boolean,
+    canGoNext: Boolean,
+    canRequestAnother: Boolean,
+    showNotNow: Boolean,
+    onPreviousActivity: () -> Unit,
+    onNextActivity: () -> Unit,
     onOtherActivity: () -> Unit,
     onNotNow: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier =
+            Modifier.fillMaxSize(),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    horizontal = 24.dp,
-                    vertical = 32.dp,
-                ),
-            verticalArrangement = Arrangement.Center,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(
+                        horizontal = 24.dp,
+                        vertical = 32.dp,
+                    ),
+            verticalArrangement =
+                Arrangement.Center,
         ) {
 
             postureLabel?.let {
+
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                    style =
+                        MaterialTheme.typography
+                            .labelLarge,
+                    color =
+                        MaterialTheme.colorScheme
+                            .primary,
                 )
 
                 Spacer(
-                    modifier = Modifier.height(12.dp),
+                    modifier =
+                        Modifier.height(12.dp),
                 )
             }
 
             Text(
-                text = activity.title,
-                style = MaterialTheme.typography.headlineMedium,
+                text =
+                    activity.title,
+                style =
+                    MaterialTheme.typography
+                        .headlineMedium,
             )
 
             Spacer(
-                modifier = Modifier.height(20.dp),
+                modifier =
+                    Modifier.height(20.dp),
             )
 
             Text(
-                text = activity.instruction,
-                style = MaterialTheme.typography.bodyLarge,
+                text =
+                    activity.instruction,
+                style =
+                    MaterialTheme.typography
+                        .bodyLarge,
             )
 
             Spacer(
-                modifier = Modifier.height(16.dp),
+                modifier =
+                    Modifier.height(16.dp),
             )
 
             Text(
-                text = formatDuration(
-                    minSeconds =
-                        activity.definition.durationSecondsMin,
-                    maxSeconds =
-                        activity.definition.durationSecondsMax,
-                ),
-                style = MaterialTheme.typography.bodyMedium,
+                text =
+                    formatDuration(
+                        minSeconds =
+                            activity.definition
+                                .durationSecondsMin,
+                        maxSeconds =
+                            activity.definition
+                                .durationSecondsMax,
+                    ),
+                style =
+                    MaterialTheme.typography
+                        .bodyMedium,
                 color =
-                    MaterialTheme.colorScheme.onSurfaceVariant,
+                    MaterialTheme.colorScheme
+                        .onSurfaceVariant,
             )
 
-            if (isActiveProposal) {
+            if (
+                canGoPrevious ||
+                canGoNext ||
+                canRequestAnother
+            ) {
 
                 Spacer(
-                    modifier = Modifier.height(40.dp),
+                    modifier =
+                        Modifier.height(32.dp),
                 )
 
-                if (hasAlternative) {
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = onOtherActivity,
-                    ) {
-                        Text("Autre activité")
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    verticalAlignment =
+                        Alignment.CenterVertically,
+                ) {
+
+                    if (canGoPrevious) {
+                        TextButton(
+                            onClick =
+                                onPreviousActivity,
+                        ) {
+                            Text(
+                                "← Précédente"
+                            )
+                        }
                     }
 
                     Spacer(
-                        modifier = Modifier.height(8.dp),
+                        modifier =
+                            Modifier.weight(1f),
                     )
+
+                    when {
+                        canGoNext -> {
+                            TextButton(
+                                onClick =
+                                    onNextActivity,
+                            ) {
+                                Text(
+                                    "Suivante →"
+                                )
+                            }
+                        }
+
+                        canRequestAnother -> {
+                            Button(
+                                onClick =
+                                    onOtherActivity,
+                            ) {
+                                Text(
+                                    "Autre activité"
+                                )
+                            }
+                        }
+                    }
                 }
+            }
+
+            if (showNotNow) {
+
+                Spacer(
+                    modifier =
+                        Modifier.height(12.dp),
+                )
 
                 TextButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onNotNow,
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onNotNow,
                 ) {
-                    Text("Pas maintenant")
+                    Text(
+                        "Pas maintenant"
+                    )
                 }
             }
         }
@@ -116,8 +197,11 @@ private fun formatDuration(
     maxSeconds: Int,
 ): String {
 
-    fun format(seconds: Int): String {
+    fun format(
+        seconds: Int,
+    ): String {
         return when {
+
             seconds < 60 ->
                 "$seconds s"
 
@@ -129,8 +213,13 @@ private fun formatDuration(
         }
     }
 
-    return if (minSeconds == maxSeconds) {
-        format(minSeconds)
+    return if (
+        minSeconds ==
+        maxSeconds
+    ) {
+        format(
+            minSeconds
+        )
     } else {
         "${format(minSeconds)} – ${format(maxSeconds)}"
     }

@@ -244,7 +244,13 @@ class AppStateRepository(
             ] = activityId
         }
     }
-
+    suspend fun clearLastActivityId() {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences.remove(
+                LAST_ACTIVITY_ID
+            )
+        }
+    }
     suspend fun setWeekdayEnabled(
         day: DayOfWeek,
         enabled: Boolean,
