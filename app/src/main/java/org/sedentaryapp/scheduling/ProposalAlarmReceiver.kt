@@ -289,6 +289,8 @@ class ProposalAlarmReceiver :
                     activityId,
                 proposalKey =
                     proposalKey,
+                proposedAtEpochMillis =
+                    System.currentTimeMillis(),
             )
 
         dependencies
@@ -406,6 +408,8 @@ class ProposalAlarmReceiver :
                     activityId,
                 proposalKey =
                     proposalKey,
+                proposedAtEpochMillis =
+                    System.currentTimeMillis(),
             )
 
         NotificationPublisher

@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -23,8 +24,11 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -40,6 +44,8 @@ import org.sedentaryapp.ui.activity.ActivityScreen
 import org.sedentaryapp.ui.activity.ActivityViewModel
 import org.sedentaryapp.ui.activity.GuidedSessionState
 import org.sedentaryapp.ui.home.HomeScreen
+import org.sedentaryapp.ui.info.AboutScreen
+import org.sedentaryapp.ui.info.WhyAppScreen
 import org.sedentaryapp.ui.onboarding.ExactAlarmOnboardingScreen
 import org.sedentaryapp.ui.onboarding.NotificationOnboardingScreen
 import org.sedentaryapp.ui.onboarding.WelcomeScreen
@@ -248,6 +254,13 @@ class MainActivity : ComponentActivity() {
                                 emptySet()
                         )
 
+                val lastProposalAtEpochMillis by
+                    appStateRepository
+                        .lastProposalAtEpochMillis
+                        .collectAsState(
+                            initial = null
+                        )
+
                 val coroutineScope =
                     rememberCoroutineScope()
 
@@ -255,6 +268,41 @@ class MainActivity : ComponentActivity() {
                     rememberSaveable {
                         mutableStateOf("home")
                     }
+
+                var lastActivityClockMillis by
+                    remember {
+                        mutableStateOf(
+                            System.currentTimeMillis()
+                        )
+                    }
+
+                LaunchedEffect(
+                    lastProposalAtEpochMillis
+                ) {
+                    lastActivityClockMillis =
+                        System.currentTimeMillis()
+
+                    val proposedAt =
+                        lastProposalAtEpochMillis
+                            ?: return@LaunchedEffect
+
+                    val remainingMillis =
+                        LAST_ACTIVITY_VISIBILITY_MILLIS -
+                            (
+                                System.currentTimeMillis() -
+                                    proposedAt
+                            )
+
+                    if (remainingMillis > 0L) {
+                        delay(
+                            remainingMillis +
+                                250L
+                        )
+
+                        lastActivityClockMillis =
+                            System.currentTimeMillis()
+                    }
+                }
 
                 LaunchedEffect(
                     pendingNotificationProposalKey,
@@ -410,6 +458,39 @@ class MainActivity : ComponentActivity() {
                 val activity =
                     activityState.activity
 
+                val lastActivityAgeMillis =
+                    lastProposalAtEpochMillis
+                        ?.let { proposedAt ->
+                            lastActivityClockMillis -
+                                proposedAt
+                        }
+
+                val lastActivityIsRecent =
+                    lastActivityAgeMillis != null &&
+                        lastActivityAgeMillis >= 0L &&
+                        lastActivityAgeMillis <=
+                            LAST_ACTIVITY_VISIBILITY_MILLIS
+
+                val visibleLastActivity =
+                    if (lastActivityIsRecent) {
+                        activityState
+                            .lastProposedActivity
+                    } else {
+                        null
+                    }
+
+                val visibleLastActivityWhenText =
+                    if (
+                        visibleLastActivity != null &&
+                        lastProposalAtEpochMillis != null
+                    ) {
+                        lastActivityLabel(
+                            lastProposalAtEpochMillis!!
+                        )
+                    } else {
+                        null
+                    }
+
                 val showingOnboardingConfig =
                     onboardingCompleted == false &&
                         onboardingStep == 1
@@ -548,6 +629,32 @@ class MainActivity : ComponentActivity() {
                                     onboardingCompletedState.value =
                                         true
                                 }
+                            },
+                        )
+                    }
+
+                    screen == "why" -> {
+
+                        BackHandler {
+                            screen = "schedule"
+                        }
+
+                        WhyAppScreen(
+                            onBack = {
+                                screen = "schedule"
+                            },
+                        )
+                    }
+
+                    screen == "about" -> {
+
+                        BackHandler {
+                            screen = "schedule"
+                        }
+
+                        AboutScreen(
+                            onBack = {
+                                screen = "schedule"
                             },
                         )
                     }
@@ -791,6 +898,17 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
 
+                            showInfoLinks =
+                                !showingOnboardingConfig,
+
+                            onOpenWhy = {
+                                screen = "why"
+                            },
+
+                            onOpenAbout = {
+                                screen = "about"
+                            },
+
                             onBack = {
                                 if (showingOnboardingConfig) {
                                     onboardingStep = 2
@@ -836,8 +954,10 @@ class MainActivity : ComponentActivity() {
                                     },
 
                             lastActivity =
-                                activityState
-                                    .lastProposedActivity,
+                                visibleLastActivity,
+
+                            lastActivityWhenText =
+                                visibleLastActivityWhenText,
 
                             onPauseProposals = {
                                 coroutineScope.launch {
@@ -930,13 +1050,6 @@ class MainActivity : ComponentActivity() {
 
                             onOpenSettings = {
                                 screen = "schedule"
-                            },
-
-                            onSimulateProposal = {
-                                viewModel
-                                    .startDemoProposal()
-
-                                screen = "activity"
                             },
                         )
                     }
@@ -1061,6 +1174,47 @@ class MainActivity : ComponentActivity() {
         startActivity(
             intent
         )
+    }
+}
+
+private const val
+    LAST_ACTIVITY_VISIBILITY_MILLIS =
+    45L * 60_000L
+
+private fun lastActivityLabel(
+    epochMillis: Long,
+): String {
+
+    val proposedAt =
+        Instant
+            .ofEpochMilli(
+                epochMillis
+            )
+            .atZone(
+                ZoneId.systemDefault()
+            )
+            .toLocalDateTime()
+
+    val time =
+        "%02d:%02d".format(
+            proposedAt.hour,
+            proposedAt.minute,
+        )
+
+    val date =
+        proposedAt.toLocalDate()
+
+    return when (date) {
+
+        LocalDate.now() ->
+            "Aujourd’hui · $time"
+
+        LocalDate.now()
+            .minusDays(1) ->
+            "Hier · $time"
+
+        else ->
+            "${weekdayName(proposedAt.dayOfWeek).replaceFirstChar { it.uppercase() }} · $time"
     }
 }
 

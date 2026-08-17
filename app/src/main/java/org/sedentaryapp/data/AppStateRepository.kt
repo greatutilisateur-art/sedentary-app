@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -111,6 +112,16 @@ class AppStateRepository(
             .map { preferences ->
                 preferences[
                     LAST_ACTIVITY_ID
+                ]
+            }
+
+    val lastProposalAtEpochMillis:
+            Flow<Long?> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                preferences[
+                    LAST_PROPOSAL_AT_EPOCH_MILLIS
                 ]
             }
 
@@ -455,12 +466,17 @@ class AppStateRepository(
             preferences.remove(
                 LAST_PROPOSAL_KEY
             )
+
+            preferences.remove(
+                LAST_PROPOSAL_AT_EPOCH_MILLIS
+            )
         }
     }
 
     suspend fun saveLastActivity(
         activityId: String,
         proposalKey: String,
+        proposedAtEpochMillis: Long? = null,
     ) {
         appContext.appStateDataStore.edit { preferences ->
             preferences[
@@ -470,6 +486,16 @@ class AppStateRepository(
             preferences[
                 LAST_PROPOSAL_KEY
             ] = proposalKey
+
+            if (
+                proposedAtEpochMillis != null &&
+                proposedAtEpochMillis > 0L
+            ) {
+                preferences[
+                    LAST_PROPOSAL_AT_EPOCH_MILLIS
+                ] =
+                    proposedAtEpochMillis
+            }
         }
     }
 
@@ -481,6 +507,10 @@ class AppStateRepository(
 
             preferences.remove(
                 LAST_PROPOSAL_KEY
+            )
+
+            preferences.remove(
+                LAST_PROPOSAL_AT_EPOCH_MILLIS
             )
         }
     }
@@ -503,6 +533,10 @@ class AppStateRepository(
 
             preferences.remove(
                 LAST_PROPOSAL_KEY
+            )
+
+            preferences.remove(
+                LAST_PROPOSAL_AT_EPOCH_MILLIS
             )
         }
     }
@@ -1614,6 +1648,11 @@ class AppStateRepository(
         val LAST_PROPOSAL_KEY =
             stringPreferencesKey(
                 "last_proposal_key"
+            )
+
+        val LAST_PROPOSAL_AT_EPOCH_MILLIS =
+            longPreferencesKey(
+                "last_proposal_at_epoch_millis"
             )
 
         val SNOOZED_PROPOSAL =

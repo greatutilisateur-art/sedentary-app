@@ -51,6 +51,9 @@ fun ScheduleScreen(
     onStationaryChanged: (Boolean) -> Unit,
     onMovingChanged: (Boolean) -> Unit,
     onPauseChanged: (Boolean) -> Unit,
+    showInfoLinks: Boolean = true,
+    onOpenWhy: () -> Unit,
+    onOpenAbout: () -> Unit,
     onBack: () -> Unit,
 ) {
 
@@ -491,6 +494,45 @@ fun ScheduleScreen(
                 modifier =
                     Modifier.height(32.dp),
             )
+
+            if (showInfoLinks) {
+                Text(
+                    text = "Informations",
+                    style =
+                        MaterialTheme.typography
+                            .titleMedium,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(4.dp),
+                )
+
+                TextButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onOpenWhy,
+                ) {
+                    Text(
+                        "Pourquoi cette application ?"
+                    )
+                }
+
+                TextButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onOpenAbout,
+                ) {
+                    Text("À propos")
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(20.dp),
+                )
+            }
 
             TextButton(
                 modifier =

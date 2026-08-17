@@ -90,25 +90,6 @@ class ActivityViewModel(
         observeProposalHistory()
     }
 
-    fun startDemoProposal() {
-
-        val number =
-            (
-                    savedStateHandle.get<Int>(
-                        KEY_DEMO_PROPOSAL_NUMBER
-                    ) ?: 0
-                    ) + 1
-
-        savedStateHandle[
-            KEY_DEMO_PROPOSAL_NUMBER
-        ] = number
-
-        startNewProposal(
-            proposalId =
-                "demo-proposal-$number"
-        )
-    }
-
     fun startNewProposal(
         proposalId: String,
     ) {
@@ -1861,10 +1842,6 @@ class ActivityViewModel(
         private const val
                 KEY_FUTURE_OPPORTUNITY_KEY =
             "future_opportunity_key"
-
-        private const val
-                KEY_DEMO_PROPOSAL_NUMBER =
-            "demo_proposal_number"
 
         private const val
                 KEY_GUIDED_STATE =
