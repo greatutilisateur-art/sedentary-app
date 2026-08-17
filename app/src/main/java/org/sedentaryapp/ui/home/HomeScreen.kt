@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -20,10 +21,17 @@ import org.sedentaryapp.data.CatalogActivity
 
 @Composable
 fun HomeScreen(
+    proposalsPaused: Boolean,
+    notificationPermissionRequired: Boolean,
+    exactAlarmPermissionRequired: Boolean,
     nextActivity: CatalogActivity?,
     noEligibleActivity: Boolean,
     nextActivityWhenText: String?,
     lastActivity: CatalogActivity?,
+    onPauseProposals: () -> Unit,
+    onResumeProposals: () -> Unit,
+    onRequestNotificationPermission: () -> Unit,
+    onRequestExactAlarmPermission: () -> Unit,
     onOpenNextActivity: () -> Unit,
     onOpenLastActivity: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -54,12 +62,9 @@ fun HomeScreen(
                     Modifier.height(16.dp),
             )
 
-            if (
-                nextActivity != null &&
-                nextActivityWhenText != null
-            ) {
+            if (proposalsPaused) {
                 Text(
-                    text = "Prochaine activité",
+                    text = "Propositions en pause",
                     style =
                         MaterialTheme.typography
                             .titleMedium,
@@ -70,106 +75,87 @@ fun HomeScreen(
                         Modifier.height(12.dp),
                 )
 
-                Card(
+                OutlinedButton(
                     modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable(
-                                onClick =
-                                    onOpenNextActivity
-                            ),
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onResumeProposals,
                 ) {
-                    Column(
-                        modifier =
-                            Modifier.padding(20.dp),
-                    ) {
-                        Text(
-                            text =
-                                nextActivity.title,
-                            style =
-                                MaterialTheme.typography
-                                    .titleLarge,
-                        )
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(8.dp),
-                        )
-
-                        Text(
-                            text =
-                                formatDuration(
-                                    minSeconds =
-                                        nextActivity
-                                            .definition
-                                            .durationSecondsMin,
-                                    maxSeconds =
-                                        nextActivity
-                                            .definition
-                                            .durationSecondsMax,
-                                ),
-                            style =
-                                MaterialTheme.typography
-                                    .bodyMedium,
-                        )
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(6.dp),
-                        )
-
-                        Text(
-                            text =
-                                nextActivityWhenText,
-                            style =
-                                MaterialTheme.typography
-                                    .bodyMedium,
-                            color =
-                                MaterialTheme.colorScheme
-                                    .onSurfaceVariant,
-                        )
-                    }
+                    Text("Reprendre")
                 }
-            } else {
+
+                Spacer(
+                    modifier =
+                        Modifier.height(4.dp),
+                )
+
+                TextButton(
+                    onClick =
+                        onOpenSettings,
+                ) {
+                    Text(
+                        "Modifier mes réglages"
+                    )
+                }
+            } else if (
+                notificationPermissionRequired
+            ) {
                 Text(
                     text =
-                        if (
-                            noEligibleActivity
-                        ) {
-                            "Aucune activité ne correspond actuellement à tes réglages."
-                        } else {
-                            "Aucune proposition prévue."
-                        },
+                        "Les notifications sont désactivées sur cet appareil.",
+                    style =
+                        MaterialTheme.typography
+                            .titleMedium,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(12.dp),
+                )
+
+                Text(
+                    text =
+                        "Autorise-les pour recevoir tes propositions aux horaires choisis.",
                     style =
                         MaterialTheme.typography
                             .bodyLarge,
                 )
-            }
-
-            Spacer(
-                modifier =
-                    Modifier.height(12.dp),
-            )
-
-            TextButton(
-                onClick =
-                    onOpenSettings,
-            ) {
-                Text(
-                    "Modifier mes réglages"
-                )
-            }
-
-            if (lastActivity != null) {
 
                 Spacer(
                     modifier =
-                        Modifier.height(28.dp),
+                        Modifier.height(16.dp),
                 )
 
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onRequestNotificationPermission,
+                ) {
+                    Text(
+                        "Autoriser les notifications"
+                    )
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(4.dp),
+                )
+
+                TextButton(
+                    onClick =
+                        onOpenSettings,
+                ) {
+                    Text(
+                        "Modifier mes réglages"
+                    )
+                }
+            } else if (
+                exactAlarmPermissionRequired
+            ) {
                 Text(
                     text =
-                        "Dernière activité",
+                        "Android n’autorise pas encore les horaires précis.",
                     style =
                         MaterialTheme.typography
                             .titleMedium,
@@ -180,56 +166,230 @@ fun HomeScreen(
                         Modifier.height(12.dp),
                 )
 
-                Card(
+                Text(
+                    text =
+                        "Autorise l’accès « Alarmes et rappels » pour recevoir les propositions au plus près des horaires choisis.",
+                    style =
+                        MaterialTheme.typography
+                            .bodyLarge,
+                )
+
+                Spacer(
                     modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable(
-                                onClick =
-                                    onOpenLastActivity
-                            ),
+                        Modifier.height(16.dp),
+                )
+
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onRequestExactAlarmPermission,
                 ) {
-                    Column(
+                    Text(
+                        "Autoriser les horaires précis"
+                    )
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(4.dp),
+                )
+
+                TextButton(
+                    onClick =
+                        onOpenSettings,
+                ) {
+                    Text(
+                        "Modifier mes réglages"
+                    )
+                }
+            } else {
+                if (
+                    nextActivity != null &&
+                    nextActivityWhenText != null
+                ) {
+                    Text(
+                        text = "Prochaine activité",
+                        style =
+                            MaterialTheme.typography
+                                .titleMedium,
+                    )
+
+                    Spacer(
                         modifier =
-                            Modifier.padding(20.dp),
+                            Modifier.height(12.dp),
+                    )
+
+                    Card(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    onClick =
+                                        onOpenNextActivity
+                                ),
                     ) {
-                        Text(
-                            text =
-                                lastActivity.title,
-                            style =
-                                MaterialTheme.typography
-                                    .titleLarge,
-                        )
+                        Column(
+                            modifier =
+                                Modifier.padding(20.dp),
+                        ) {
+                            Text(
+                                text =
+                                    nextActivity.title,
+                                style =
+                                    MaterialTheme.typography
+                                        .titleLarge,
+                            )
+
+                            Spacer(
+                                modifier =
+                                    Modifier.height(8.dp),
+                            )
+
+                            Text(
+                                text =
+                                    formatDuration(
+                                        minSeconds =
+                                            nextActivity
+                                                .definition
+                                                .durationSecondsMin,
+                                        maxSeconds =
+                                            nextActivity
+                                                .definition
+                                                .durationSecondsMax,
+                                    ),
+                                style =
+                                    MaterialTheme.typography
+                                        .bodyMedium,
+                            )
+
+                            Spacer(
+                                modifier =
+                                    Modifier.height(6.dp),
+                            )
+
+                            Text(
+                                text =
+                                    nextActivityWhenText,
+                                style =
+                                    MaterialTheme.typography
+                                        .bodyMedium,
+                                color =
+                                    MaterialTheme.colorScheme
+                                        .onSurfaceVariant,
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        text =
+                            if (
+                                noEligibleActivity
+                            ) {
+                                "Aucune activité ne correspond actuellement à tes réglages."
+                            } else {
+                                "Aucune proposition prévue."
+                            },
+                        style =
+                            MaterialTheme.typography
+                                .bodyLarge,
+                    )
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(12.dp),
+                )
+
+                TextButton(
+                    onClick =
+                        onOpenSettings,
+                ) {
+                    Text(
+                        "Modifier mes réglages"
+                    )
+                }
+
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onPauseProposals,
+                ) {
+                    Text("Mettre en pause")
+                }
+
+                if (lastActivity != null) {
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(28.dp),
+                    )
+
+                    Text(
+                        text =
+                            "Dernière activité",
+                        style =
+                            MaterialTheme.typography
+                                .titleMedium,
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(12.dp),
+                    )
+
+                    Card(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    onClick =
+                                        onOpenLastActivity
+                                ),
+                    ) {
+                        Column(
+                            modifier =
+                                Modifier.padding(20.dp),
+                        ) {
+                            Text(
+                                text =
+                                    lastActivity.title,
+                                style =
+                                    MaterialTheme.typography
+                                        .titleLarge,
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(
-                modifier =
-                    Modifier.weight(1f),
-            )
-
-            Text(
-                text = "Test développeur",
-                style =
-                    MaterialTheme.typography
-                        .labelSmall,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            OutlinedButton(
-                modifier =
-                    Modifier.fillMaxWidth(),
-                onClick =
-                    onSimulateProposal,
-            ) {
-                Text(
-                    "Simuler une proposition"
+                Spacer(
+                    modifier =
+                        Modifier.weight(1f),
                 )
+
+                Text(
+                    text = "Test développeur",
+                    style =
+                        MaterialTheme.typography
+                            .labelSmall,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(8.dp),
+                )
+
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onSimulateProposal,
+                ) {
+                    Text(
+                        "Simuler une proposition"
+                    )
+                }
             }
         }
     }

@@ -38,7 +38,11 @@ import org.sedentaryapp.engine.schedule.NextOpportunityPlanner
 fun ScheduleScreen(
     settings: ScheduleSettings,
     activityPreferences: ActivityPreferences,
+    proposalsPaused: Boolean,
     minimumGapMinutes: Long,
+    title: String = "Tes réglages",
+    showPauseControl: Boolean = true,
+    bottomActionLabel: String = "Fermer",
     onWeekdayChanged: (DayOfWeek, Boolean) -> Unit,
     onSlotTimeChanged: (Int, LocalTime) -> Unit,
     onAddSlot: (LocalTime) -> Unit,
@@ -46,6 +50,7 @@ fun ScheduleScreen(
     onIntensityChanged: (String, Boolean) -> Unit,
     onStationaryChanged: (Boolean) -> Unit,
     onMovingChanged: (Boolean) -> Unit,
+    onPauseChanged: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
 
@@ -74,7 +79,7 @@ fun ScheduleScreen(
         ) {
 
             Text(
-                text = "Tes réglages",
+                text = title,
                 style =
                     MaterialTheme.typography
                         .headlineMedium,
@@ -84,6 +89,31 @@ fun ScheduleScreen(
                 modifier =
                     Modifier.height(24.dp),
             )
+
+            if (showPauseControl) {
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick = {
+                        onPauseChanged(
+                            !proposalsPaused
+                        )
+                    },
+                ) {
+                    Text(
+                        if (proposalsPaused) {
+                            "Reprendre"
+                        } else {
+                            "Mettre en pause"
+                        }
+                    )
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(28.dp),
+                )
+            }
 
             Text(
                 text = "Jours travaillés",
@@ -468,7 +498,7 @@ fun ScheduleScreen(
                 onClick =
                     onBack,
             ) {
-                Text("Fermer")
+                Text(bottomActionLabel)
             }
         }
     }

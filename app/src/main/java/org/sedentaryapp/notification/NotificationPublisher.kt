@@ -8,8 +8,13 @@ import android.content.Context
 import android.content.Intent
 import org.sedentaryapp.MainActivity
 import org.sedentaryapp.data.CatalogActivity
+import org.sedentaryapp.scheduling.ProposalAlarmReceiver
+import org.sedentaryapp.scheduling.ProposalAlarmScheduler
 
 object NotificationPublisher {
+
+    const val EXTRA_PROPOSAL_KEY =
+        "notification_proposal_key"
 
     private const val CHANNEL_ID =
         "activity_proposals"
@@ -17,10 +22,21 @@ object NotificationPublisher {
     private const val NOTIFICATION_ID =
         1001
 
+    private const val OPEN_REQUEST_CODE =
+        4201
+
+    private const val SNOOZE_REQUEST_CODE =
+        4202
+
+    private const val NOT_NOW_REQUEST_CODE =
+        4203
+
     fun show(
         context: Context,
         activity: CatalogActivity,
+        proposalKey: String,
     ) {
+
         val notificationManager =
             context.getSystemService(
                 NotificationManager::class.java
@@ -37,16 +53,59 @@ object NotificationPublisher {
             ).apply {
                 flags =
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                            Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+
+                putExtra(
+                    EXTRA_PROPOSAL_KEY,
+                    proposalKey,
+                )
             }
 
         val openAppPendingIntent =
             PendingIntent.getActivity(
                 context,
-                0,
+                OPEN_REQUEST_CODE,
                 openAppIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or
-                        PendingIntent.FLAG_IMMUTABLE,
+                    PendingIntent.FLAG_IMMUTABLE,
+            )
+
+        val snoozePendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                SNOOZE_REQUEST_CODE,
+                actionIntent(
+                    context =
+                        context,
+                    action =
+                        ProposalAlarmScheduler
+                            .ACTION_SNOOZE,
+                    proposalKey =
+                        proposalKey,
+                    activityId =
+                        activity.definition.id,
+                ),
+                PendingIntent.FLAG_UPDATE_CURRENT or
+                    PendingIntent.FLAG_IMMUTABLE,
+            )
+
+        val notNowPendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                NOT_NOW_REQUEST_CODE,
+                actionIntent(
+                    context =
+                        context,
+                    action =
+                        ProposalAlarmScheduler
+                            .ACTION_NOT_NOW,
+                    proposalKey =
+                        proposalKey,
+                    activityId =
+                        activity.definition.id,
+                ),
+                PendingIntent.FLAG_UPDATE_CURRENT or
+                    PendingIntent.FLAG_IMMUTABLE,
             )
 
         val notification =
@@ -55,26 +114,36 @@ object NotificationPublisher {
                 CHANNEL_ID,
             )
                 .setSmallIcon(
-                    android.R.drawable.ic_dialog_info
+                    android.R.drawable
+                        .ic_dialog_info
                 )
                 .setContentTitle(
                     activity.title
                 )
                 .setContentText(
-                    activity.instruction
-                )
-                .setStyle(
-                    Notification.BigTextStyle()
-                        .bigText(
-                            activity.instruction
-                        )
+                    "${durationLabel(activity)} · Touche pour voir la consigne"
                 )
                 .setContentIntent(
                     openAppPendingIntent
                 )
+                .addAction(
+                    Notification.Action.Builder(
+                        null,
+                        "+ 30 min",
+                        snoozePendingIntent,
+                    ).build()
+                )
+                .addAction(
+                    Notification.Action.Builder(
+                        null,
+                        "Pas maintenant",
+                        notNowPendingIntent,
+                    ).build()
+                )
                 .setAutoCancel(true)
                 .setCategory(
-                    Notification.CATEGORY_REMINDER
+                    Notification
+                        .CATEGORY_REMINDER
                 )
                 .build()
 
@@ -84,9 +153,95 @@ object NotificationPublisher {
         )
     }
 
+    fun cancel(
+        context: Context,
+    ) {
+        context
+            .getSystemService(
+                NotificationManager::class.java
+            )
+            .cancel(
+                NOTIFICATION_ID
+            )
+    }
+
+    private fun actionIntent(
+        context: Context,
+        action: String,
+        proposalKey: String,
+        activityId: String,
+    ): Intent {
+
+        return Intent(
+            context,
+            ProposalAlarmReceiver::class.java,
+        ).apply {
+            this.action =
+                action
+
+            putExtra(
+                ProposalAlarmScheduler
+                    .EXTRA_PROPOSAL_KEY,
+                proposalKey,
+            )
+
+            putExtra(
+                ProposalAlarmScheduler
+                    .EXTRA_ACTIVITY_ID,
+                activityId,
+            )
+        }
+    }
+
+    private fun durationLabel(
+        activity: CatalogActivity,
+    ): String {
+
+        val min =
+            activity.definition
+                .durationSecondsMin
+
+        val max =
+            activity.definition
+                .durationSecondsMax
+
+        if (min == max) {
+            return formatDuration(
+                min
+            )
+        }
+
+        return "${formatDuration(min)}–${formatDuration(max)}"
+    }
+
+    private fun formatDuration(
+        seconds: Int,
+    ): String {
+
+        return if (
+            seconds < 60
+        ) {
+            "$seconds s"
+        } else {
+            val minutes =
+                seconds / 60
+
+            val remainingSeconds =
+                seconds % 60
+
+            if (
+                remainingSeconds == 0
+            ) {
+                "$minutes min"
+            } else {
+                "$minutes min ${remainingSeconds} s"
+            }
+        }
+    }
+
     private fun ensureChannel(
         notificationManager:
-        NotificationManager,
+            NotificationManager,
     ) {
         if (
             notificationManager
@@ -102,7 +257,7 @@ object NotificationPublisher {
                 CHANNEL_ID,
                 "Propositions d'activité",
                 NotificationManager
-                    .IMPORTANCE_DEFAULT,
+                    .IMPORTANCE_HIGH,
             ).apply {
                 description =
                     "Petites activités proposées pendant la journée"
@@ -112,7 +267,9 @@ object NotificationPublisher {
                     null,
                 )
 
-                enableVibration(false)
+                enableVibration(
+                    false
+                )
             }
 
         notificationManager

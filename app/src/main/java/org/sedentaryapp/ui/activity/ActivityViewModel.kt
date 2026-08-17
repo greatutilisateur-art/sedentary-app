@@ -69,7 +69,7 @@ class ActivityViewModel(
     private var activityPreferences =
         ActivityPreferences()
     private var proposalHistoryIds:
-            List<String> = emptyList()
+        List<String> = emptyList()
 
     private val definitions =
         activities.map { it.definition }
@@ -85,7 +85,7 @@ class ActivityViewModel(
     init {
         restoreState()
         restoreGuidedSession()
-        restorePersistentLastActivity()
+        observePersistentLastActivity()
         observeActivityPreferences()
         observeProposalHistory()
     }
@@ -166,7 +166,7 @@ class ActivityViewModel(
                                 .takeIf { id ->
                                     activities.any { activity ->
                                         activity.definition.id ==
-                                                id
+                                            id
                                     }
                                 }
                         }
@@ -179,7 +179,7 @@ class ActivityViewModel(
                     persistedHistory
                         .lastOrNull { entry ->
                             entry.proposalKey ==
-                                    proposalId
+                                proposalId
                         }
                         ?.activityId
 
@@ -189,7 +189,7 @@ class ActivityViewModel(
                             activities
                                 .firstOrNull { activity ->
                                     activity.definition.id ==
-                                            id
+                                        id
                                 }
                         }
 
@@ -224,12 +224,12 @@ class ActivityViewModel(
 
                     proposalHistoryIds =
                         (
-                                proposalHistoryIds +
-                                        selectedId
-                                ).takeLast(
-                                policy.scoring
-                                    .historyWindowProposals
-                            )
+                            proposalHistoryIds +
+                                selectedId
+                        ).takeLast(
+                            policy.scoring
+                                .historyWindowProposals
+                        )
                 }
 
                 savedStateHandle[
@@ -491,7 +491,7 @@ class ActivityViewModel(
                 ),
         ).any {
             it.id ==
-                    activityId
+                activityId
         }
     }
 
@@ -516,14 +516,14 @@ class ActivityViewModel(
             val overrideEligible =
                 eligibleDefinitions.any {
                     it.id ==
-                            overrideActivityId
+                        overrideActivityId
                 }
 
             if (overrideEligible) {
                 return activities
                     .firstOrNull {
                         it.definition.id ==
-                                overrideActivityId
+                            overrideActivityId
                     }
             }
         }
@@ -549,7 +549,7 @@ class ActivityViewModel(
         return activities
             .firstOrNull {
                 it.definition.id ==
-                        selectedDefinition.id
+                    selectedDefinition.id
             }
     }
 
@@ -902,8 +902,8 @@ class ActivityViewModel(
                         ) == true
 
                 opportunityStillFuture ||
-                        guidedState !=
-                        GuidedSessionState.READY
+                    guidedState !=
+                    GuidedSessionState.READY
             } else {
                 false
             }
@@ -1371,7 +1371,7 @@ class ActivityViewModel(
                                     .takeIf { id ->
                                         activities.any { activity ->
                                             activity.definition.id ==
-                                                    id
+                                                id
                                         }
                                     }
                             }
@@ -1403,69 +1403,54 @@ class ActivityViewModel(
                 definitions
                     .firstOrNull { definition ->
                         definition.id ==
-                                id
+                            id
                     }
             }
     }
 
-    private fun restorePersistentLastActivity() {
-
-        if (
-            savedStateHandle.get<String>(
-                KEY_LAST_PROPOSED_ACTIVITY_ID
-            ) != null
-        ) {
-            return
-        }
+    private fun observePersistentLastActivity() {
 
         viewModelScope.launch {
+            appStateRepository
+                .lastActivityId
+                .collect { persistedId ->
 
-            val persistedId =
-                appStateRepository
-                    .lastActivityId
-                    .first()
+                    val validId =
+                        persistedId
+                            ?.takeIf { id ->
+                                activities.any { activity ->
+                                    activity.definition.id ==
+                                        id
+                                }
+                            }
 
-            val valid =
-                persistedId != null &&
-                        activities.any {
-                            it.definition.id ==
-                                    persistedId
-                        }
+                    val currentId =
+                        savedStateHandle
+                            .get<String>(
+                                KEY_LAST_PROPOSED_ACTIVITY_ID
+                            )
 
-            if (
-                valid &&
-                savedStateHandle.get<String>(
-                    KEY_LAST_PROPOSED_ACTIVITY_ID
-                ) == null
-            ) {
+                    if (
+                        currentId ==
+                        validId
+                    ) {
+                        return@collect
+                    }
 
-                savedStateHandle[
-                    KEY_LAST_PROPOSED_ACTIVITY_ID
-                ] =
-                    persistedId
+                    if (validId == null) {
+                        savedStateHandle
+                            .remove<String>(
+                                KEY_LAST_PROPOSED_ACTIVITY_ID
+                            )
+                    } else {
+                        savedStateHandle[
+                            KEY_LAST_PROPOSED_ACTIVITY_ID
+                        ] =
+                            validId
+                    }
 
-                if (!isProposalActive()) {
-
-                    savedStateHandle[
-                        KEY_DISPLAY_CONTEXT
-                    ] =
-                        ActivityDisplayContext
-                            .LAST_ACTIVITY
-                            .name
-
-                    writeExploredActivityIds(
-                        listOf(
-                            persistedId!!
-                        )
-                    )
-
-                    savedStateHandle[
-                        KEY_CURRENT_INDEX
-                    ] = 0
+                    publishState()
                 }
-
-                publishState()
-            }
         }
     }
 
@@ -1514,11 +1499,28 @@ class ActivityViewModel(
     private fun persistLastActivity(
         activityId: String,
     ) {
-        viewModelScope.launch {
-            appStateRepository
-                .saveLastActivityId(
-                    activityId
+
+        val proposalKey =
+            savedStateHandle
+                .get<String>(
+                    KEY_PROPOSAL_ID
                 )
+
+        viewModelScope.launch {
+            if (proposalKey == null) {
+                appStateRepository
+                    .saveLastActivityId(
+                        activityId
+                    )
+            } else {
+                appStateRepository
+                    .saveLastActivity(
+                        activityId =
+                            activityId,
+                        proposalKey =
+                            proposalKey,
+                    )
+            }
         }
     }
 
@@ -1530,8 +1532,8 @@ class ActivityViewModel(
             when {
                 activityPreferences
                     .stationaryEnabled &&
-                        activityPreferences
-                            .movingEnabled ->
+                    activityPreferences
+                        .movingEnabled ->
                     null
 
                 activityPreferences

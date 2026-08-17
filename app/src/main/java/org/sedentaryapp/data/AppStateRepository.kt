@@ -59,6 +59,12 @@ data class ProposalHistoryEntry(
     val activityId: String,
 )
 
+data class SnoozedProposal(
+    val proposalKey: String,
+    val activityId: String,
+    val triggerAtEpochMillis: Long,
+)
+
 class AppStateRepository(
     context: Context,
     defaultSlotTimes: List<LocalTime>,
@@ -108,6 +114,36 @@ class AppStateRepository(
                 ]
             }
 
+    val proposalsPaused:
+            Flow<Boolean> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                preferences[
+                    PROPOSALS_PAUSED
+                ] ?: false
+            }
+
+    val notificationPermissionRequested:
+            Flow<Boolean> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                preferences[
+                    NOTIFICATION_PERMISSION_REQUESTED
+                ] ?: false
+            }
+
+    val onboardingCompleted:
+            Flow<Boolean> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                preferences[
+                    ONBOARDING_COMPLETED
+                ] ?: false
+            }
+
     val plannedActivityOverride:
             Flow<PlannedActivityOverride?> =
         appContext.appStateDataStore.data
@@ -148,6 +184,18 @@ class AppStateRepository(
                 parseProposalHistory(
                     preferences[
                         PROPOSAL_HISTORY
+                    ]
+                )
+            }
+
+    val snoozedProposal:
+            Flow<SnoozedProposal?> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                parseSnoozedProposal(
+                    preferences[
+                        SNOOZED_PROPOSAL
                     ]
                 )
             }
@@ -336,7 +384,7 @@ class AppStateRepository(
             if (
                 current.any { entry ->
                     entry.proposalKey ==
-                            proposalKey
+                        proposalKey
                 }
             ) {
                 return@edit
@@ -344,16 +392,16 @@ class AppStateRepository(
 
             val updated =
                 (
-                        current +
-                                ProposalHistoryEntry(
-                                    proposalKey =
-                                        proposalKey,
-                                    activityId =
-                                        activityId,
-                                )
-                        ).takeLast(
-                        maxEntries
-                    )
+                    current +
+                        ProposalHistoryEntry(
+                            proposalKey =
+                                proposalKey,
+                            activityId =
+                                activityId,
+                        )
+                ).takeLast(
+                    maxEntries
+                )
 
             preferences[
                 PROPOSAL_HISTORY
@@ -364,21 +412,97 @@ class AppStateRepository(
         }
     }
 
+    suspend fun setProposalsPaused(
+        paused: Boolean,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                PROPOSALS_PAUSED
+            ] = paused
+
+            if (paused) {
+                preferences.remove(
+                    SNOOZED_PROPOSAL
+                )
+            }
+        }
+    }
+
+    suspend fun markNotificationPermissionRequested() {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                NOTIFICATION_PERMISSION_REQUESTED
+            ] = true
+        }
+    }
+
+    suspend fun markOnboardingCompleted() {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                ONBOARDING_COMPLETED
+            ] = true
+        }
+    }
+
     suspend fun saveLastActivityId(
         activityId: String,
     ) {
-        appContext.appStateDataStore.edit {
-                preferences,
-            ->
+        appContext.appStateDataStore.edit { preferences ->
             preferences[
                 LAST_ACTIVITY_ID
             ] = activityId
+
+            preferences.remove(
+                LAST_PROPOSAL_KEY
+            )
         }
     }
+
+    suspend fun saveLastActivity(
+        activityId: String,
+        proposalKey: String,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                LAST_ACTIVITY_ID
+            ] = activityId
+
+            preferences[
+                LAST_PROPOSAL_KEY
+            ] = proposalKey
+        }
+    }
+
     suspend fun clearLastActivityId() {
         appContext.appStateDataStore.edit { preferences ->
             preferences.remove(
                 LAST_ACTIVITY_ID
+            )
+
+            preferences.remove(
+                LAST_PROPOSAL_KEY
+            )
+        }
+    }
+
+    suspend fun clearLastActivityIfProposalKey(
+        proposalKey: String,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            if (
+                preferences[
+                    LAST_PROPOSAL_KEY
+                ] != proposalKey
+            ) {
+                return@edit
+            }
+
+            preferences.remove(
+                LAST_ACTIVITY_ID
+            )
+
+            preferences.remove(
+                LAST_PROPOSAL_KEY
             )
         }
     }
@@ -403,6 +527,71 @@ class AppStateRepository(
         }
     }
 
+    suspend fun clearPlannedActivityOverrideIfOpportunity(
+        opportunityKey: String,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            val current =
+                parsePlannedActivityOverride(
+                    preferences[
+                        PLANNED_ACTIVITY_OVERRIDE
+                    ]
+                )
+
+            if (
+                current?.opportunityKey ==
+                opportunityKey
+            ) {
+                preferences.remove(
+                    PLANNED_ACTIVITY_OVERRIDE
+                )
+            }
+        }
+    }
+
+    suspend fun saveSnoozedProposal(
+        proposalKey: String,
+        activityId: String,
+        triggerAtEpochMillis: Long,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                SNOOZED_PROPOSAL
+            ] =
+                "$proposalKey|$activityId|$triggerAtEpochMillis"
+        }
+    }
+
+    suspend fun clearSnoozedProposal() {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences.remove(
+                SNOOZED_PROPOSAL
+            )
+        }
+    }
+
+    suspend fun clearSnoozedProposalIfProposalKey(
+        proposalKey: String,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            val current =
+                parseSnoozedProposal(
+                    preferences[
+                        SNOOZED_PROPOSAL
+                    ]
+                )
+
+            if (
+                current?.proposalKey ==
+                proposalKey
+            ) {
+                preferences.remove(
+                    SNOOZED_PROPOSAL
+                )
+            }
+        }
+    }
+
     suspend fun markOpportunityConsumedEarly(
         opportunityKey: String,
     ) {
@@ -415,13 +604,32 @@ class AppStateRepository(
                     ?.toMutableSet()
                     ?: mutableSetOf()
 
-            consumed.add(
+            val cutoff =
+                LocalDateTime.now()
+                    .minusDays(1)
+
+            val pruned =
+                consumed
+                    .filter { key ->
+                        val parsed =
+                            parseOpportunityKey(
+                                key
+                            )
+
+                        parsed != null &&
+                            !parsed.isBefore(
+                                cutoff
+                            )
+                    }
+                    .toMutableSet()
+
+            pruned.add(
                 opportunityKey
             )
 
             preferences[
                 CONSUMED_EARLY_OPPORTUNITY_KEYS
-            ] = consumed
+            ] = pruned
 
             val currentOverride =
                 parsePlannedActivityOverride(
@@ -433,10 +641,27 @@ class AppStateRepository(
             if (
                 currentOverride
                     ?.opportunityKey ==
-                opportunityKey
+                    opportunityKey
             ) {
                 preferences.remove(
                     PLANNED_ACTIVITY_OVERRIDE
+                )
+            }
+
+            val currentSnooze =
+                parseSnoozedProposal(
+                    preferences[
+                        SNOOZED_PROPOSAL
+                    ]
+                )
+
+            if (
+                currentSnooze
+                    ?.proposalKey ==
+                opportunityKey
+            ) {
+                preferences.remove(
+                    SNOOZED_PROPOSAL
                 )
             }
         }
@@ -448,7 +673,7 @@ class AppStateRepository(
     ) {
         require(
             intensity in
-                    SUPPORTED_INTENSITIES
+                SUPPORTED_INTENSITIES
         )
 
         appContext.appStateDataStore.edit { preferences ->
@@ -867,7 +1092,7 @@ class AppStateRepository(
             ]
                 ?.filter {
                     it in
-                            SUPPORTED_INTENSITIES
+                        SUPPORTED_INTENSITIES
                 }
                 ?.toSet()
 
@@ -878,6 +1103,53 @@ class AppStateRepository(
         } else {
             stored
         }
+    }
+
+    private fun parseSnoozedProposal(
+        value: String?,
+    ): SnoozedProposal? {
+
+        if (value == null) {
+            return null
+        }
+
+        val parts =
+            value.split(
+                "|",
+                limit = 3,
+            )
+
+        if (parts.size != 3) {
+            return null
+        }
+
+        val proposalKey =
+            parts[0]
+
+        val activityId =
+            parts[1]
+
+        val triggerAtEpochMillis =
+            parts[2]
+                .toLongOrNull()
+                ?: return null
+
+        if (
+            proposalKey.isBlank() ||
+            activityId.isBlank() ||
+            triggerAtEpochMillis <= 0L
+        ) {
+            return null
+        }
+
+        return SnoozedProposal(
+            proposalKey =
+                proposalKey,
+            activityId =
+                activityId,
+            triggerAtEpochMillis =
+                triggerAtEpochMillis,
+        )
     }
 
     private fun parsePlannedActivityOverride(
@@ -894,7 +1166,7 @@ class AppStateRepository(
         if (
             separatorIndex <= 0 ||
             separatorIndex >=
-            value.lastIndex
+                value.lastIndex
         ) {
             return null
         }
@@ -940,7 +1212,7 @@ class AppStateRepository(
                         key
                     )
                         ?.dayOfWeek ==
-                            day
+                        day
                 }
                 ?.toSet()
                 ?: emptySet()
@@ -965,7 +1237,7 @@ class AppStateRepository(
                         key
                     )
                         ?.toLocalTime() ==
-                            time
+                        time
                 }
                 ?.toSet()
                 ?: emptySet()
@@ -1000,9 +1272,9 @@ class AppStateRepository(
                             ?: return@filter false
 
                     opportunity.dayOfWeek in
-                            selectedWeekdays &&
-                            opportunity.toLocalTime() in
-                            validTimes
+                        selectedWeekdays &&
+                        opportunity.toLocalTime() in
+                        validTimes
                 }
                 ?.toSet()
                 ?: emptySet()
@@ -1337,6 +1609,31 @@ class AppStateRepository(
         val LAST_ACTIVITY_ID =
             stringPreferencesKey(
                 "last_activity_id"
+            )
+
+        val LAST_PROPOSAL_KEY =
+            stringPreferencesKey(
+                "last_proposal_key"
+            )
+
+        val SNOOZED_PROPOSAL =
+            stringPreferencesKey(
+                "snoozed_proposal"
+            )
+
+        val PROPOSALS_PAUSED =
+            booleanPreferencesKey(
+                "proposals_paused"
+            )
+
+        val NOTIFICATION_PERMISSION_REQUESTED =
+            booleanPreferencesKey(
+                "notification_permission_requested"
+            )
+
+        val ONBOARDING_COMPLETED =
+            booleanPreferencesKey(
+                "onboarding_completed"
             )
 
         val PROPOSAL_HISTORY =
