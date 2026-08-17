@@ -7,8 +7,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -45,9 +49,12 @@ fun HomeScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .verticalScroll(
+                        rememberScrollState()
+                    )
                     .padding(
-                        horizontal = 24.dp,
-                        vertical = 40.dp,
+                        horizontal = 20.dp,
+                        vertical = 32.dp,
                     ),
         ) {
             Text(
@@ -59,13 +66,35 @@ fun HomeScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(16.dp),
+                    Modifier.height(6.dp),
+            )
+
+            Text(
+                text =
+                    "Des occasions simples de bouger pendant la journée.",
+                style =
+                    MaterialTheme.typography
+                        .bodyMedium,
+                color =
+                    MaterialTheme.colorScheme
+                        .onSurfaceVariant,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(28.dp),
             )
 
             when {
                 proposalsPaused -> {
-                    PausedContent(
-                        onResumeProposals =
+                    StatusCard(
+                        title =
+                            "Propositions en pause",
+                        body =
+                            "Tes réglages sont conservés. Reprends quand tu veux.",
+                        primaryLabel =
+                            "Reprendre",
+                        onPrimary =
                             onResumeProposals,
                         onOpenSettings =
                             onOpenSettings,
@@ -73,14 +102,14 @@ fun HomeScreen(
                 }
 
                 notificationPermissionRequired -> {
-                    PermissionContent(
+                    StatusCard(
                         title =
-                            "Les notifications sont désactivées sur cet appareil.",
+                            "Notifications désactivées",
                         body =
                             "Autorise-les pour recevoir tes propositions aux horaires choisis.",
-                        buttonLabel =
+                        primaryLabel =
                             "Autoriser les notifications",
-                        onRequestPermission =
+                        onPrimary =
                             onRequestNotificationPermission,
                         onOpenSettings =
                             onOpenSettings,
@@ -88,14 +117,14 @@ fun HomeScreen(
                 }
 
                 exactAlarmPermissionRequired -> {
-                    PermissionContent(
+                    StatusCard(
                         title =
-                            "Android n’autorise pas encore les horaires précis.",
+                            "Horaires précis désactivés",
                         body =
                             "Autorise l’accès « Alarmes et rappels » pour recevoir les propositions au plus près des horaires choisis.",
-                        buttonLabel =
+                        primaryLabel =
                             "Autoriser les horaires précis",
-                        onRequestPermission =
+                        onPrimary =
                             onRequestExactAlarmPermission,
                         onOpenSettings =
                             onOpenSettings,
@@ -125,106 +154,87 @@ fun HomeScreen(
                     )
                 }
             }
+
+            Spacer(
+                modifier =
+                    Modifier.height(24.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun PausedContent(
-    onResumeProposals: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    Text(
-        text = "Propositions en pause",
-        style =
-            MaterialTheme.typography
-                .titleMedium,
-    )
-
-    Spacer(
-        modifier =
-            Modifier.height(12.dp),
-    )
-
-    OutlinedButton(
-        modifier =
-            Modifier.fillMaxWidth(),
-        onClick =
-            onResumeProposals,
-    ) {
-        Text("Reprendre")
-    }
-
-    Spacer(
-        modifier =
-            Modifier.height(4.dp),
-    )
-
-    TextButton(
-        onClick =
-            onOpenSettings,
-    ) {
-        Text(
-            "Modifier mes réglages"
-        )
-    }
-}
-
-@Composable
-private fun PermissionContent(
+private fun StatusCard(
     title: String,
     body: String,
-    buttonLabel: String,
-    onRequestPermission: () -> Unit,
+    primaryLabel: String,
+    onPrimary: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    Text(
-        text = title,
-        style =
-            MaterialTheme.typography
-                .titleMedium,
-    )
-
-    Spacer(
-        modifier =
-            Modifier.height(12.dp),
-    )
-
-    Text(
-        text = body,
-        style =
-            MaterialTheme.typography
-                .bodyLarge,
-    )
-
-    Spacer(
-        modifier =
-            Modifier.height(16.dp),
-    )
-
-    Button(
+    Card(
         modifier =
             Modifier.fillMaxWidth(),
-        onClick =
-            onRequestPermission,
+        shape =
+            RoundedCornerShape(22.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme
+                        .secondaryContainer,
+            ),
     ) {
-        Text(
-            buttonLabel
-        )
-    }
+        Column(
+            modifier =
+                Modifier.padding(20.dp),
+        ) {
+            Text(
+                text = title,
+                style =
+                    MaterialTheme.typography
+                        .titleLarge,
+                color =
+                    MaterialTheme.colorScheme
+                        .onSecondaryContainer,
+            )
 
-    Spacer(
-        modifier =
-            Modifier.height(4.dp),
-    )
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp),
+            )
 
-    TextButton(
-        onClick =
-            onOpenSettings,
-    ) {
-        Text(
-            "Modifier mes réglages"
-        )
+            Text(
+                text = body,
+                style =
+                    MaterialTheme.typography
+                        .bodyLarge,
+                color =
+                    MaterialTheme.colorScheme
+                        .onSecondaryContainer,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(20.dp),
+            )
+
+            Button(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick =
+                    onPrimary,
+            ) {
+                Text(primaryLabel)
+            }
+
+            TextButton(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick =
+                    onOpenSettings,
+            ) {
+                Text("Modifier mes réglages")
+            }
+        }
     }
 }
 
@@ -240,22 +250,20 @@ private fun ActiveContent(
     onOpenLastActivity: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
+    SectionLabel(
+        text =
+            "Prochaine activité"
+    )
+
+    Spacer(
+        modifier =
+            Modifier.height(10.dp),
+    )
+
     if (
         nextActivity != null &&
         nextActivityWhenText != null
     ) {
-        Text(
-            text = "Prochaine activité",
-            style =
-                MaterialTheme.typography
-                    .titleMedium,
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(12.dp),
-        )
-
         Card(
             modifier =
                 Modifier
@@ -264,6 +272,14 @@ private fun ActiveContent(
                         onClick =
                             onOpenNextActivity
                     ),
+            shape =
+                RoundedCornerShape(22.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor =
+                        MaterialTheme.colorScheme
+                            .primaryContainer,
+                ),
         ) {
             Column(
                 modifier =
@@ -271,10 +287,29 @@ private fun ActiveContent(
             ) {
                 Text(
                     text =
+                        nextActivityWhenText,
+                    style =
+                        MaterialTheme.typography
+                            .labelLarge,
+                    color =
+                        MaterialTheme.colorScheme
+                            .onPrimaryContainer,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(8.dp),
+                )
+
+                Text(
+                    text =
                         nextActivity.title,
                     style =
                         MaterialTheme.typography
                             .titleLarge,
+                    color =
+                        MaterialTheme.colorScheme
+                            .onPrimaryContainer,
                 )
 
                 Spacer(
@@ -297,53 +332,70 @@ private fun ActiveContent(
                     style =
                         MaterialTheme.typography
                             .bodyMedium,
+                    color =
+                        MaterialTheme.colorScheme
+                            .onPrimaryContainer,
                 )
 
                 Spacer(
                     modifier =
-                        Modifier.height(6.dp),
+                        Modifier.height(12.dp),
                 )
 
                 Text(
-                    text =
-                        nextActivityWhenText,
+                    text = "Voir l’activité",
                     style =
                         MaterialTheme.typography
-                            .bodyMedium,
+                            .labelLarge,
                     color =
                         MaterialTheme.colorScheme
-                            .onSurfaceVariant,
+                            .primary,
                 )
             }
         }
     } else {
-        Text(
-            text =
-                if (
-                    noEligibleActivity
-                ) {
-                    "Aucune activité ne correspond actuellement à tes réglages."
-                } else {
-                    "Aucune proposition prévue."
-                },
-            style =
-                MaterialTheme.typography
-                    .bodyLarge,
-        )
+        Card(
+            modifier =
+                Modifier.fillMaxWidth(),
+            shape =
+                RoundedCornerShape(20.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor =
+                        MaterialTheme.colorScheme
+                            .surfaceVariant,
+                ),
+        ) {
+            Text(
+                modifier =
+                    Modifier.padding(18.dp),
+                text =
+                    if (
+                        noEligibleActivity
+                    ) {
+                        "Aucune activité ne correspond actuellement à tes réglages."
+                    } else {
+                        "Aucune proposition prévue."
+                    },
+                style =
+                    MaterialTheme.typography
+                        .bodyLarge,
+            )
+        }
     }
 
     Spacer(
         modifier =
-            Modifier.height(12.dp),
+            Modifier.height(16.dp),
     )
 
     TextButton(
+        modifier =
+            Modifier.fillMaxWidth(),
         onClick =
             onOpenSettings,
     ) {
-        Text(
-            "Modifier mes réglages"
-        )
+        Text("Modifier mes réglages")
     }
 
     OutlinedButton(
@@ -361,20 +413,17 @@ private fun ActiveContent(
     ) {
         Spacer(
             modifier =
-                Modifier.height(28.dp),
+                Modifier.height(30.dp),
         )
 
-        Text(
+        SectionLabel(
             text =
-                "Dernière activité",
-            style =
-                MaterialTheme.typography
-                    .titleMedium,
+                "Dernière activité"
         )
 
         Spacer(
             modifier =
-                Modifier.height(12.dp),
+                Modifier.height(10.dp),
         )
 
         Card(
@@ -385,17 +434,25 @@ private fun ActiveContent(
                         onClick =
                             onOpenLastActivity
                     ),
+            shape =
+                RoundedCornerShape(20.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor =
+                        MaterialTheme.colorScheme
+                            .surfaceVariant,
+                ),
         ) {
             Column(
                 modifier =
-                    Modifier.padding(20.dp),
+                    Modifier.padding(18.dp),
             ) {
                 Text(
                     text =
                         lastActivity.title,
                     style =
                         MaterialTheme.typography
-                            .titleLarge,
+                            .titleMedium,
                 )
 
                 Spacer(
@@ -418,6 +475,18 @@ private fun ActiveContent(
     }
 }
 
+@Composable
+private fun SectionLabel(
+    text: String,
+) {
+    Text(
+        text = text,
+        style =
+            MaterialTheme.typography
+                .titleMedium,
+    )
+}
+
 private fun formatDuration(
     minSeconds: Int,
     maxSeconds: Int,
@@ -426,9 +495,7 @@ private fun formatDuration(
     fun format(
         seconds: Int,
     ): String {
-
         return when {
-
             seconds < 60 ->
                 "$seconds s"
 

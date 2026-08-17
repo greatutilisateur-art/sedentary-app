@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -70,7 +73,10 @@ private fun InfoScreen(
                     .verticalScroll(
                         rememberScrollState()
                     )
-                    .padding(24.dp),
+                    .padding(
+                        horizontal = 20.dp,
+                        vertical = 28.dp,
+                    ),
         ) {
             Text(
                 text = title,
@@ -81,38 +87,53 @@ private fun InfoScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(24.dp),
+                    Modifier.height(22.dp),
             )
 
-            paragraphs.forEachIndexed {
-                    index,
-                    paragraph,
-                ->
-
-                Text(
-                    text = paragraph,
-                    style =
-                        MaterialTheme.typography
-                            .bodyLarge,
-                )
-
-                if (
-                    index <
-                    paragraphs.lastIndex
+            Card(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                shape =
+                    RoundedCornerShape(20.dp),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme
+                                .surfaceVariant,
+                    ),
+            ) {
+                Column(
+                    modifier =
+                        Modifier.padding(18.dp),
                 ) {
-                    Spacer(
-                        modifier =
-                            Modifier.height(16.dp),
-                    )
+                    paragraphs.forEachIndexed { index, paragraph ->
+
+                        Text(
+                            text = paragraph,
+                            style =
+                                MaterialTheme.typography
+                                    .bodyLarge,
+                        )
+
+                        if (
+                            index <
+                            paragraphs.lastIndex
+                        ) {
+                            Spacer(
+                                modifier =
+                                    Modifier.height(16.dp),
+                            )
+                        }
+                    }
                 }
             }
 
             Spacer(
                 modifier =
-                    Modifier.height(32.dp),
+                    Modifier.height(24.dp),
             )
 
-            TextButton(
+            OutlinedButton(
                 modifier =
                     Modifier.fillMaxWidth(),
                 onClick =

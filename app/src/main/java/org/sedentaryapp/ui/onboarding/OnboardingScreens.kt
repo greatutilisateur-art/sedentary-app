@@ -6,7 +6,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,9 +32,12 @@ fun WelcomeScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .verticalScroll(
+                        rememberScrollState()
+                    )
                     .padding(
                         horizontal = 24.dp,
-                        vertical = 48.dp,
+                        vertical = 40.dp,
                     ),
         ) {
             Text(
@@ -41,7 +49,7 @@ fun WelcomeScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(20.dp),
+                    Modifier.height(14.dp),
             )
 
             Text(
@@ -54,23 +62,56 @@ fun WelcomeScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(12.dp),
+                    Modifier.height(24.dp),
             )
 
-            Text(
-                text =
-                    "Tu gardes la main : tu peux ignorer une proposition ou mettre l’application en pause à tout moment.",
-                style =
-                    MaterialTheme.typography
-                        .bodyLarge,
-                color =
-                    MaterialTheme.colorScheme
-                        .onSurfaceVariant,
-            )
+            Card(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                shape =
+                    RoundedCornerShape(22.dp),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme
+                                .primaryContainer,
+                    ),
+            ) {
+                Column(
+                    modifier =
+                        Modifier.padding(20.dp),
+                ) {
+                    Text(
+                        text = "30 s à 5 min",
+                        style =
+                            MaterialTheme.typography
+                                .titleLarge,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onPrimaryContainer,
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp),
+                    )
+
+                    Text(
+                        text =
+                            "Pas de performance à atteindre. Tu gardes la main sur chaque proposition.",
+                        style =
+                            MaterialTheme.typography
+                                .bodyLarge,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onPrimaryContainer,
+                    )
+                }
+            }
 
             Spacer(
                 modifier =
-                    Modifier.weight(1f),
+                    Modifier.height(30.dp),
             )
 
             Button(
@@ -91,6 +132,34 @@ fun NotificationOnboardingScreen(
     onAllowNotifications: () -> Unit,
     onLater: () -> Unit,
 ) {
+    PermissionStep(
+        title =
+            "Recevoir les propositions",
+        body =
+            "Pour recevoir une activité aux horaires choisis, l’application a besoin de l’autorisation d’afficher des notifications.",
+        detail =
+            "Tu pourras modifier ce choix plus tard dans les réglages Android.",
+        alreadyAllowed =
+            notificationsAlreadyAllowed,
+        allowLabel =
+            "Autoriser les notifications",
+        onAllow =
+            onAllowNotifications,
+        onLater =
+            onLater,
+    )
+}
+
+@Composable
+private fun PermissionStep(
+    title: String,
+    body: String,
+    detail: String,
+    alreadyAllowed: Boolean,
+    allowLabel: String,
+    onAllow: () -> Unit,
+    onLater: () -> Unit,
+) {
     Surface(
         modifier =
             Modifier.fillMaxSize(),
@@ -99,13 +168,16 @@ fun NotificationOnboardingScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .verticalScroll(
+                        rememberScrollState()
+                    )
                     .padding(
                         horizontal = 24.dp,
-                        vertical = 48.dp,
+                        vertical = 40.dp,
                     ),
         ) {
             Text(
-                text = "Recevoir les propositions",
+                text = title,
                 style =
                     MaterialTheme.typography
                         .headlineMedium,
@@ -113,12 +185,11 @@ fun NotificationOnboardingScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(20.dp),
+                    Modifier.height(18.dp),
             )
 
             Text(
-                text =
-                    "Pour recevoir une activité aux horaires choisis, l’application a besoin de l’autorisation d’afficher des notifications.",
+                text = body,
                 style =
                     MaterialTheme.typography
                         .bodyLarge,
@@ -126,46 +197,55 @@ fun NotificationOnboardingScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(12.dp),
+                    Modifier.height(16.dp),
             )
 
-            Text(
-                text =
-                    "Tu pourras modifier ce choix plus tard dans les réglages Android.",
-                style =
-                    MaterialTheme.typography
-                        .bodyMedium,
-                color =
-                    MaterialTheme.colorScheme
-                        .onSurfaceVariant,
-            )
+            Card(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                shape =
+                    RoundedCornerShape(18.dp),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme
+                                .surfaceVariant,
+                    ),
+            ) {
+                Text(
+                    modifier =
+                        Modifier.padding(16.dp),
+                    text = detail,
+                    style =
+                        MaterialTheme.typography
+                            .bodyMedium,
+                    color =
+                        MaterialTheme.colorScheme
+                            .onSurfaceVariant,
+                )
+            }
 
             Spacer(
                 modifier =
-                    Modifier.weight(1f),
+                    Modifier.height(30.dp),
             )
 
             Button(
                 modifier =
                     Modifier.fillMaxWidth(),
                 onClick =
-                    onAllowNotifications,
+                    onAllow,
             ) {
                 Text(
-                    if (notificationsAlreadyAllowed) {
+                    if (alreadyAllowed) {
                         "Continuer"
                     } else {
-                        "Autoriser les notifications"
+                        allowLabel
                     }
                 )
             }
 
-            if (!notificationsAlreadyAllowed) {
-                Spacer(
-                    modifier =
-                        Modifier.height(8.dp),
-                )
-
+            if (!alreadyAllowed) {
                 TextButton(
                     modifier =
                         Modifier.fillMaxWidth(),

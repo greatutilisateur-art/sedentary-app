@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -56,16 +59,15 @@ fun ScheduleScreen(
     onOpenAbout: () -> Unit,
     onBack: () -> Unit,
 ) {
-
     val context =
         LocalContext.current
 
     var slotError by
-    remember {
-        mutableStateOf<String?>(
-            null
-        )
-    }
+        remember {
+            mutableStateOf<String?>(
+                null
+            )
+        }
 
     Surface(
         modifier =
@@ -78,9 +80,11 @@ fun ScheduleScreen(
                     .verticalScroll(
                         rememberScrollState()
                     )
-                    .padding(24.dp),
+                    .padding(
+                        horizontal = 20.dp,
+                        vertical = 28.dp,
+                    ),
         ) {
-
             Text(
                 text = title,
                 style =
@@ -114,427 +118,383 @@ fun ScheduleScreen(
 
                 Spacer(
                     modifier =
-                        Modifier.height(28.dp),
+                        Modifier.height(22.dp),
                 )
             }
 
-            Text(
-                text = "Jours travaillés",
-                style =
-                    MaterialTheme.typography
-                        .titleMedium,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            WeekdayRow(
-                days = listOf(
-                    DayOfWeek.MONDAY,
-                    DayOfWeek.TUESDAY,
-                    DayOfWeek.WEDNESDAY,
-                    DayOfWeek.THURSDAY,
-                ),
-                selected =
-                    settings.selectedWeekdays,
-                onChanged =
-                    onWeekdayChanged,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            WeekdayRow(
-                days = listOf(
-                    DayOfWeek.FRIDAY,
-                    DayOfWeek.SATURDAY,
-                    DayOfWeek.SUNDAY,
-                ),
-                selected =
-                    settings.selectedWeekdays,
-                onChanged =
-                    onWeekdayChanged,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(28.dp),
-            )
-
-            Text(
-                text = "Créneaux",
-                style =
-                    MaterialTheme.typography
-                        .titleMedium,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            settings.slots.forEach { slot ->
-
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    horizontalArrangement =
-                        Arrangement.SpaceBetween,
-                    verticalAlignment =
-                        Alignment.CenterVertically,
-                ) {
-
-                    TextButton(
-                        onClick = {
-
-                            showTimePicker(
-                                context = context,
-                                initialTime =
-                                    slot.time,
-                            ) { newTime ->
-
-                                val candidateTimes =
-                                    settings.slots
-                                        .map {
-                                                currentSlot ->
-
-                                            if (
-                                                currentSlot.index ==
-                                                slot.index
-                                            ) {
-                                                newTime
-                                            } else {
-                                                currentSlot.time
-                                            }
-                                        }
-
-                                val valid =
-                                    NextOpportunityPlanner
-                                        .hasValidSpacing(
-                                            activeSlotTimes =
-                                                candidateTimes,
-                                            minimumGapMinutes =
-                                                minimumGapMinutes,
-                                        )
-
-                                if (valid) {
-                                    slotError = null
-
-                                    onSlotTimeChanged(
-                                        slot.index,
-                                        newTime,
-                                    )
-                                } else {
-                                    slotError =
-                                        "Espace les créneaux d’au moins $minimumGapMinutes min."
-                                }
-                            }
-                        },
-                    ) {
-                        Text(
-                            formatTime(
-                                slot.time
-                            )
-                        )
-                    }
-
-                    TextButton(
-                        modifier =
-                            Modifier.semantics {
-                                contentDescription =
-                                    "Supprimer le créneau de ${formatTimeForTalkBack(slot.time)}"
-                            },
-                        enabled =
-                            settings.slots.size > 1,
-                        onClick = {
-                            slotError = null
-
-                            onRemoveSlot(
-                                slot.index
-                            )
-                        },
-                    ) {
-                        Text("−")
-                    }
-                }
-            }
-
-            slotError?.let {
-                Text(
-                    text = it,
-                    color =
-                        MaterialTheme
-                            .colorScheme
-                            .error,
-                    style =
-                        MaterialTheme
-                            .typography
-                            .bodySmall,
-                )
-            }
-
-            Spacer(
-                modifier =
-                    Modifier.height(12.dp),
-            )
-
-            OutlinedButton(
-                modifier =
-                    Modifier.fillMaxWidth(),
-                enabled =
-                    settings.slots.size < 6,
-                onClick = {
-
-                    val suggestedTime =
-                        settings.slots
-                            .maxByOrNull {
-                                it.time
-                            }
-                            ?.time
-                            ?.plusMinutes(30)
-                            ?: LocalTime.of(
-                                10,
-                                0,
-                            )
-
-                    showTimePicker(
-                        context = context,
-                        initialTime =
-                            suggestedTime,
-                    ) { newTime ->
-
-                        val candidateTimes =
-                            settings.slots
-                                .map {
-                                    it.time
-                                } +
-                                    newTime
-
-                        val valid =
-                            NextOpportunityPlanner
-                                .hasValidSpacing(
-                                    activeSlotTimes =
-                                        candidateTimes,
-                                    minimumGapMinutes =
-                                        minimumGapMinutes,
-                                )
-
-                        if (valid) {
-                            slotError = null
-
-                            onAddSlot(
-                                newTime
-                            )
-                        } else {
-                            slotError =
-                                "Espace les créneaux d’au moins $minimumGapMinutes min."
-                        }
-                    }
-                },
+            SettingsSection(
+                title =
+                    "Jours travaillés"
             ) {
-                Text(
-                    "+ Ajouter un créneau"
+                WeekdayRow(
+                    days =
+                        listOf(
+                            DayOfWeek.MONDAY,
+                            DayOfWeek.TUESDAY,
+                            DayOfWeek.WEDNESDAY,
+                            DayOfWeek.THURSDAY,
+                        ),
+                    selected =
+                        settings.selectedWeekdays,
+                    onChanged =
+                        onWeekdayChanged,
                 )
-            }
 
-            if (
-                settings.slots.size >= 6
-            ) {
                 Spacer(
                     modifier =
                         Modifier.height(8.dp),
                 )
 
-                Text(
-                    text =
-                        "Maximum 6 créneaux.",
-                    style =
-                        MaterialTheme.typography
-                            .bodySmall,
-                    color =
-                        MaterialTheme.colorScheme
-                            .onSurfaceVariant,
-                )
-            }
-
-            Spacer(
-                modifier =
-                    Modifier.height(28.dp),
-            )
-
-            Text(
-                text = "Intensité",
-                style =
-                    MaterialTheme.typography
-                        .titleMedium,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            Row(
-                horizontalArrangement =
-                    Arrangement.spacedBy(8.dp),
-            ) {
-                PreferenceChip(
-                    label = "Douce",
+                WeekdayRow(
+                    days =
+                        listOf(
+                            DayOfWeek.FRIDAY,
+                            DayOfWeek.SATURDAY,
+                            DayOfWeek.SUNDAY,
+                        ),
                     selected =
-                        "gentle" in
-                                activityPreferences
-                                    .enabledIntensities,
-                    canDisable =
-                        activityPreferences
-                            .enabledIntensities
-                            .size > 1,
-                    onChanged = {
-                        onIntensityChanged(
-                            "gentle",
-                            it,
-                        )
-                    },
-                )
-
-                PreferenceChip(
-                    label = "Intermédiaire",
-                    selected =
-                        "active" in
-                                activityPreferences
-                                    .enabledIntensities,
-                    canDisable =
-                        activityPreferences
-                            .enabledIntensities
-                            .size > 1,
-                    onChanged = {
-                        onIntensityChanged(
-                            "active",
-                            it,
-                        )
-                    },
-                )
-            }
-
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            Row {
-                PreferenceChip(
-                    label = "Dynamique",
-                    selected =
-                        "dynamic" in
-                                activityPreferences
-                                    .enabledIntensities,
-                    canDisable =
-                        activityPreferences
-                            .enabledIntensities
-                            .size > 1,
-                    onChanged = {
-                        onIntensityChanged(
-                            "dynamic",
-                            it,
-                        )
-                    },
-                )
-            }
-
-            Spacer(
-                modifier =
-                    Modifier.height(28.dp),
-            )
-
-            Text(
-                text = "Type de mouvement",
-                style =
-                    MaterialTheme.typography
-                        .titleMedium,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            Row(
-                horizontalArrangement =
-                    Arrangement.spacedBy(8.dp),
-            ) {
-                PreferenceChip(
-                    label = "Sur place",
-                    selected =
-                        activityPreferences
-                            .stationaryEnabled,
-                    canDisable =
-                        activityPreferences
-                            .movingEnabled,
+                        settings.selectedWeekdays,
                     onChanged =
-                        onStationaryChanged,
-                )
-
-                PreferenceChip(
-                    label = "En mouvement",
-                    selected =
-                        activityPreferences
-                            .movingEnabled,
-                    canDisable =
-                        activityPreferences
-                            .stationaryEnabled,
-                    onChanged =
-                        onMovingChanged,
+                        onWeekdayChanged,
                 )
             }
 
             Spacer(
                 modifier =
-                    Modifier.height(32.dp),
+                    Modifier.height(16.dp),
             )
 
-            if (showInfoLinks) {
-                Text(
-                    text = "Informations",
-                    style =
-                        MaterialTheme.typography
-                            .titleMedium,
-                )
+            SettingsSection(
+                title = "Créneaux"
+            ) {
+                settings.slots.forEach { slot ->
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.SpaceBetween,
+                        verticalAlignment =
+                            Alignment.CenterVertically,
+                    ) {
+                        TextButton(
+                            onClick = {
+                                showTimePicker(
+                                    context = context,
+                                    initialTime =
+                                        slot.time,
+                                ) { newTime ->
+                                    val candidateTimes =
+                                        settings.slots
+                                            .map {
+                                                    currentSlot ->
 
-                Spacer(
-                    modifier =
-                        Modifier.height(4.dp),
-                )
+                                                if (
+                                                    currentSlot.index ==
+                                                    slot.index
+                                                ) {
+                                                    newTime
+                                                } else {
+                                                    currentSlot.time
+                                                }
+                                            }
 
-                TextButton(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    onClick =
-                        onOpenWhy,
-                ) {
+                                    val valid =
+                                        NextOpportunityPlanner
+                                            .hasValidSpacing(
+                                                activeSlotTimes =
+                                                    candidateTimes,
+                                                minimumGapMinutes =
+                                                    minimumGapMinutes,
+                                            )
+
+                                    if (valid) {
+                                        slotError = null
+                                        onSlotTimeChanged(
+                                            slot.index,
+                                            newTime,
+                                        )
+                                    } else {
+                                        slotError =
+                                            "Espace les créneaux d’au moins $minimumGapMinutes min."
+                                    }
+                                }
+                            },
+                        ) {
+                            Text(
+                                formatTime(
+                                    slot.time
+                                )
+                            )
+                        }
+
+                        TextButton(
+                            modifier =
+                                Modifier.semantics {
+                                    contentDescription =
+                                        "Supprimer le créneau de ${formatTimeForTalkBack(slot.time)}"
+                                },
+                            enabled =
+                                settings.slots.size > 1,
+                            onClick = {
+                                slotError = null
+                                onRemoveSlot(
+                                    slot.index
+                                )
+                            },
+                        ) {
+                            Text("−")
+                        }
+                    }
+                }
+
+                slotError?.let {
+                    Spacer(
+                        modifier =
+                            Modifier.height(4.dp),
+                    )
+
                     Text(
-                        "Pourquoi cette application ?"
+                        text = it,
+                        color =
+                            MaterialTheme.colorScheme
+                                .error,
+                        style =
+                            MaterialTheme.typography
+                                .bodySmall,
                     )
                 }
 
-                TextButton(
+                Spacer(
+                    modifier =
+                        Modifier.height(10.dp),
+                )
+
+                OutlinedButton(
                     modifier =
                         Modifier.fillMaxWidth(),
-                    onClick =
-                        onOpenAbout,
+                    enabled =
+                        settings.slots.size < 6,
+                    onClick = {
+                        val suggestedTime =
+                            settings.slots
+                                .maxByOrNull {
+                                    it.time
+                                }
+                                ?.time
+                                ?.plusMinutes(30)
+                                ?: LocalTime.of(
+                                    10,
+                                    0,
+                                )
+
+                        showTimePicker(
+                            context = context,
+                            initialTime =
+                                suggestedTime,
+                        ) { newTime ->
+                            val candidateTimes =
+                                settings.slots
+                                    .map {
+                                        it.time
+                                    } +
+                                    newTime
+
+                            val valid =
+                                NextOpportunityPlanner
+                                    .hasValidSpacing(
+                                        activeSlotTimes =
+                                            candidateTimes,
+                                        minimumGapMinutes =
+                                            minimumGapMinutes,
+                                    )
+
+                            if (valid) {
+                                slotError = null
+                                onAddSlot(
+                                    newTime
+                                )
+                            } else {
+                                slotError =
+                                    "Espace les créneaux d’au moins $minimumGapMinutes min."
+                            }
+                        }
+                    },
                 ) {
-                    Text("À propos")
+                    Text("+ Ajouter un créneau")
+                }
+
+                if (
+                    settings.slots.size >= 6
+                ) {
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp),
+                    )
+
+                    Text(
+                        text =
+                            "Maximum 6 créneaux.",
+                        style =
+                            MaterialTheme.typography
+                                .bodySmall,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(16.dp),
+            )
+
+            SettingsSection(
+                title = "Intensité"
+            ) {
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(8.dp),
+                ) {
+                    PreferenceChip(
+                        label = "Douce",
+                        selected =
+                            "gentle" in
+                                activityPreferences
+                                    .enabledIntensities,
+                        canDisable =
+                            activityPreferences
+                                .enabledIntensities
+                                .size > 1,
+                        onChanged = {
+                            onIntensityChanged(
+                                "gentle",
+                                it,
+                            )
+                        },
+                    )
+
+                    PreferenceChip(
+                        label = "Intermédiaire",
+                        selected =
+                            "active" in
+                                activityPreferences
+                                    .enabledIntensities,
+                        canDisable =
+                            activityPreferences
+                                .enabledIntensities
+                                .size > 1,
+                        onChanged = {
+                            onIntensityChanged(
+                                "active",
+                                it,
+                            )
+                        },
+                    )
                 }
 
                 Spacer(
                     modifier =
-                        Modifier.height(20.dp),
+                        Modifier.height(8.dp),
                 )
+
+                Row {
+                    PreferenceChip(
+                        label = "Dynamique",
+                        selected =
+                            "dynamic" in
+                                activityPreferences
+                                    .enabledIntensities,
+                        canDisable =
+                            activityPreferences
+                                .enabledIntensities
+                                .size > 1,
+                        onChanged = {
+                            onIntensityChanged(
+                                "dynamic",
+                                it,
+                            )
+                        },
+                    )
+                }
             }
 
-            TextButton(
+            Spacer(
+                modifier =
+                    Modifier.height(16.dp),
+            )
+
+            SettingsSection(
+                title =
+                    "Type de mouvement"
+            ) {
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(8.dp),
+                ) {
+                    PreferenceChip(
+                        label = "Sur place",
+                        selected =
+                            activityPreferences
+                                .stationaryEnabled,
+                        canDisable =
+                            activityPreferences
+                                .movingEnabled,
+                        onChanged =
+                            onStationaryChanged,
+                    )
+
+                    PreferenceChip(
+                        label = "En mouvement",
+                        selected =
+                            activityPreferences
+                                .movingEnabled,
+                        canDisable =
+                            activityPreferences
+                                .stationaryEnabled,
+                        onChanged =
+                            onMovingChanged,
+                    )
+                }
+            }
+
+            if (showInfoLinks) {
+                Spacer(
+                    modifier =
+                        Modifier.height(16.dp),
+                )
+
+                SettingsSection(
+                    title = "Informations"
+                ) {
+                    TextButton(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick =
+                            onOpenWhy,
+                    ) {
+                        Text(
+                            "Pourquoi cette application ?"
+                        )
+                    }
+
+                    TextButton(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick =
+                            onOpenAbout,
+                    ) {
+                        Text("À propos")
+                    }
+                }
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(22.dp),
+            )
+
+            OutlinedButton(
                 modifier =
                     Modifier.fillMaxWidth(),
                 onClick =
@@ -542,6 +502,44 @@ fun ScheduleScreen(
             ) {
                 Text(bottomActionLabel)
             }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    Text(
+        text = title,
+        style =
+            MaterialTheme.typography
+                .titleMedium,
+    )
+
+    Spacer(
+        modifier =
+            Modifier.height(10.dp),
+    )
+
+    Card(
+        modifier =
+            Modifier.fillMaxWidth(),
+        shape =
+            RoundedCornerShape(20.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme
+                        .surfaceVariant,
+            ),
+    ) {
+        Column(
+            modifier =
+                Modifier.padding(14.dp),
+        ) {
+            content()
         }
     }
 }
@@ -567,9 +565,7 @@ private fun PreferenceChip(
             }
         },
         label = {
-            Text(
-                label
-            )
+            Text(label)
         },
     )
 }
@@ -586,7 +582,6 @@ private fun WeekdayRow(
             Arrangement.spacedBy(8.dp),
     ) {
         days.forEach { day ->
-
             FilterChip(
                 selected =
                     day in selected,
@@ -628,6 +623,7 @@ private fun showTimePicker(
         true,
     ).show()
 }
+
 private fun formatTime(
     time: LocalTime,
 ): String {
@@ -650,25 +646,12 @@ private fun weekdayShortName(
     day: DayOfWeek,
 ): String {
     return when (day) {
-        DayOfWeek.MONDAY ->
-            "Lun"
-
-        DayOfWeek.TUESDAY ->
-            "Mar"
-
-        DayOfWeek.WEDNESDAY ->
-            "Mer"
-
-        DayOfWeek.THURSDAY ->
-            "Jeu"
-
-        DayOfWeek.FRIDAY ->
-            "Ven"
-
-        DayOfWeek.SATURDAY ->
-            "Sam"
-
-        DayOfWeek.SUNDAY ->
-            "Dim"
+        DayOfWeek.MONDAY -> "Lun"
+        DayOfWeek.TUESDAY -> "Mar"
+        DayOfWeek.WEDNESDAY -> "Mer"
+        DayOfWeek.THURSDAY -> "Jeu"
+        DayOfWeek.FRIDAY -> "Ven"
+        DayOfWeek.SATURDAY -> "Sam"
+        DayOfWeek.SUNDAY -> "Dim"
     }
 }
