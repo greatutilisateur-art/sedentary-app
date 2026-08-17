@@ -63,11 +63,11 @@ fun ScheduleScreen(
         LocalContext.current
 
     var slotError by
-        remember {
-            mutableStateOf<String?>(
-                null
-            )
-        }
+    remember {
+        mutableStateOf<String?>(
+            null
+        )
+    }
 
     Surface(
         modifier =
@@ -297,7 +297,7 @@ fun ScheduleScreen(
                                     .map {
                                         it.time
                                     } +
-                                    newTime
+                                        newTime
 
                             val valid =
                                 NextOpportunityPlanner
@@ -352,71 +352,69 @@ fun ScheduleScreen(
             SettingsSection(
                 title = "Intensité"
             ) {
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(8.dp),
-                ) {
-                    PreferenceChip(
-                        label = "Douce",
-                        selected =
-                            "gentle" in
+                PreferenceChip(
+                    label = "Douce",
+                    selected =
+                        "gentle" in
                                 activityPreferences
                                     .enabledIntensities,
-                        canDisable =
-                            activityPreferences
-                                .enabledIntensities
-                                .size > 1,
-                        onChanged = {
-                            onIntensityChanged(
-                                "gentle",
-                                it,
-                            )
-                        },
-                    )
-
-                    PreferenceChip(
-                        label = "Intermédiaire",
-                        selected =
-                            "active" in
-                                activityPreferences
-                                    .enabledIntensities,
-                        canDisable =
-                            activityPreferences
-                                .enabledIntensities
-                                .size > 1,
-                        onChanged = {
-                            onIntensityChanged(
-                                "active",
-                                it,
-                            )
-                        },
-                    )
-                }
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "gentle",
+                            it,
+                        )
+                    },
+                )
 
                 Spacer(
                     modifier =
                         Modifier.height(8.dp),
                 )
 
-                Row {
-                    PreferenceChip(
-                        label = "Dynamique",
-                        selected =
-                            "dynamic" in
+                PreferenceChip(
+                    label = "Intermédiaire",
+                    selected =
+                        "active" in
                                 activityPreferences
                                     .enabledIntensities,
-                        canDisable =
-                            activityPreferences
-                                .enabledIntensities
-                                .size > 1,
-                        onChanged = {
-                            onIntensityChanged(
-                                "dynamic",
-                                it,
-                            )
-                        },
-                    )
-                }
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "active",
+                            it,
+                        )
+                    },
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(8.dp),
+                )
+
+                PreferenceChip(
+                    label = "Dynamique",
+                    selected =
+                        "dynamic" in
+                                activityPreferences
+                                    .enabledIntensities,
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "dynamic",
+                            it,
+                        )
+                    },
+                )
             }
 
             Spacer(
@@ -428,34 +426,34 @@ fun ScheduleScreen(
                 title =
                     "Type de mouvement"
             ) {
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(8.dp),
-                ) {
-                    PreferenceChip(
-                        label = "Sur place",
-                        selected =
-                            activityPreferences
-                                .stationaryEnabled,
-                        canDisable =
-                            activityPreferences
-                                .movingEnabled,
-                        onChanged =
-                            onStationaryChanged,
-                    )
+                PreferenceChip(
+                    label = "Sur place",
+                    selected =
+                        activityPreferences
+                            .stationaryEnabled,
+                    canDisable =
+                        activityPreferences
+                            .movingEnabled,
+                    onChanged =
+                        onStationaryChanged,
+                )
 
-                    PreferenceChip(
-                        label = "En mouvement",
-                        selected =
-                            activityPreferences
-                                .movingEnabled,
-                        canDisable =
-                            activityPreferences
-                                .stationaryEnabled,
-                        onChanged =
-                            onMovingChanged,
-                    )
-                }
+                Spacer(
+                    modifier =
+                        Modifier.height(8.dp),
+                )
+
+                PreferenceChip(
+                    label = "En mouvement",
+                    selected =
+                        activityPreferences
+                            .movingEnabled,
+                    canDisable =
+                        activityPreferences
+                            .stationaryEnabled,
+                    onChanged =
+                        onMovingChanged,
+                )
             }
 
             if (showInfoLinks) {
@@ -577,29 +575,46 @@ private fun WeekdayRow(
     onChanged:
         (DayOfWeek, Boolean) -> Unit,
 ) {
-    Row(
-        horizontalArrangement =
-            Arrangement.spacedBy(8.dp),
-    ) {
-        days.forEach { day ->
-            FilterChip(
-                selected =
-                    day in selected,
-                onClick = {
-                    onChanged(
-                        day,
-                        day !in selected,
+    Column {
+        days
+            .chunked(2)
+            .forEachIndexed {
+                    rowIndex,
+                    rowDays,
+                ->
+
+                if (rowIndex > 0) {
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp),
                     )
-                },
-                label = {
-                    Text(
-                        weekdayShortName(
-                            day
+                }
+
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(8.dp),
+                ) {
+                    rowDays.forEach { day ->
+                        FilterChip(
+                            selected =
+                                day in selected,
+                            onClick = {
+                                onChanged(
+                                    day,
+                                    day !in selected,
+                                )
+                            },
+                            label = {
+                                Text(
+                                    weekdayShortName(
+                                        day
+                                    )
+                                )
+                            },
                         )
-                    )
-                },
-            )
-        }
+                    }
+                }
+            }
     }
 }
 

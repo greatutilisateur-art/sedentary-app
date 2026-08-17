@@ -26,6 +26,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,7 +64,7 @@ fun ActivityScreen(
     ) {
         if (
             guidedSessionState ==
-                GuidedSessionState.TIME_ELAPSED &&
+            GuidedSessionState.TIME_ELAPSED &&
             shouldPlayCompletionHaptic
         ) {
             val feedbackType =
@@ -303,27 +305,35 @@ private fun ReadyContent(
                 Modifier.height(12.dp),
         )
 
-        Row(
+        Column(
             modifier =
                 Modifier.fillMaxWidth(),
-            horizontalArrangement =
-                Arrangement.spacedBy(10.dp),
         ) {
             if (canGoPrevious) {
                 OutlinedButton(
                     modifier =
-                        Modifier.weight(1f),
+                        Modifier.fillMaxWidth(),
                     onClick =
                         onPreviousActivity,
                 ) {
                     Text("Précédent")
+                }
+
+                if (
+                    canGoNext ||
+                    canRequestAnother
+                ) {
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp),
+                    )
                 }
             }
 
             if (canGoNext) {
                 OutlinedButton(
                     modifier =
-                        Modifier.weight(1f),
+                        Modifier.fillMaxWidth(),
                     onClick =
                         onNextActivity,
                 ) {
@@ -334,7 +344,7 @@ private fun ReadyContent(
             ) {
                 OutlinedButton(
                     modifier =
-                        Modifier.weight(1f),
+                        Modifier.fillMaxWidth(),
                     onClick =
                         onOtherActivity,
                 ) {
@@ -518,7 +528,14 @@ private fun Countdown(
 ) {
     Text(
         modifier =
-            Modifier.fillMaxWidth(),
+            Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription =
+                        countdownTalkBack(
+                            seconds
+                        )
+                },
         text =
             "%d:%02d".format(
                 seconds / 60,
@@ -532,6 +549,32 @@ private fun Countdown(
             MaterialTheme.colorScheme
                 .primary,
     )
+}
+
+private fun countdownTalkBack(
+    seconds: Int,
+): String {
+
+    val minutes =
+        seconds / 60
+
+    val remainingSeconds =
+        seconds % 60
+
+    return when {
+        minutes == 0 ->
+            "$remainingSeconds secondes restantes"
+
+        remainingSeconds == 0 ->
+            if (minutes == 1) {
+                "1 minute restante"
+            } else {
+                "$minutes minutes restantes"
+            }
+
+        else ->
+            "$minutes minutes et $remainingSeconds secondes restantes"
+    }
 }
 
 private fun formatDuration(
