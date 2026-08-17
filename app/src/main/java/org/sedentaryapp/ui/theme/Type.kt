@@ -8,67 +8,59 @@ import androidx.compose.ui.unit.sp
 
 val SedentaryTypography =
     Typography(
+        headlineLarge =
+            TextStyle(
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 32.sp,
+                lineHeight = 40.sp,
+            ),
         headlineMedium =
             TextStyle(
-                fontFamily =
-                    FontFamily.Default,
-                fontWeight =
-                    FontWeight.SemiBold,
-                fontSize = 30.sp,
-                lineHeight = 36.sp,
-                letterSpacing = (-0.3).sp,
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 28.sp,
+                lineHeight = 34.sp,
             ),
         titleLarge =
             TextStyle(
-                fontFamily =
-                    FontFamily.Default,
-                fontWeight =
-                    FontWeight.SemiBold,
-                fontSize = 21.sp,
-                lineHeight = 27.sp,
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp,
+                lineHeight = 26.sp,
             ),
         titleMedium =
             TextStyle(
-                fontFamily =
-                    FontFamily.Default,
-                fontWeight =
-                    FontWeight.SemiBold,
-                fontSize = 17.sp,
-                lineHeight = 23.sp,
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                lineHeight = 24.sp,
             ),
         bodyLarge =
             TextStyle(
-                fontFamily =
-                    FontFamily.Default,
-                fontWeight =
-                    FontWeight.Normal,
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
                 lineHeight = 24.sp,
             ),
         bodyMedium =
             TextStyle(
-                fontFamily =
-                    FontFamily.Default,
-                fontWeight =
-                    FontWeight.Normal,
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.Normal,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
             ),
         bodySmall =
             TextStyle(
-                fontFamily =
-                    FontFamily.Default,
-                fontWeight =
-                    FontWeight.Normal,
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.Normal,
                 fontSize = 12.sp,
-                lineHeight = 17.sp,
+                lineHeight = 18.sp,
             ),
         labelLarge =
             TextStyle(
-                fontFamily =
-                    FontFamily.Default,
-                fontWeight =
-                    FontWeight.Medium,
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
             ),

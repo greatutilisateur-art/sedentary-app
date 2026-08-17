@@ -714,6 +714,21 @@ class MainActivity : ComponentActivity() {
                                 activityState
                                     .shouldPlayCompletionHaptic,
 
+                            onBack = {
+
+                                if (
+                                    activityState
+                                        .guidedSessionState ==
+                                        GuidedSessionState
+                                            .TIME_ELAPSED
+                                ) {
+                                    viewModel
+                                        .closeGuidedSession()
+                                }
+
+                                screen = "home"
+                            },
+
                             onPreviousActivity =
                                 viewModel::onPreviousActivity,
 

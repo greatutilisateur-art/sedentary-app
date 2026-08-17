@@ -29,6 +29,8 @@ fun ExactAlarmOnboardingScreen(
     Surface(
         modifier =
             Modifier.fillMaxSize(),
+        color =
+            MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier =
@@ -43,15 +45,16 @@ fun ExactAlarmOnboardingScreen(
                     ),
         ) {
             Text(
-                text = "Respecter tes horaires",
+                text =
+                    "Respecter tes horaires",
                 style =
                     MaterialTheme.typography
-                        .headlineMedium,
+                        .headlineLarge,
             )
 
             Spacer(
                 modifier =
-                    Modifier.height(18.dp),
+                    Modifier.height(20.dp),
             )
 
             Text(
@@ -64,7 +67,7 @@ fun ExactAlarmOnboardingScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(16.dp),
+                    Modifier.height(18.dp),
             )
 
             Card(
@@ -78,10 +81,14 @@ fun ExactAlarmOnboardingScreen(
                             MaterialTheme.colorScheme
                                 .surfaceVariant,
                     ),
+                elevation =
+                    CardDefaults.cardElevation(
+                        defaultElevation = 0.dp
+                    ),
             ) {
                 Text(
                     modifier =
-                        Modifier.padding(16.dp),
+                        Modifier.padding(18.dp),
                     text =
                         "L’application programme uniquement la prochaine proposition et ne reste pas active en arrière-plan.",
                     style =
@@ -95,7 +102,7 @@ fun ExactAlarmOnboardingScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(30.dp),
+                    Modifier.height(34.dp),
             )
 
             Button(
@@ -103,9 +110,13 @@ fun ExactAlarmOnboardingScreen(
                     Modifier.fillMaxWidth(),
                 onClick =
                     onAllowExactAlarms,
+                shape =
+                    RoundedCornerShape(14.dp),
             ) {
                 Text(
-                    if (exactAlarmsAlreadyAllowed) {
+                    if (
+                        exactAlarmsAlreadyAllowed
+                    ) {
                         "Continuer"
                     } else {
                         "Autoriser les horaires précis"
@@ -113,7 +124,9 @@ fun ExactAlarmOnboardingScreen(
                 )
             }
 
-            if (!exactAlarmsAlreadyAllowed) {
+            if (
+                !exactAlarmsAlreadyAllowed
+            ) {
                 TextButton(
                     modifier =
                         Modifier.fillMaxWidth(),

@@ -2,7 +2,9 @@ package org.sedentaryapp.ui.activity
 
 import android.os.Build
 import android.view.HapticFeedbackConstants
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,12 +12,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -25,12 +29,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.sedentaryapp.R
 import org.sedentaryapp.data.CatalogActivity
 
 @Composable
@@ -44,6 +55,7 @@ fun ActivityScreen(
     guidedSessionState: GuidedSessionState,
     remainingSeconds: Int,
     shouldPlayCompletionHaptic: Boolean,
+    onBack: () -> Unit,
     onPreviousActivity: () -> Unit,
     onNextActivity: () -> Unit,
     onOtherActivity: () -> Unit,
@@ -64,7 +76,7 @@ fun ActivityScreen(
     ) {
         if (
             guidedSessionState ==
-            GuidedSessionState.TIME_ELAPSED &&
+                GuidedSessionState.TIME_ELAPSED &&
             shouldPlayCompletionHaptic
         ) {
             val feedbackType =
@@ -88,6 +100,8 @@ fun ActivityScreen(
     Surface(
         modifier =
             Modifier.fillMaxSize(),
+        color =
+            MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier =
@@ -98,9 +112,28 @@ fun ActivityScreen(
                     )
                     .padding(
                         horizontal = 20.dp,
-                        vertical = 28.dp,
+                        vertical = 20.dp,
                     ),
         ) {
+            IconButton(
+                onClick =
+                    onBack,
+            ) {
+                Icon(
+                    painter =
+                        painterResource(
+                            R.drawable.ic_arrow_back
+                        ),
+                    contentDescription =
+                        "Retour",
+                )
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp),
+            )
+
             when (
                 guidedSessionState
             ) {
@@ -137,10 +170,7 @@ fun ActivityScreen(
                             activity,
                         remainingSeconds =
                             remainingSeconds,
-                        statusLabel =
-                            null,
-                        primaryLabel =
-                            "Pause",
+                        paused = false,
                         onPrimary =
                             onPauseGuidedSession,
                         onEndGuidedSession =
@@ -154,10 +184,7 @@ fun ActivityScreen(
                             activity,
                         remainingSeconds =
                             remainingSeconds,
-                        statusLabel =
-                            "En pause",
-                        primaryLabel =
-                            "Reprendre",
+                        paused = true,
                         onPrimary =
                             onResumeGuidedSession,
                         onEndGuidedSession =
@@ -167,8 +194,6 @@ fun ActivityScreen(
 
                 GuidedSessionState.TIME_ELAPSED -> {
                     FinishedContent(
-                        activity =
-                            activity,
                         onCloseGuidedSession =
                             onCloseGuidedSession,
                     )
@@ -192,58 +217,38 @@ private fun ReadyContent(
     onNotNow: () -> Unit,
     onStartGuidedSession: () -> Unit,
 ) {
-    postureLabel?.let {
-        Surface(
-            shape =
-                RoundedCornerShape(999.dp),
-            color =
-                MaterialTheme.colorScheme
-                    .secondaryContainer,
-        ) {
-            Text(
-                modifier =
-                    Modifier.padding(
-                        horizontal = 12.dp,
-                        vertical = 7.dp,
-                    ),
-                text = it,
-                style =
-                    MaterialTheme.typography
-                        .labelLarge,
-                color =
-                    MaterialTheme.colorScheme
-                        .onSecondaryContainer,
-            )
-        }
-
-        Spacer(
-            modifier =
-                Modifier.height(18.dp),
-        )
-    }
-
     Text(
         text =
             activity.title,
         style =
             MaterialTheme.typography
-                .headlineMedium,
+                .titleLarge,
     )
 
     Spacer(
         modifier =
-            Modifier.height(10.dp),
+            Modifier.height(6.dp),
     )
 
     Text(
         text =
-            formatDuration(
-                minSeconds =
-                    activity.definition
-                        .durationSecondsMin,
-                maxSeconds =
-                    activity.definition
-                        .durationSecondsMax,
+            buildList {
+                add(
+                    formatDuration(
+                        minSeconds =
+                            activity.definition
+                                .durationSecondsMin,
+                        maxSeconds =
+                            activity.definition
+                                .durationSecondsMax,
+                    )
+                )
+
+                postureLabel?.let {
+                    add(it)
+                }
+            }.joinToString(
+                separator = " · "
             ),
         style =
             MaterialTheme.typography
@@ -255,42 +260,29 @@ private fun ReadyContent(
 
     Spacer(
         modifier =
-            Modifier.height(24.dp),
+            Modifier.height(28.dp),
     )
 
-    Card(
-        modifier =
-            Modifier.fillMaxWidth(),
-        shape =
-            RoundedCornerShape(22.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme
-                        .surfaceVariant,
-            ),
-    ) {
-        Text(
-            modifier =
-                Modifier.padding(20.dp),
-            text =
-                activity.instruction,
-            style =
-                MaterialTheme.typography
-                    .bodyLarge,
-        )
-    }
+    Text(
+        text =
+            activity.instruction,
+        style =
+            MaterialTheme.typography
+                .bodyLarge,
+    )
 
     Spacer(
         modifier =
-            Modifier.height(26.dp),
+            Modifier.height(32.dp),
     )
 
-    Button(
+    FilledTonalButton(
         modifier =
             Modifier.fillMaxWidth(),
         onClick =
             onStartGuidedSession,
+        shape =
+            RoundedCornerShape(14.dp),
     ) {
         Text("C’est parti")
     }
@@ -305,53 +297,20 @@ private fun ReadyContent(
                 Modifier.height(12.dp),
         )
 
-        Column(
-            modifier =
-                Modifier.fillMaxWidth(),
-        ) {
-            if (canGoPrevious) {
-                OutlinedButton(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    onClick =
-                        onPreviousActivity,
-                ) {
-                    Text("Précédent")
-                }
-
-                if (
-                    canGoNext ||
-                    canRequestAnother
-                ) {
-                    Spacer(
-                        modifier =
-                            Modifier.height(8.dp),
-                    )
-                }
-            }
-
-            if (canGoNext) {
-                OutlinedButton(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    onClick =
-                        onNextActivity,
-                ) {
-                    Text("Suivant")
-                }
-            } else if (
-                canRequestAnother
-            ) {
-                OutlinedButton(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    onClick =
-                        onOtherActivity,
-                ) {
-                    Text("Autre activité")
-                }
-            }
-        }
+        AlternativeButtons(
+            canGoPrevious =
+                canGoPrevious,
+            canGoNext =
+                canGoNext,
+            canRequestAnother =
+                canRequestAnother,
+            onPreviousActivity =
+                onPreviousActivity,
+            onNextActivity =
+                onNextActivity,
+            onOtherActivity =
+                onOtherActivity,
+        )
     }
 
     if (showNotNow) {
@@ -372,11 +331,124 @@ private fun ReadyContent(
 }
 
 @Composable
+private fun AlternativeButtons(
+    canGoPrevious: Boolean,
+    canGoNext: Boolean,
+    canRequestAnother: Boolean,
+    onPreviousActivity: () -> Unit,
+    onNextActivity: () -> Unit,
+    onOtherActivity: () -> Unit,
+) {
+    val fontScale =
+        LocalDensity.current
+            .fontScale
+
+    if (fontScale >= 1.5f) {
+        Column(
+            modifier =
+                Modifier.fillMaxWidth(),
+        ) {
+            if (canGoPrevious) {
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onPreviousActivity,
+                    shape =
+                        RoundedCornerShape(14.dp),
+                ) {
+                    Text("Précédent")
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(8.dp),
+                )
+            }
+
+            if (canGoNext) {
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onNextActivity,
+                    shape =
+                        RoundedCornerShape(14.dp),
+                ) {
+                    Text("Suivant")
+                }
+            } else if (
+                canRequestAnother
+            ) {
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onOtherActivity,
+                    shape =
+                        RoundedCornerShape(14.dp),
+                ) {
+                    Text("Autre activité")
+                }
+            }
+        }
+    } else {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth(),
+        ) {
+            if (canGoPrevious) {
+                OutlinedButton(
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick =
+                        onPreviousActivity,
+                    shape =
+                        RoundedCornerShape(14.dp),
+                ) {
+                    Text("Précédent")
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.size(8.dp),
+                )
+            }
+
+            if (canGoNext) {
+                OutlinedButton(
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick =
+                        onNextActivity,
+                    shape =
+                        RoundedCornerShape(14.dp),
+                ) {
+                    Text("Suivant")
+                }
+            } else if (
+                canRequestAnother
+            ) {
+                OutlinedButton(
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick =
+                        onOtherActivity,
+                    shape =
+                        RoundedCornerShape(14.dp),
+                ) {
+                    Text("Autre activité")
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun GuidedContent(
     activity: CatalogActivity,
     remainingSeconds: Int,
-    statusLabel: String?,
-    primaryLabel: String,
+    paused: Boolean,
     onPrimary: () -> Unit,
     onEndGuidedSession: () -> Unit,
 ) {
@@ -393,71 +465,66 @@ private fun GuidedContent(
             Modifier.height(30.dp),
     )
 
-    Countdown(
-        seconds =
+    CircularCountdown(
+        remainingSeconds =
             remainingSeconds,
+        totalSeconds =
+            activity.definition
+                .durationSecondsMax,
     )
 
-    if (statusLabel != null) {
+    if (paused) {
         Spacer(
             modifier =
-                Modifier.height(8.dp),
+                Modifier.height(10.dp),
         )
 
         Text(
             modifier =
                 Modifier.fillMaxWidth(),
-            text =
-                statusLabel,
+            text = "En pause",
             style =
                 MaterialTheme.typography
-                    .titleMedium,
+                    .bodyMedium,
             color =
                 MaterialTheme.colorScheme
-                    .primary,
+                    .onSurfaceVariant,
         )
     }
 
     Spacer(
         modifier =
-            Modifier.height(28.dp),
+            Modifier.height(30.dp),
     )
 
-    Card(
-        modifier =
-            Modifier.fillMaxWidth(),
-        shape =
-            RoundedCornerShape(22.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme
-                        .surfaceVariant,
-            ),
-    ) {
-        Text(
-            modifier =
-                Modifier.padding(20.dp),
-            text =
-                activity.instruction,
-            style =
-                MaterialTheme.typography
-                    .bodyLarge,
-        )
-    }
+    Text(
+        text =
+            activity.instruction,
+        style =
+            MaterialTheme.typography
+                .bodyLarge,
+    )
 
     Spacer(
         modifier =
-            Modifier.height(28.dp),
+            Modifier.height(32.dp),
     )
 
-    Button(
+    FilledTonalButton(
         modifier =
             Modifier.fillMaxWidth(),
         onClick =
             onPrimary,
+        shape =
+            RoundedCornerShape(14.dp),
     ) {
-        Text(primaryLabel)
+        Text(
+            if (paused) {
+                "Reprendre"
+            } else {
+                "Pause"
+            }
+        )
     }
 
     TextButton(
@@ -471,45 +538,167 @@ private fun GuidedContent(
 }
 
 @Composable
+private fun CircularCountdown(
+    remainingSeconds: Int,
+    totalSeconds: Int,
+) {
+    val trackColor =
+        MaterialTheme.colorScheme
+            .outlineVariant
+
+    val progressColor =
+        MaterialTheme.colorScheme
+            .primary
+
+    val safeTotal =
+        totalSeconds
+            .coerceAtLeast(1)
+
+    val fraction =
+        (
+            remainingSeconds
+                .coerceIn(
+                    0,
+                    safeTotal,
+                )
+                .toFloat() /
+                safeTotal.toFloat()
+        )
+
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth(),
+        contentAlignment =
+            Alignment.Center,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(184.dp)
+                    .semantics {
+                        contentDescription =
+                            countdownTalkBack(
+                                remainingSeconds
+                            )
+                    },
+            contentAlignment =
+                Alignment.Center,
+        ) {
+            Canvas(
+                modifier =
+                    Modifier.fillMaxSize(),
+            ) {
+                val stroke =
+                    5.dp.toPx()
+
+                val inset =
+                    stroke / 2f
+
+                val arcSize =
+                    Size(
+                        width =
+                            size.width -
+                                stroke,
+                        height =
+                            size.height -
+                                stroke,
+                    )
+
+                drawArc(
+                    color =
+                        trackColor,
+                    startAngle =
+                        -90f,
+                    sweepAngle =
+                        360f,
+                    useCenter =
+                        false,
+                    topLeft =
+                        Offset(
+                            inset,
+                            inset,
+                        ),
+                    size =
+                        arcSize,
+                    style =
+                        Stroke(
+                            width =
+                                stroke,
+                            cap =
+                                StrokeCap.Round,
+                        ),
+                )
+
+                drawArc(
+                    color =
+                        progressColor,
+                    startAngle =
+                        -90f,
+                    sweepAngle =
+                        360f *
+                            fraction,
+                    useCenter =
+                        false,
+                    topLeft =
+                        Offset(
+                            inset,
+                            inset,
+                        ),
+                    size =
+                        arcSize,
+                    style =
+                        Stroke(
+                            width =
+                                stroke,
+                            cap =
+                                StrokeCap.Round,
+                        ),
+                )
+            }
+
+            Text(
+                text =
+                    "%d:%02d".format(
+                        remainingSeconds / 60,
+                        remainingSeconds % 60,
+                    ),
+                fontSize = 56.sp,
+                lineHeight = 64.sp,
+                fontWeight =
+                    FontWeight.Medium,
+            )
+        }
+    }
+}
+
+@Composable
 private fun FinishedContent(
-    activity: CatalogActivity,
     onCloseGuidedSession: () -> Unit,
 ) {
-    Text(
-        text =
-            activity.title,
-        style =
-            MaterialTheme.typography
-                .titleLarge,
-    )
-
     Spacer(
         modifier =
-            Modifier.height(30.dp),
-    )
-
-    Countdown(
-        seconds = 0,
-    )
-
-    Spacer(
-        modifier =
-            Modifier.height(18.dp),
+            Modifier.height(48.dp),
     )
 
     Text(
-        text = "C’est fini !",
-        style =
-            MaterialTheme.typography
-                .headlineMedium,
-        color =
-            MaterialTheme.colorScheme
-                .primary,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription =
+                        "Chronomètre terminé, zéro minute zéro seconde"
+                },
+        text = "0:00",
+        fontSize = 56.sp,
+        lineHeight = 64.sp,
+        fontWeight =
+            FontWeight.Medium,
     )
 
     Spacer(
         modifier =
-            Modifier.height(28.dp),
+            Modifier.height(36.dp),
     )
 
     Button(
@@ -517,44 +706,16 @@ private fun FinishedContent(
             Modifier.fillMaxWidth(),
         onClick =
             onCloseGuidedSession,
+        shape =
+            RoundedCornerShape(14.dp),
     ) {
-        Text("Fermer")
+        Text("C’est fini !")
     }
-}
-
-@Composable
-private fun Countdown(
-    seconds: Int,
-) {
-    Text(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .semantics {
-                    contentDescription =
-                        countdownTalkBack(
-                            seconds
-                        )
-                },
-        text =
-            "%d:%02d".format(
-                seconds / 60,
-                seconds % 60,
-            ),
-        fontSize = 64.sp,
-        lineHeight = 72.sp,
-        fontWeight =
-            FontWeight.SemiBold,
-        color =
-            MaterialTheme.colorScheme
-                .primary,
-    )
 }
 
 private fun countdownTalkBack(
     seconds: Int,
 ): String {
-
     val minutes =
         seconds / 60
 

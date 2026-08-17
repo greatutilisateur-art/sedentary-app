@@ -6,42 +6,36 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-private val DarkColorScheme =
-    darkColorScheme(
-        primary = DarkPrimary,
-        onPrimary = DarkOnPrimary,
-        primaryContainer = DarkPrimaryContainer,
-        onPrimaryContainer = DarkOnPrimaryContainer,
-        secondary = DarkSecondary,
-        onSecondary = DarkOnSecondary,
-        secondaryContainer = DarkSecondaryContainer,
-        onSecondaryContainer = DarkOnSecondaryContainer,
-        background = DarkBackground,
-        onBackground = DarkOnBackground,
-        surface = DarkSurface,
-        onSurface = DarkOnSurface,
-        surfaceVariant = DarkSurfaceVariant,
-        onSurfaceVariant = DarkOnSurfaceVariant,
-        outline = DarkOutline,
-    )
-
 private val LightColorScheme =
     lightColorScheme(
-        primary = LightPrimary,
-        onPrimary = LightOnPrimary,
-        primaryContainer = LightPrimaryContainer,
-        onPrimaryContainer = LightOnPrimaryContainer,
-        secondary = LightSecondary,
-        onSecondary = LightOnSecondary,
-        secondaryContainer = LightSecondaryContainer,
-        onSecondaryContainer = LightOnSecondaryContainer,
-        background = LightBackground,
-        onBackground = LightOnBackground,
-        surface = LightSurface,
-        onSurface = LightOnSurface,
-        surfaceVariant = LightSurfaceVariant,
-        onSurfaceVariant = LightOnSurfaceVariant,
-        outline = LightOutline,
+        primary = IntervalPrimary,
+        onPrimary = IntervalOnPrimary,
+        primaryContainer = IntervalPrimaryContainer,
+        onPrimaryContainer = IntervalOnPrimaryContainer,
+        background = IntervalBackground,
+        onBackground = IntervalOnSurface,
+        surface = IntervalSurface,
+        onSurface = IntervalOnSurface,
+        surfaceVariant = IntervalSurfaceVariant,
+        onSurfaceVariant = IntervalOnSurfaceVariant,
+        outline = IntervalOutline,
+        outlineVariant = IntervalOutlineVariant,
+    )
+
+private val DarkColorScheme =
+    darkColorScheme(
+        primary = IntervalDarkPrimary,
+        onPrimary = IntervalDarkOnPrimary,
+        primaryContainer = IntervalDarkPrimaryContainer,
+        onPrimaryContainer = IntervalDarkOnPrimaryContainer,
+        background = IntervalDarkBackground,
+        onBackground = IntervalDarkOnSurface,
+        surface = IntervalDarkSurface,
+        onSurface = IntervalDarkOnSurface,
+        surfaceVariant = IntervalDarkSurfaceVariant,
+        onSurfaceVariant = IntervalDarkOnSurfaceVariant,
+        outline = IntervalDarkOutline,
+        outlineVariant = IntervalDarkOutlineVariant,
     )
 
 @Composable
@@ -57,7 +51,9 @@ fun SedentaryAppTheme(
             } else {
                 LightColorScheme
             },
-        typography = SedentaryTypography,
-        content = content,
+        typography =
+            SedentaryTypography,
+        content =
+            content,
     )
 }

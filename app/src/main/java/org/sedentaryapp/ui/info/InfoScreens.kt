@@ -1,23 +1,25 @@
 package org.sedentaryapp.ui.info
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import org.sedentaryapp.R
 
 @Composable
 fun WhyAppScreen(
@@ -25,13 +27,13 @@ fun WhyAppScreen(
 ) {
     InfoScreen(
         title =
-            "Pourquoi cette application ?",
+            "Pourquoi ces pauses ?",
         paragraphs =
             listOf(
                 "Au travail, il est facile de rester assis longtemps sans y penser.",
-                "L’application propose, aux horaires que tu choisis, de courtes occasions de bouger de 30 secondes à 5 minutes.",
-                "L’objectif n’est pas de faire du sport ni de compter des performances. Chaque proposition reste une invitation : tu peux la faire, la reporter ou l’ignorer.",
-                "Le produit privilégie des interruptions simples, peu contraignantes et sans culpabilisation.",
+                "Intervalles propose de courtes occasions de bouger pendant la journée de travail, aux horaires que tu choisis.",
+                "L’objectif n’est pas de faire du sport ni de mesurer une performance. Chaque proposition reste une invitation : tu peux la faire, la reporter ou l’ignorer.",
+                "Les textes scientifiques détaillés et leurs sources seront intégrés uniquement après validation du référentiel scientifique.",
             ),
         onBack =
             onBack,
@@ -47,9 +49,10 @@ fun AboutScreen(
             "À propos",
         paragraphs =
             listOf(
-                "Application Android gratuite et open source, conçue pour fonctionner entièrement hors ligne.",
-                "Aucun compte n’est nécessaire. Les réglages et le petit historique utilisé pour varier les propositions restent sur l’appareil.",
-                "Version V0 en développement.",
+                "Intervalles — V0",
+                "Une application Android gratuite et open source conçue pour aider à interrompre la sédentarité au travail grâce à de courtes activités.",
+                "Tes réglages restent sur ton appareil. Aucun compte n’est nécessaire et l’application fonctionne hors ligne.",
+                "Intervalles est un outil de prévention et de soutien au quotidien. Il ne remplace pas un professionnel de santé.",
             ),
         onBack =
             onBack,
@@ -65,6 +68,8 @@ private fun InfoScreen(
     Surface(
         modifier =
             Modifier.fillMaxSize(),
+        color =
+            MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier =
@@ -75,57 +80,35 @@ private fun InfoScreen(
                     )
                     .padding(
                         horizontal = 20.dp,
-                        vertical = 28.dp,
+                        vertical = 20.dp,
                     ),
         ) {
-            Text(
-                text = title,
-                style =
-                    MaterialTheme.typography
-                        .headlineMedium,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(22.dp),
-            )
-
-            Card(
+            Row(
                 modifier =
                     Modifier.fillMaxWidth(),
-                shape =
-                    RoundedCornerShape(20.dp),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme
-                                .surfaceVariant,
-                    ),
+                verticalAlignment =
+                    Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier =
-                        Modifier.padding(18.dp),
+                IconButton(
+                    onClick =
+                        onBack,
                 ) {
-                    paragraphs.forEachIndexed { index, paragraph ->
-
-                        Text(
-                            text = paragraph,
-                            style =
-                                MaterialTheme.typography
-                                    .bodyLarge,
-                        )
-
-                        if (
-                            index <
-                            paragraphs.lastIndex
-                        ) {
-                            Spacer(
-                                modifier =
-                                    Modifier.height(16.dp),
-                            )
-                        }
-                    }
+                    Icon(
+                        painter =
+                            painterResource(
+                                R.drawable.ic_arrow_back
+                            ),
+                        contentDescription =
+                            "Retour",
+                    )
                 }
+
+                Text(
+                    text = title,
+                    style =
+                        MaterialTheme.typography
+                            .headlineMedium,
+                )
             }
 
             Spacer(
@@ -133,14 +116,33 @@ private fun InfoScreen(
                     Modifier.height(24.dp),
             )
 
-            OutlinedButton(
-                modifier =
-                    Modifier.fillMaxWidth(),
-                onClick =
-                    onBack,
-            ) {
-                Text("Fermer")
+            paragraphs.forEachIndexed {
+                    index,
+                    paragraph,
+                ->
+
+                Text(
+                    text = paragraph,
+                    style =
+                        MaterialTheme.typography
+                            .bodyLarge,
+                )
+
+                if (
+                    index <
+                    paragraphs.lastIndex
+                ) {
+                    Spacer(
+                        modifier =
+                            Modifier.height(16.dp),
+                    )
+                }
             }
+
+            Spacer(
+                modifier =
+                    Modifier.height(24.dp),
+            )
         }
     }
 }

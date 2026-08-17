@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import org.sedentaryapp.MainActivity
+import org.sedentaryapp.R
 import org.sedentaryapp.data.CatalogActivity
 import org.sedentaryapp.scheduling.ProposalAlarmReceiver
 import org.sedentaryapp.scheduling.ProposalAlarmScheduler
@@ -114,8 +115,8 @@ object NotificationPublisher {
                 CHANNEL_ID,
             )
                 .setSmallIcon(
-                    android.R.drawable
-                        .ic_dialog_info
+                    R.drawable
+                        .ic_notification
                 )
                 .setContentTitle(
                     activity.title

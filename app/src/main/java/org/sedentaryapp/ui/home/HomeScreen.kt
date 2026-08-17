@@ -1,7 +1,9 @@
 package org.sedentaryapp.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,14 +15,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import org.sedentaryapp.R
 import org.sedentaryapp.data.CatalogActivity
 
 @Composable
@@ -44,6 +50,8 @@ fun HomeScreen(
     Surface(
         modifier =
             Modifier.fillMaxSize(),
+        color =
+            MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier =
@@ -54,24 +62,244 @@ fun HomeScreen(
                     )
                     .padding(
                         horizontal = 20.dp,
-                        vertical = 32.dp,
+                        vertical = 28.dp,
                     ),
         ) {
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    Alignment.CenterVertically,
+            ) {
+                Text(
+                    modifier =
+                        Modifier.weight(1f),
+                    text = "Intervalles",
+                    style =
+                        MaterialTheme.typography
+                            .headlineMedium,
+                    color =
+                        MaterialTheme.colorScheme
+                            .primary,
+                )
+
+                IconButton(
+                    onClick =
+                        onOpenSettings,
+                ) {
+                    Icon(
+                        painter =
+                            painterResource(
+                                R.drawable.ic_settings
+                            ),
+                        contentDescription =
+                            "Paramètres",
+                    )
+                }
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(28.dp),
+            )
+
+            if (proposalsPaused) {
+                Text(
+                    text =
+                        "Propositions en pause",
+                    style =
+                        MaterialTheme.typography
+                            .titleLarge,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(16.dp),
+                )
+
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onResumeProposals,
+                ) {
+                    Text("Réactiver")
+                }
+
+                return@Column
+            }
+
+            if (
+                notificationPermissionRequired
+            ) {
+                PermissionStatusCard(
+                    title =
+                        "Notifications désactivées",
+                    body =
+                        "Autorise-les pour recevoir les propositions aux horaires choisis.",
+                    actionLabel =
+                        "Autoriser les notifications",
+                    onAction =
+                        onRequestNotificationPermission,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(24.dp),
+                )
+            } else if (
+                exactAlarmPermissionRequired
+            ) {
+                PermissionStatusCard(
+                    title =
+                        "Horaires précis désactivés",
+                    body =
+                        "Autorise l’accès « Alarmes et rappels » pour recevoir les propositions au plus près des horaires choisis.",
+                    actionLabel =
+                        "Autoriser les horaires précis",
+                    onAction =
+                        onRequestExactAlarmPermission,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(24.dp),
+                )
+            }
+
             Text(
-                text = "Mes pauses",
+                text =
+                    "Prochaine activité",
                 style =
                     MaterialTheme.typography
-                        .headlineMedium,
+                        .titleMedium,
             )
 
             Spacer(
                 modifier =
-                    Modifier.height(6.dp),
+                    Modifier.height(10.dp),
+            )
+
+            if (
+                nextActivity != null &&
+                nextActivityWhenText != null
+            ) {
+                PrimaryActivityCard(
+                    activity =
+                        nextActivity,
+                    whenText =
+                        nextActivityWhenText,
+                    onClick =
+                        onOpenNextActivity,
+                )
+            } else {
+                EmptyActivityCard(
+                    text =
+                        if (noEligibleActivity) {
+                            "Aucune activité ne correspond actuellement à tes réglages."
+                        } else {
+                            "Aucune proposition prévue."
+                        },
+                )
+            }
+
+            if (
+                lastActivity != null &&
+                lastActivityWhenText != null
+            ) {
+                Spacer(
+                    modifier =
+                        Modifier.height(30.dp),
+                )
+
+                Text(
+                    text =
+                        "Dernière activité",
+                    style =
+                        MaterialTheme.typography
+                            .titleMedium,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(10.dp),
+                )
+
+                SecondaryActivityCard(
+                    activity =
+                        lastActivity,
+                    whenText =
+                        lastActivityWhenText,
+                    onClick =
+                        onOpenLastActivity,
+                )
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(30.dp),
+            )
+
+            OutlinedButton(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick =
+                    onPauseProposals,
+                shape =
+                    RoundedCornerShape(14.dp),
+            ) {
+                Text("Mettre en pause")
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(16.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PermissionStatusCard(
+    title: String,
+    body: String,
+    actionLabel: String,
+    onAction: () -> Unit,
+) {
+    Card(
+        modifier =
+            Modifier.fillMaxWidth(),
+        shape =
+            RoundedCornerShape(18.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme
+                        .surfaceVariant,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 0.dp
+            ),
+    ) {
+        Column(
+            modifier =
+                Modifier.padding(18.dp),
+        ) {
+            Text(
+                text = title,
+                style =
+                    MaterialTheme.typography
+                        .titleMedium,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp),
             )
 
             Text(
-                text =
-                    "Des occasions simples de bouger pendant la journée.",
+                text = body,
                 style =
                     MaterialTheme.typography
                         .bodyMedium,
@@ -82,409 +310,200 @@ fun HomeScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(28.dp),
-            )
-
-            when {
-                proposalsPaused -> {
-                    StatusCard(
-                        title =
-                            "Propositions en pause",
-                        body =
-                            "Tes réglages sont conservés. Reprends quand tu veux.",
-                        primaryLabel =
-                            "Reprendre",
-                        onPrimary =
-                            onResumeProposals,
-                        onOpenSettings =
-                            onOpenSettings,
-                    )
-                }
-
-                notificationPermissionRequired -> {
-                    StatusCard(
-                        title =
-                            "Notifications désactivées",
-                        body =
-                            "Autorise-les pour recevoir tes propositions aux horaires choisis.",
-                        primaryLabel =
-                            "Autoriser les notifications",
-                        onPrimary =
-                            onRequestNotificationPermission,
-                        onOpenSettings =
-                            onOpenSettings,
-                    )
-                }
-
-                exactAlarmPermissionRequired -> {
-                    StatusCard(
-                        title =
-                            "Horaires précis désactivés",
-                        body =
-                            "Autorise l’accès « Alarmes et rappels » pour recevoir les propositions au plus près des horaires choisis.",
-                        primaryLabel =
-                            "Autoriser les horaires précis",
-                        onPrimary =
-                            onRequestExactAlarmPermission,
-                        onOpenSettings =
-                            onOpenSettings,
-                    )
-                }
-
-                else -> {
-                    ActiveContent(
-                        nextActivity =
-                            nextActivity,
-                        noEligibleActivity =
-                            noEligibleActivity,
-                        nextActivityWhenText =
-                            nextActivityWhenText,
-                        lastActivity =
-                            lastActivity,
-                        lastActivityWhenText =
-                            lastActivityWhenText,
-                        onPauseProposals =
-                            onPauseProposals,
-                        onOpenNextActivity =
-                            onOpenNextActivity,
-                        onOpenLastActivity =
-                            onOpenLastActivity,
-                        onOpenSettings =
-                            onOpenSettings,
-                    )
-                }
-            }
-
-            Spacer(
-                modifier =
-                    Modifier.height(24.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatusCard(
-    title: String,
-    body: String,
-    primaryLabel: String,
-    onPrimary: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    Card(
-        modifier =
-            Modifier.fillMaxWidth(),
-        shape =
-            RoundedCornerShape(22.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme
-                        .secondaryContainer,
-            ),
-    ) {
-        Column(
-            modifier =
-                Modifier.padding(20.dp),
-        ) {
-            Text(
-                text = title,
-                style =
-                    MaterialTheme.typography
-                        .titleLarge,
-                color =
-                    MaterialTheme.colorScheme
-                        .onSecondaryContainer,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(10.dp),
-            )
-
-            Text(
-                text = body,
-                style =
-                    MaterialTheme.typography
-                        .bodyLarge,
-                color =
-                    MaterialTheme.colorScheme
-                        .onSecondaryContainer,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(20.dp),
+                    Modifier.height(14.dp),
             )
 
             Button(
                 modifier =
                     Modifier.fillMaxWidth(),
                 onClick =
-                    onPrimary,
+                    onAction,
+                shape =
+                    RoundedCornerShape(14.dp),
             ) {
-                Text(primaryLabel)
-            }
-
-            TextButton(
-                modifier =
-                    Modifier.fillMaxWidth(),
-                onClick =
-                    onOpenSettings,
-            ) {
-                Text("Modifier mes réglages")
+                Text(actionLabel)
             }
         }
     }
 }
 
 @Composable
-private fun ActiveContent(
-    nextActivity: CatalogActivity?,
-    noEligibleActivity: Boolean,
-    nextActivityWhenText: String?,
-    lastActivity: CatalogActivity?,
-    lastActivityWhenText: String?,
-    onPauseProposals: () -> Unit,
-    onOpenNextActivity: () -> Unit,
-    onOpenLastActivity: () -> Unit,
-    onOpenSettings: () -> Unit,
+private fun PrimaryActivityCard(
+    activity: CatalogActivity,
+    whenText: String,
+    onClick: () -> Unit,
 ) {
-    SectionLabel(
-        text =
-            "Prochaine activité"
-    )
-
-    Spacer(
+    Card(
         modifier =
-            Modifier.height(10.dp),
-    )
-
-    if (
-        nextActivity != null &&
-        nextActivityWhenText != null
+            Modifier
+                .fillMaxWidth()
+                .clickable(
+                    onClick =
+                        onClick
+                ),
+        shape =
+            RoundedCornerShape(18.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme
+                        .primaryContainer,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 0.dp
+            ),
     ) {
-        Card(
+        Column(
             modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        onClick =
-                            onOpenNextActivity
-                    ),
-            shape =
-                RoundedCornerShape(22.dp),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme
-                            .primaryContainer,
-                ),
-        ) {
-            Column(
-                modifier =
-                    Modifier.padding(20.dp),
-            ) {
-                Text(
-                    text =
-                        nextActivityWhenText,
-                    style =
-                        MaterialTheme.typography
-                            .labelLarge,
-                    color =
-                        MaterialTheme.colorScheme
-                            .onPrimaryContainer,
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(8.dp),
-                )
-
-                Text(
-                    text =
-                        nextActivity.title,
-                    style =
-                        MaterialTheme.typography
-                            .titleLarge,
-                    color =
-                        MaterialTheme.colorScheme
-                            .onPrimaryContainer,
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(8.dp),
-                )
-
-                Text(
-                    text =
-                        formatDuration(
-                            minSeconds =
-                                nextActivity
-                                    .definition
-                                    .durationSecondsMin,
-                            maxSeconds =
-                                nextActivity
-                                    .definition
-                                    .durationSecondsMax,
-                        ),
-                    style =
-                        MaterialTheme.typography
-                            .bodyMedium,
-                    color =
-                        MaterialTheme.colorScheme
-                            .onPrimaryContainer,
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(12.dp),
-                )
-
-                Text(
-                    text = "Voir l’activité",
-                    style =
-                        MaterialTheme.typography
-                            .labelLarge,
-                    color =
-                        MaterialTheme.colorScheme
-                            .primary,
-                )
-            }
-        }
-    } else {
-        Card(
-            modifier =
-                Modifier.fillMaxWidth(),
-            shape =
-                RoundedCornerShape(20.dp),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme
-                            .surfaceVariant,
-                ),
+                Modifier.padding(18.dp),
         ) {
             Text(
-                modifier =
-                    Modifier.padding(18.dp),
                 text =
-                    if (
-                        noEligibleActivity
-                    ) {
-                        "Aucune activité ne correspond actuellement à tes réglages."
-                    } else {
-                        "Aucune proposition prévue."
-                    },
+                    activity.title,
+                style =
+                    MaterialTheme.typography
+                        .titleLarge,
+                color =
+                    MaterialTheme.colorScheme
+                        .onPrimaryContainer,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(6.dp),
+            )
+
+            Text(
+                text =
+                    formatDuration(
+                        minSeconds =
+                            activity.definition
+                                .durationSecondsMin,
+                        maxSeconds =
+                            activity.definition
+                                .durationSecondsMax,
+                    ),
                 style =
                     MaterialTheme.typography
                         .bodyLarge,
+                color =
+                    MaterialTheme.colorScheme
+                        .onPrimaryContainer,
             )
-        }
-    }
 
-    Spacer(
-        modifier =
-            Modifier.height(16.dp),
-    )
-
-    TextButton(
-        modifier =
-            Modifier.fillMaxWidth(),
-        onClick =
-            onOpenSettings,
-    ) {
-        Text("Modifier mes réglages")
-    }
-
-    OutlinedButton(
-        modifier =
-            Modifier.fillMaxWidth(),
-        onClick =
-            onPauseProposals,
-    ) {
-        Text("Mettre en pause")
-    }
-
-    if (
-        lastActivity != null &&
-        lastActivityWhenText != null
-    ) {
-        Spacer(
-            modifier =
-                Modifier.height(30.dp),
-        )
-
-        SectionLabel(
-            text =
-                "Dernière activité"
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(10.dp),
-        )
-
-        Card(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        onClick =
-                            onOpenLastActivity
-                    ),
-            shape =
-                RoundedCornerShape(20.dp),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme
-                            .surfaceVariant,
-                ),
-        ) {
-            Column(
+            Spacer(
                 modifier =
-                    Modifier.padding(18.dp),
-            ) {
-                Text(
-                    text =
-                        lastActivity.title,
-                    style =
-                        MaterialTheme.typography
-                            .titleMedium,
-                )
+                    Modifier.height(4.dp),
+            )
 
-                Spacer(
-                    modifier =
-                        Modifier.height(6.dp),
-                )
-
-                Text(
-                    text =
-                        lastActivityWhenText,
-                    style =
-                        MaterialTheme.typography
-                            .bodyMedium,
-                    color =
-                        MaterialTheme.colorScheme
-                            .onSurfaceVariant,
-                )
-            }
+            Text(
+                text =
+                    whenText,
+                style =
+                    MaterialTheme.typography
+                        .bodyMedium,
+                color =
+                    MaterialTheme.colorScheme
+                        .onSurfaceVariant,
+            )
         }
     }
 }
 
 @Composable
-private fun SectionLabel(
+private fun SecondaryActivityCard(
+    activity: CatalogActivity,
+    whenText: String,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(
+                    onClick =
+                        onClick
+                ),
+        shape =
+            RoundedCornerShape(18.dp),
+        border =
+            BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme
+                    .outlineVariant,
+            ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme
+                        .surface,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 0.dp
+            ),
+    ) {
+        Column(
+            modifier =
+                Modifier.padding(18.dp),
+        ) {
+            Text(
+                text =
+                    activity.title,
+                style =
+                    MaterialTheme.typography
+                        .titleLarge,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(6.dp),
+            )
+
+            Text(
+                text =
+                    whenText,
+                style =
+                    MaterialTheme.typography
+                        .bodyMedium,
+                color =
+                    MaterialTheme.colorScheme
+                        .onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyActivityCard(
     text: String,
 ) {
-    Text(
-        text = text,
-        style =
-            MaterialTheme.typography
-                .titleMedium,
-    )
+    Card(
+        modifier =
+            Modifier.fillMaxWidth(),
+        shape =
+            RoundedCornerShape(18.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme
+                        .surfaceVariant,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 0.dp
+            ),
+    ) {
+        Text(
+            modifier =
+                Modifier.padding(18.dp),
+            text = text,
+            style =
+                MaterialTheme.typography
+                    .bodyLarge,
+        )
+    }
 }
 
 private fun formatDuration(
