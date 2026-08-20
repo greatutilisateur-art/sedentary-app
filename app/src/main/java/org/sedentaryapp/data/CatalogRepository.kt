@@ -4,12 +4,19 @@ import android.content.Context
 import org.json.JSONObject
 import org.sedentaryapp.engine.model.ActivityDefinition
 
+enum class ActivityGuidanceMode {
+    SIMPLE,
+    TIMER,
+}
+
 data class CatalogActivity(
     val definition: ActivityDefinition,
     val title: String,
     val instruction: String,
-    val preferredPosture: String,
+    val preferredPosture: String?,
     val compatiblePostures: Set<String>,
+    val guidanceMode: ActivityGuidanceMode =
+        ActivityGuidanceMode.SIMPLE,
 )
 
 class CatalogRepository(
@@ -47,6 +54,19 @@ class CatalogRepository(
                     }
                 }
 
+                val preferredPosture =
+                    if (item.isNull("preferred_posture")) {
+                        null
+                    } else {
+                        item.getString("preferred_posture")
+                    }
+
+                val guidanceMode =
+                    ActivityGuidanceMode.valueOf(
+                        item.getString("guidance_mode")
+                            .uppercase()
+                    )
+
                 add(
                     CatalogActivity(
                         definition = ActivityDefinition(
@@ -71,9 +91,11 @@ class CatalogRepository(
                         title = item.getString("title"),
                         instruction = item.getString("instruction"),
                         preferredPosture =
-                            item.getString("preferred_posture"),
+                            preferredPosture,
                         compatiblePostures =
                             compatiblePostures,
+                        guidanceMode =
+                            guidanceMode,
                     )
                 )
             }

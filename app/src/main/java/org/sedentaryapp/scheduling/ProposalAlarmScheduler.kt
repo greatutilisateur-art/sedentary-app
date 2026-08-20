@@ -346,6 +346,12 @@ class ProposalAlarmScheduler(
         const val ACTION_NOT_NOW =
             "org.sedentaryapp.action.NOT_NOW_PROPOSAL"
 
+        const val ACTION_DO_NOW =
+            "org.sedentaryapp.action.DO_NOW_PROPOSAL"
+
+        const val ACTION_DISMISS =
+            "org.sedentaryapp.action.DISMISS_PROPOSAL"
+
         const val EXTRA_EVENT_TYPE =
             "proposal_event_type"
 
@@ -362,10 +368,10 @@ class ProposalAlarmScheduler(
             "snooze"
 
         const val SNOOZE_MINUTES =
-            30L
+            2L
 
         const val MAX_LATE_DELIVERY_MINUTES =
-            3L
+            10L
 
         private const val
             MIN_FIXED_SNOOZE_GAP_MINUTES = 20L

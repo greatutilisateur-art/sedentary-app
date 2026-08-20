@@ -1,0 +1,61 @@
+{
+  "policy_version": "decision-policy-v1.0.2",
+  "selector_version": "weighted-selector-v1.0.0",
+  "default_slots": [
+    "10:00",
+    "11:30",
+    "15:00",
+    "16:30"
+  ],
+  "technical_lateness_tolerance_minutes": 10,
+  "scheduling": {
+    "minimum_gap_between_distinct_opportunities_minutes": 10,
+    "configured_standard_slots_must_respect_minimum_gap": true,
+    "fixed_standard_slots_have_priority": true,
+    "catch_up_missed_slots": false,
+    "drop_late_opportunity_if_too_close_to_fixed_slot": true
+  },
+  "snooze": {
+    "options_minutes": [
+      30
+    ],
+    "preserve_activity": true,
+    "one_active_occurrence_per_opportunity": true,
+    "allow_during_lunch_break": true,
+    "allow_after_work_end": true,
+    "does_not_move_standard_slots": true,
+    "hide_option_if_too_close_to_fixed_slot": true
+  },
+  "start_of_day": {
+    "supported": true,
+    "enabled_by_default": false,
+    "included_in_default_four_slots": false,
+    "minimum_gap_to_standard_slots_minutes": 20
+  },
+  "scoring": {
+    "min_weight": 0.05,
+    "max_weight": 20.0,
+    "history_window_proposals": 4,
+    "repetition_coefficients": {
+      "same_as_previous_activity": 0.15,
+      "same_as_previous_family": 0.45,
+      "same_activity_in_recent_window": 0.55,
+      "family_at_least_twice_in_recent_window": 0.75,
+      "no_repetition": 1.0
+    },
+    "combine_repetition_coefficients": false,
+    "use_evidence_level_at_runtime": false,
+    "use_preference_bonus_in_v0": false
+  },
+  "alternative": {
+    "exclude_current_activity_only": false,
+    "allow_activities_seen_earlier_in_interaction": false,
+    "persistent_penalty": false,
+    "stop_when_no_other_candidate": true
+  },
+  "history": {
+    "engine_scope": "current_day_and_recent_proposals",
+    "persist_full_trace_in_release_build": false,
+    "persist_full_trace_in_debug_build": true
+  }
+}

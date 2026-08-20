@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import org.sedentaryapp.data.ActivityGuidanceMode
 import org.sedentaryapp.data.AppStateRepository
 import org.sedentaryapp.data.CatalogRepository
 import org.sedentaryapp.data.PolicyRepository
@@ -31,7 +32,7 @@ class ProposalAlarmReceiver :
 
         CoroutineScope(
             SupervisorJob() +
-                Dispatchers.IO
+                    Dispatchers.IO
         ).launch {
             try {
                 when (intent.action) {
@@ -57,6 +58,24 @@ class ProposalAlarmReceiver :
                     ProposalAlarmScheduler
                         .ACTION_NOT_NOW ->
                         handleNotNowAction(
+                            context =
+                                appContext,
+                            intent =
+                                intent,
+                        )
+
+                    ProposalAlarmScheduler
+                        .ACTION_DO_NOW ->
+                        handleDoNowAction(
+                            context =
+                                appContext,
+                            intent =
+                                intent,
+                        )
+
+                    ProposalAlarmScheduler
+                        .ACTION_DISMISS ->
+                        handleDismissAction(
                             context =
                                 appContext,
                             intent =
@@ -105,12 +124,6 @@ class ProposalAlarmReceiver :
                         intent.getStringExtra(
                             ProposalAlarmScheduler
                                 .EXTRA_PROPOSAL_KEY
-                        )
-                            ?: return,
-                    activityId =
-                        intent.getStringExtra(
-                            ProposalAlarmScheduler
-                                .EXTRA_ACTIVITY_ID
                         )
                             ?: return,
                 )
@@ -172,7 +185,7 @@ class ProposalAlarmReceiver :
                         settings,
                 ) ||
             proposalKey in
-                consumedEarly
+            consumedEarly
         ) {
             dependencies.scheduler
                 .reconcile()
@@ -222,7 +235,7 @@ class ProposalAlarmReceiver :
         if (
             history.any {
                 it.proposalKey ==
-                    proposalKey
+                        proposalKey
             }
         ) {
             dependencies.scheduler
@@ -284,7 +297,7 @@ class ProposalAlarmReceiver :
 
         dependencies
             .appStateRepository
-            .saveLastActivity(
+            .saveActiveProposal(
                 activityId =
                     activityId,
                 proposalKey =
@@ -299,6 +312,12 @@ class ProposalAlarmReceiver :
                 proposalKey
             )
 
+        val alertSettings =
+            dependencies
+                .appStateRepository
+                .notificationAlertSettings
+                .first()
+
         NotificationPublisher
             .show(
                 context =
@@ -307,6 +326,14 @@ class ProposalAlarmReceiver :
                     activity,
                 proposalKey =
                     proposalKey,
+                allowSnooze =
+                    true,
+                soundEnabled =
+                    alertSettings
+                        .soundEnabled,
+                vibrationEnabled =
+                    alertSettings
+                        .vibrationEnabled,
             )
 
         dependencies.scheduler
@@ -316,7 +343,6 @@ class ProposalAlarmReceiver :
     private suspend fun deliverSnoozedProposal(
         context: Context,
         proposalKey: String,
-        activityId: String,
     ) {
 
         val dependencies =
@@ -348,9 +374,7 @@ class ProposalAlarmReceiver :
         if (
             snooze == null ||
             snooze.proposalKey !=
-                proposalKey ||
-            snooze.activityId !=
-                activityId
+            proposalKey
         ) {
             dependencies.scheduler
                 .reconcile()
@@ -358,15 +382,18 @@ class ProposalAlarmReceiver :
             return
         }
 
+        val effectiveActivityId =
+            snooze.activityId
+
         val lateMillis =
             System.currentTimeMillis() -
-                snooze.triggerAtEpochMillis
+                    snooze.triggerAtEpochMillis
 
         if (
             lateMillis >
             ProposalAlarmScheduler
                 .MAX_LATE_DELIVERY_MINUTES *
-                60_000L
+            60_000L
         ) {
             dependencies
                 .appStateRepository
@@ -384,7 +411,7 @@ class ProposalAlarmReceiver :
                 .loadActivities()
                 .firstOrNull {
                     it.definition.id ==
-                        activityId
+                            effectiveActivityId
                 }
                 ?: run {
                     dependencies
@@ -403,14 +430,20 @@ class ProposalAlarmReceiver :
 
         dependencies
             .appStateRepository
-            .saveLastActivity(
+            .saveActiveProposal(
                 activityId =
-                    activityId,
+                    effectiveActivityId,
                 proposalKey =
                     proposalKey,
                 proposedAtEpochMillis =
                     System.currentTimeMillis(),
             )
+
+        val alertSettings =
+            dependencies
+                .appStateRepository
+                .notificationAlertSettings
+                .first()
 
         NotificationPublisher
             .show(
@@ -420,6 +453,14 @@ class ProposalAlarmReceiver :
                     activity,
                 proposalKey =
                     proposalKey,
+                allowSnooze =
+                    false,
+                soundEnabled =
+                    alertSettings
+                        .soundEnabled,
+                vibrationEnabled =
+                    alertSettings
+                        .vibrationEnabled,
             )
 
         dependencies.scheduler
@@ -479,9 +520,148 @@ class ProposalAlarmReceiver :
                     activityId,
                 triggerAtEpochMillis =
                     System.currentTimeMillis() +
-                        ProposalAlarmScheduler
-                            .SNOOZE_MINUTES *
-                        60_000L,
+                            ProposalAlarmScheduler
+                                .SNOOZE_MINUTES *
+                            60_000L,
+            )
+
+        dependencies
+            .appStateRepository
+            .clearActiveProposalIfProposalKey(
+                proposalKey
+            )
+
+        dependencies.scheduler
+            .reconcile()
+    }
+
+    private suspend fun handleDoNowAction(
+        context: Context,
+        intent: Intent,
+    ) {
+
+        val proposalKey =
+            intent.getStringExtra(
+                ProposalAlarmScheduler
+                    .EXTRA_PROPOSAL_KEY
+            )
+                ?: return
+
+        val activityId =
+            intent.getStringExtra(
+                ProposalAlarmScheduler
+                    .EXTRA_ACTIVITY_ID
+            )
+                ?: return
+
+        val dependencies =
+            dependencies(
+                context
+            )
+
+        val activeProposal =
+            dependencies
+                .appStateRepository
+                .activeProposal
+                .first()
+
+        if (
+            activeProposal == null ||
+            activeProposal.proposalKey !=
+                proposalKey ||
+            activeProposal.activityId !=
+                activityId
+        ) {
+            NotificationPublisher
+                .cancel(
+                    context
+                )
+
+            dependencies.scheduler
+                .reconcile()
+
+            return
+        }
+
+        val activity =
+            dependencies
+                .catalogRepository
+                .loadActivities()
+                .firstOrNull {
+                    it.definition.id ==
+                        activityId
+                }
+                ?: return
+
+        if (
+            activity.guidanceMode !=
+            ActivityGuidanceMode.SIMPLE
+        ) {
+            return
+        }
+
+        val completedAt =
+            System.currentTimeMillis()
+
+        dependencies
+            .appStateRepository
+            .saveLastActivity(
+                activityId =
+                    activityId,
+                proposalKey =
+                    proposalKey,
+                proposedAtEpochMillis =
+                    completedAt,
+            )
+
+        dependencies
+            .appStateRepository
+            .clearActiveProposalIfProposalKey(
+                proposalKey
+            )
+
+        dependencies
+            .appStateRepository
+            .clearSnoozedProposalIfProposalKey(
+                proposalKey
+            )
+
+        NotificationPublisher
+            .cancel(
+                context
+            )
+
+        dependencies.scheduler
+            .reconcile()
+    }
+
+    private suspend fun handleDismissAction(
+        context: Context,
+        intent: Intent,
+    ) {
+
+        val proposalKey =
+            intent.getStringExtra(
+                ProposalAlarmScheduler
+                    .EXTRA_PROPOSAL_KEY
+            )
+                ?: return
+
+        val dependencies =
+            dependencies(
+                context
+            )
+
+        dependencies
+            .appStateRepository
+            .clearSnoozedProposalIfProposalKey(
+                proposalKey
+            )
+
+        dependencies
+            .appStateRepository
+            .clearActiveProposalIfProposalKey(
+                proposalKey
             )
 
         dependencies.scheduler
@@ -518,7 +698,7 @@ class ProposalAlarmReceiver :
 
         dependencies
             .appStateRepository
-            .clearLastActivityIfProposalKey(
+            .clearActiveProposalIfProposalKey(
                 proposalKey
             )
 
@@ -534,18 +714,18 @@ class ProposalAlarmReceiver :
             .appStateRepository
             .onboardingCompleted
             .first() &&
-            !dependencies
-                .appStateRepository
-                .proposalsPaused
-                .first() &&
-            ProposalAlarmScheduler
-                .notificationsAllowed(
-                    dependencies.context
-                ) &&
-            ProposalAlarmScheduler
-                .exactAlarmsAllowed(
-                    dependencies.context
-                )
+                !dependencies
+                    .appStateRepository
+                    .proposalsPaused
+                    .first() &&
+                ProposalAlarmScheduler
+                    .notificationsAllowed(
+                        dependencies.context
+                    ) &&
+                ProposalAlarmScheduler
+                    .exactAlarmsAllowed(
+                        dependencies.context
+                    )
     }
 
     private fun dependencies(
@@ -588,12 +768,12 @@ class ProposalAlarmReceiver :
     private data class Dependencies(
         val context: Context,
         val appStateRepository:
-            AppStateRepository,
+        AppStateRepository,
         val catalogRepository:
-            CatalogRepository,
+        CatalogRepository,
         val policy:
-            org.sedentaryapp.engine.model.DecisionPolicy,
+        org.sedentaryapp.engine.model.DecisionPolicy,
         val scheduler:
-            ProposalAlarmScheduler,
+        ProposalAlarmScheduler,
     )
 }

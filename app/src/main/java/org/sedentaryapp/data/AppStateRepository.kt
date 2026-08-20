@@ -50,6 +50,11 @@ data class ActivityPreferences(
     val movingEnabled: Boolean = true,
 )
 
+data class NotificationAlertSettings(
+    val soundEnabled: Boolean = false,
+    val vibrationEnabled: Boolean = true,
+)
+
 data class PlannedActivityOverride(
     val opportunityKey: String,
     val activityId: String,
@@ -64,6 +69,12 @@ data class SnoozedProposal(
     val proposalKey: String,
     val activityId: String,
     val triggerAtEpochMillis: Long,
+)
+
+data class ActiveProposal(
+    val proposalKey: String,
+    val activityId: String,
+    val proposedAtEpochMillis: Long,
 )
 
 class AppStateRepository(
@@ -135,6 +146,33 @@ class AppStateRepository(
                 ] ?: false
             }
 
+    val completionVibrationEnabled:
+            Flow<Boolean> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                preferences[
+                    COMPLETION_VIBRATION_ENABLED
+                ] ?: true
+            }
+
+    val notificationAlertSettings:
+            Flow<NotificationAlertSettings> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                NotificationAlertSettings(
+                    soundEnabled =
+                        preferences[
+                            NOTIFICATION_SOUND_ENABLED
+                        ] ?: false,
+                    vibrationEnabled =
+                        preferences[
+                            NOTIFICATION_VIBRATION_ENABLED
+                        ] ?: true,
+                )
+            }
+
     val notificationPermissionRequested:
             Flow<Boolean> =
         appContext.appStateDataStore.data
@@ -195,6 +233,18 @@ class AppStateRepository(
                 parseProposalHistory(
                     preferences[
                         PROPOSAL_HISTORY
+                    ]
+                )
+            }
+
+    val activeProposal:
+            Flow<ActiveProposal?> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                parseActiveProposal(
+                    preferences[
+                        ACTIVE_PROPOSAL
                     ]
                 )
             }
@@ -435,7 +485,41 @@ class AppStateRepository(
                 preferences.remove(
                     SNOOZED_PROPOSAL
                 )
+
+                preferences.remove(
+                    ACTIVE_PROPOSAL
+                )
             }
+        }
+    }
+
+    suspend fun setCompletionVibrationEnabled(
+        enabled: Boolean,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                COMPLETION_VIBRATION_ENABLED
+            ] = enabled
+        }
+    }
+
+    suspend fun setNotificationSoundEnabled(
+        enabled: Boolean,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                NOTIFICATION_SOUND_ENABLED
+            ] = enabled
+        }
+    }
+
+    suspend fun setNotificationVibrationEnabled(
+        enabled: Boolean,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                NOTIFICATION_VIBRATION_ENABLED
+            ] = enabled
         }
     }
 
@@ -470,6 +554,41 @@ class AppStateRepository(
             preferences.remove(
                 LAST_PROPOSAL_AT_EPOCH_MILLIS
             )
+
+            preferences.remove(
+                LAST_COMPLETED_FUTURE_OPPORTUNITY_KEY
+            )
+        }
+    }
+
+    suspend fun saveLastActivityNow(
+        activityId: String,
+        completedAtEpochMillis: Long =
+            System.currentTimeMillis(),
+    ) {
+        if (
+            activityId.isBlank() ||
+            completedAtEpochMillis <= 0L
+        ) {
+            return
+        }
+
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                LAST_ACTIVITY_ID
+            ] = activityId
+
+            preferences.remove(
+                LAST_PROPOSAL_KEY
+            )
+
+            preferences[
+                LAST_PROPOSAL_AT_EPOCH_MILLIS
+            ] = completedAtEpochMillis
+
+            preferences.remove(
+                LAST_COMPLETED_FUTURE_OPPORTUNITY_KEY
+            )
         }
     }
 
@@ -487,6 +606,10 @@ class AppStateRepository(
                 LAST_PROPOSAL_KEY
             ] = proposalKey
 
+            preferences.remove(
+                LAST_COMPLETED_FUTURE_OPPORTUNITY_KEY
+            )
+
             if (
                 proposedAtEpochMillis != null &&
                 proposedAtEpochMillis > 0L
@@ -496,6 +619,54 @@ class AppStateRepository(
                 ] =
                     proposedAtEpochMillis
             }
+        }
+    }
+
+    suspend fun saveLastActivityFromCompletedFuture(
+        activityId: String,
+        opportunityKey: String,
+        completedAtEpochMillis: Long,
+    ) {
+        if (
+            activityId.isBlank() ||
+            opportunityKey.isBlank() ||
+            completedAtEpochMillis <= 0L
+        ) {
+            return
+        }
+
+        appContext.appStateDataStore.edit { preferences ->
+            if (
+                preferences[
+                    LAST_COMPLETED_FUTURE_OPPORTUNITY_KEY
+                ] == opportunityKey &&
+                preferences[
+                    LAST_ACTIVITY_ID
+                ] == activityId &&
+                preferences[
+                    LAST_PROPOSAL_AT_EPOCH_MILLIS
+                ] != null
+            ) {
+                return@edit
+            }
+
+            preferences[
+                LAST_ACTIVITY_ID
+            ] = activityId
+
+            preferences.remove(
+                LAST_PROPOSAL_KEY
+            )
+
+            preferences[
+                LAST_PROPOSAL_AT_EPOCH_MILLIS
+            ] =
+                completedAtEpochMillis
+
+            preferences[
+                LAST_COMPLETED_FUTURE_OPPORTUNITY_KEY
+            ] =
+                opportunityKey
         }
     }
 
@@ -511,6 +682,10 @@ class AppStateRepository(
 
             preferences.remove(
                 LAST_PROPOSAL_AT_EPOCH_MILLIS
+            )
+
+            preferences.remove(
+                LAST_COMPLETED_FUTURE_OPPORTUNITY_KEY
             )
         }
     }
@@ -537,6 +712,10 @@ class AppStateRepository(
 
             preferences.remove(
                 LAST_PROPOSAL_AT_EPOCH_MILLIS
+            )
+
+            preferences.remove(
+                LAST_COMPLETED_FUTURE_OPPORTUNITY_KEY
             )
         }
     }
@@ -581,6 +760,99 @@ class AppStateRepository(
                 )
             }
         }
+    }
+
+    suspend fun saveActiveProposal(
+        proposalKey: String,
+        activityId: String,
+        proposedAtEpochMillis: Long,
+    ) {
+        if (
+            proposalKey.isBlank() ||
+            activityId.isBlank() ||
+            proposedAtEpochMillis <= 0L
+        ) {
+            return
+        }
+
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                ACTIVE_PROPOSAL
+            ] =
+                "$proposalKey|$activityId|$proposedAtEpochMillis"
+        }
+    }
+
+    suspend fun clearActiveProposalIfProposalKey(
+        proposalKey: String,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            val current =
+                parseActiveProposal(
+                    preferences[
+                        ACTIVE_PROPOSAL
+                    ]
+                )
+
+            if (
+                current?.proposalKey ==
+                proposalKey
+            ) {
+                preferences.remove(
+                    ACTIVE_PROPOSAL
+                )
+            }
+        }
+    }
+
+    suspend fun consumeActiveProposalAsLast(
+        proposalKey: String,
+    ): Boolean {
+
+        var consumed = false
+
+        appContext.appStateDataStore.edit { preferences ->
+            val current =
+                parseActiveProposal(
+                    preferences[
+                        ACTIVE_PROPOSAL
+                    ]
+                )
+
+            if (
+                current?.proposalKey !=
+                proposalKey
+            ) {
+                return@edit
+            }
+
+            preferences[
+                LAST_ACTIVITY_ID
+            ] =
+                current.activityId
+
+            preferences[
+                LAST_PROPOSAL_KEY
+            ] =
+                current.proposalKey
+
+            preferences[
+                LAST_PROPOSAL_AT_EPOCH_MILLIS
+            ] =
+                current.proposedAtEpochMillis
+
+            preferences.remove(
+                LAST_COMPLETED_FUTURE_OPPORTUNITY_KEY
+            )
+
+            preferences.remove(
+                ACTIVE_PROPOSAL
+            )
+
+            consumed = true
+        }
+
+        return consumed
     }
 
     suspend fun saveSnoozedProposal(
@@ -956,6 +1228,17 @@ class AppStateRepository(
             val previousTime =
                 times[index]
 
+            val duplicateExists =
+                times.withIndex()
+                    .any { indexedValue ->
+                        indexedValue.index != index &&
+                            indexedValue.value == time
+                    }
+
+            if (duplicateExists) {
+                return@edit
+            }
+
             times[index] =
                 time
 
@@ -1137,6 +1420,52 @@ class AppStateRepository(
         } else {
             stored
         }
+    }
+
+    private fun parseActiveProposal(
+        raw: String?,
+    ): ActiveProposal? {
+
+        if (raw.isNullOrBlank()) {
+            return null
+        }
+
+        val parts =
+            raw.split(
+                "|"
+            )
+
+        if (parts.size != 3) {
+            return null
+        }
+
+        val proposalKey =
+            parts[0]
+
+        val activityId =
+            parts[1]
+
+        val proposedAtEpochMillis =
+            parts[2]
+                .toLongOrNull()
+                ?: return null
+
+        if (
+            proposalKey.isBlank() ||
+            activityId.isBlank() ||
+            proposedAtEpochMillis <= 0L
+        ) {
+            return null
+        }
+
+        return ActiveProposal(
+            proposalKey =
+                proposalKey,
+            activityId =
+                activityId,
+            proposedAtEpochMillis =
+                proposedAtEpochMillis,
+        )
     }
 
     private fun parseSnoozedProposal(
@@ -1624,19 +1953,19 @@ class AppStateRepository(
             listOf(
                 LocalTime.of(
                     10,
-                    10,
+                    0,
                 ),
                 LocalTime.of(
                     11,
-                    50,
+                    30,
                 ),
                 LocalTime.of(
                     15,
-                    10,
+                    0,
                 ),
                 LocalTime.of(
-                    17,
-                    0,
+                    16,
+                    30,
                 ),
             )
 
@@ -1650,9 +1979,19 @@ class AppStateRepository(
                 "last_proposal_key"
             )
 
+        val LAST_COMPLETED_FUTURE_OPPORTUNITY_KEY =
+            stringPreferencesKey(
+                "last_completed_future_opportunity_key"
+            )
+
         val LAST_PROPOSAL_AT_EPOCH_MILLIS =
             longPreferencesKey(
                 "last_proposal_at_epoch_millis"
+            )
+
+        val ACTIVE_PROPOSAL =
+            stringPreferencesKey(
+                "active_proposal"
             )
 
         val SNOOZED_PROPOSAL =
@@ -1663,6 +2002,21 @@ class AppStateRepository(
         val PROPOSALS_PAUSED =
             booleanPreferencesKey(
                 "proposals_paused"
+            )
+
+        val COMPLETION_VIBRATION_ENABLED =
+            booleanPreferencesKey(
+                "completion_vibration_enabled"
+            )
+
+        val NOTIFICATION_SOUND_ENABLED =
+            booleanPreferencesKey(
+                "notification_sound_enabled"
+            )
+
+        val NOTIFICATION_VIBRATION_ENABLED =
+            booleanPreferencesKey(
+                "notification_vibration_enabled"
             )
 
         val NOTIFICATION_PERMISSION_REQUESTED =

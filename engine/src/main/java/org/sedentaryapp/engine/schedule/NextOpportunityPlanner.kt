@@ -12,6 +12,13 @@ object NextOpportunityPlanner {
         minimumGapMinutes: Long,
     ): Boolean {
 
+        if (
+            activeSlotTimes.size !=
+            activeSlotTimes.distinct().size
+        ) {
+            return false
+        }
+
         val sorted =
             activeSlotTimes
                 .sorted()

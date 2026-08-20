@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -57,6 +59,7 @@ fun HomeScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .safeDrawingPadding()
                     .verticalScroll(
                         rememberScrollState()
                     )
@@ -71,6 +74,24 @@ fun HomeScreen(
                 verticalAlignment =
                     Alignment.CenterVertically,
             ) {
+                Icon(
+                    modifier =
+                        Modifier.size(30.dp),
+                    painter =
+                        painterResource(
+                            R.drawable.ic_intervalles_mark
+                        ),
+                    contentDescription = null,
+                    tint =
+                        MaterialTheme.colorScheme
+                            .primary,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.size(10.dp),
+                )
+
                 Text(
                     modifier =
                         Modifier.weight(1f),
@@ -94,6 +115,9 @@ fun HomeScreen(
                             ),
                         contentDescription =
                             "Paramètres",
+                        tint =
+                            MaterialTheme.colorScheme
+                                .primary,
                     )
                 }
             }
@@ -405,7 +429,7 @@ private fun PrimaryActivityCard(
                         .bodyMedium,
                 color =
                     MaterialTheme.colorScheme
-                        .onSurfaceVariant,
+                        .onPrimaryContainer,
             )
         }
     }
@@ -531,9 +555,9 @@ private fun formatDuration(
         maxSeconds
     ) {
         format(
-            minSeconds
+            maxSeconds
         )
     } else {
-        "${format(minSeconds)} – ${format(maxSeconds)}"
+        "≈ ${format(maxSeconds)}"
     }
 }

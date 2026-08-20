@@ -10,13 +10,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,6 +42,7 @@ fun WelcomeScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .safeDrawingPadding()
                     .padding(
                         horizontal = 24.dp,
                         vertical = 40.dp,
@@ -97,9 +102,14 @@ fun WelcomeScreen(
 }
 
 @Composable
-fun NotificationOnboardingScreen(
-    notificationsAlreadyAllowed: Boolean,
-    onAllowNotifications: () -> Unit,
+fun PermissionsOnboardingScreen(
+    notificationsAllowed: Boolean,
+    exactAlarmsAllowed: Boolean,
+    soundEnabled: Boolean,
+    vibrationEnabled: Boolean,
+    onSoundChanged: (Boolean) -> Unit,
+    onVibrationChanged: (Boolean) -> Unit,
+    onConfigurePermissions: () -> Unit,
     onLater: () -> Unit,
 ) {
     Surface(
@@ -112,33 +122,21 @@ fun NotificationOnboardingScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .safeDrawingPadding()
                     .verticalScroll(
                         rememberScrollState()
                     )
                     .padding(
                         horizontal = 24.dp,
-                        vertical = 40.dp,
+                        vertical = 32.dp,
                     ),
         ) {
             Text(
                 text =
-                    "Rester informé",
+                    "Recevoir les propositions",
                 style =
                     MaterialTheme.typography
                         .headlineLarge,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(20.dp),
-            )
-
-            Text(
-                text =
-                    "Les notifications permettent de recevoir les propositions au moment prévu.",
-                style =
-                    MaterialTheme.typography
-                        .bodyLarge,
             )
 
             Spacer(
@@ -148,10 +146,80 @@ fun NotificationOnboardingScreen(
 
             Text(
                 text =
-                    "L’application fonctionne aussi sans elles.",
+                    "Intervalles utilise deux autorisations Android pour afficher les propositions au moment choisi.",
                 style =
                     MaterialTheme.typography
                         .bodyLarge,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(20.dp),
+            )
+
+            PermissionStatusRow(
+                label =
+                    "Notifications",
+                allowed =
+                    notificationsAllowed,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp),
+            )
+
+            PermissionStatusRow(
+                label =
+                    "Horaires précis",
+                allowed =
+                    exactAlarmsAllowed,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(28.dp),
+            )
+
+            Text(
+                text = "Alerte",
+                style =
+                    MaterialTheme.typography
+                        .titleMedium,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp),
+            )
+
+            PreferenceSwitchRow(
+                title = "Son",
+                checked =
+                    soundEnabled,
+                onCheckedChange =
+                    onSoundChanged,
+            )
+
+            PreferenceSwitchRow(
+                title = "Vibration",
+                checked =
+                    vibrationEnabled,
+                onCheckedChange =
+                    onVibrationChanged,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(12.dp),
+            )
+
+            Text(
+                text =
+                    "Tu pourras modifier ces choix plus tard dans les paramètres.",
+                style =
+                    MaterialTheme.typography
+                        .bodySmall,
                 color =
                     MaterialTheme.colorScheme
                         .onSurfaceVariant,
@@ -159,41 +227,135 @@ fun NotificationOnboardingScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(34.dp),
+                    Modifier.height(28.dp),
             )
 
             Button(
                 modifier =
                     Modifier.fillMaxWidth(),
                 onClick =
-                    onAllowNotifications,
+                    onConfigurePermissions,
                 shape =
                     RoundedCornerShape(14.dp),
             ) {
                 Text(
                     if (
-                        notificationsAlreadyAllowed
+                        notificationsAllowed &&
+                        exactAlarmsAllowed
                     ) {
                         "Continuer"
                     } else {
-                        "Autoriser les notifications"
+                        "Configurer les autorisations"
                     }
                 )
             }
 
-            if (
-                !notificationsAlreadyAllowed
+            TextButton(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick =
+                    onLater,
             ) {
-                TextButton(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    onClick =
-                        onLater,
-                ) {
-                    Text("Pas maintenant")
-                }
+                Text("Plus tard")
             }
         }
+    }
+}
+
+@Composable
+private fun PermissionStatusRow(
+    label: String,
+    allowed: Boolean,
+) {
+    Card(
+        modifier =
+            Modifier.fillMaxWidth(),
+        shape =
+            RoundedCornerShape(18.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme
+                        .surfaceVariant,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 0.dp
+            ),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment =
+                Alignment.CenterVertically,
+        ) {
+            Text(
+                modifier =
+                    Modifier.weight(1f),
+                text = label,
+                style =
+                    MaterialTheme.typography
+                        .bodyLarge,
+            )
+
+            Text(
+                text =
+                    if (allowed) {
+                        "Autorisée"
+                    } else {
+                        "À autoriser"
+                    },
+                style =
+                    MaterialTheme.typography
+                        .bodyMedium,
+                color =
+                    if (allowed) {
+                        MaterialTheme
+                            .colorScheme
+                            .primary
+                    } else {
+                        MaterialTheme
+                            .colorScheme
+                            .onSurfaceVariant
+                    },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PreferenceSwitchRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(
+                    vertical = 6.dp,
+                ),
+        verticalAlignment =
+            Alignment.CenterVertically,
+    ) {
+        Text(
+            modifier =
+                Modifier.weight(1f),
+            text = title,
+            style =
+                MaterialTheme.typography
+                    .bodyLarge,
+        )
+
+        Switch(
+            checked =
+                checked,
+            onCheckedChange =
+                onCheckedChange,
+        )
     }
 }
 

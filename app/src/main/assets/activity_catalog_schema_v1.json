@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sedentaryapp.local/schema/activity_catalog_schema_v1.json",
-  "title": "SedentaryApp Activity Catalog V1",
-  "description": "Contrat de données du catalogue d'activités V0. Les activités publiées durent de 30 secondes à 5 minutes; internal_family est une métadonnée éditoriale non utilisée par le scoring V0.",
+  "title": "Intervalles Activity Catalog V1",
+  "description": "Contrat de données du catalogue d'activités V0.",
   "type": "object",
   "required": [
     "catalog_version",
@@ -68,6 +68,7 @@
         "intensity",
         "duration_seconds_min",
         "duration_seconds_max",
+        "guidance_mode",
         "compatible_postures",
         "preferred_posture",
         "standing_required",
@@ -156,13 +157,13 @@
         },
         "duration_seconds_min": {
           "type": "integer",
-          "minimum": 30,
+          "minimum": 10,
           "maximum": 300
         },
         "duration_seconds_max": {
           "type": "integer",
-          "minimum": 30,
-          "maximum": 300
+          "minimum": 10,
+          "maximum": 600
         },
         "compatible_postures": {
           "type": "array",
@@ -306,6 +307,12 @@
             "minLength": 2,
             "maxLength": 80
           }
+        },
+        "guidance_mode": {
+          "enum": [
+            "simple",
+            "timer"
+          ]
         }
       },
       "additionalProperties": false

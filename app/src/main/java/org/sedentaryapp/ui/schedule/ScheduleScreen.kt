@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,6 +52,9 @@ fun ScheduleScreen(
     settings: ScheduleSettings,
     activityPreferences: ActivityPreferences,
     proposalsPaused: Boolean,
+    completionVibrationEnabled: Boolean,
+    notificationSoundEnabled: Boolean,
+    notificationVibrationEnabled: Boolean,
     minimumGapMinutes: Long,
     title: String = "Tes réglages",
     showPauseControl: Boolean = true,
@@ -62,6 +67,9 @@ fun ScheduleScreen(
     onStationaryChanged: (Boolean) -> Unit,
     onMovingChanged: (Boolean) -> Unit,
     onPauseChanged: (Boolean) -> Unit,
+    onCompletionVibrationChanged: (Boolean) -> Unit,
+    onNotificationSoundChanged: (Boolean) -> Unit,
+    onNotificationVibrationChanged: (Boolean) -> Unit,
     showInfoLinks: Boolean = true,
     onOpenWhy: () -> Unit,
     onOpenAbout: () -> Unit,
@@ -71,11 +79,11 @@ fun ScheduleScreen(
         LocalContext.current
 
     var slotError by
-        remember {
-            mutableStateOf<String?>(
-                null
-            )
-        }
+    remember {
+        mutableStateOf<String?>(
+            null
+        )
+    }
 
     Surface(
         modifier =
@@ -87,6 +95,7 @@ fun ScheduleScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .safeDrawingPadding()
                     .verticalScroll(
                         rememberScrollState()
                     )
@@ -159,7 +168,7 @@ fun ScheduleScreen(
 
             SectionTitle(
                 text =
-                    "Jours travaillés"
+                    "Jours"
             )
 
             Spacer(
@@ -309,72 +318,57 @@ fun ScheduleScreen(
                     Modifier.height(6.dp),
             )
 
-            TextButton(
-                onClick = {
-                    val suggestedTime =
-                        settings.slots
-                            .maxByOrNull {
-                                it.time
-                            }
-                            ?.time
-                            ?.plusMinutes(30)
-                            ?: LocalTime.of(
-                                10,
-                                0,
-                            )
-
-                    showTimePicker(
-                        context =
-                            context,
-                        initialTime =
-                            suggestedTime,
-                    ) { newTime ->
-                        val candidateTimes =
+            if (settings.slots.size < 6) {
+                TextButton(
+                    onClick = {
+                        val suggestedTime =
                             settings.slots
-                                .map {
+                                .maxByOrNull {
                                     it.time
-                                } +
-                                newTime
-
-                        val valid =
-                            NextOpportunityPlanner
-                                .hasValidSpacing(
-                                    activeSlotTimes =
-                                        candidateTimes,
-                                    minimumGapMinutes =
-                                        minimumGapMinutes,
+                                }
+                                ?.time
+                                ?.plusMinutes(30)
+                                ?: LocalTime.of(
+                                    10,
+                                    0,
                                 )
 
-                        if (valid) {
-                            slotError = null
-                            onAddSlot(
-                                newTime
-                            )
-                        } else {
-                            slotError =
-                                "Espace les créneaux d’au moins $minimumGapMinutes min."
-                        }
-                    }
-                },
-                enabled =
-                    settings.slots.size < 6,
-            ) {
-                Text("+ Ajouter un créneau")
-            }
+                        showTimePicker(
+                            context =
+                                context,
+                            initialTime =
+                                suggestedTime,
+                        ) { newTime ->
+                            val candidateTimes =
+                                settings.slots
+                                    .map {
+                                        it.time
+                                    } +
+                                        newTime
 
-            if (
-                settings.slots.size >= 6
-            ) {
-                Text(
-                    text =
-                        "Maximum 6 créneaux.",
-                    style =
-                        MaterialTheme.typography
-                            .bodySmall,
-                    color =
-                        MaterialTheme.colorScheme
-                            .onSurfaceVariant,
-                )
+                            val valid =
+                                NextOpportunityPlanner
+                                    .hasValidSpacing(
+                                        activeSlotTimes =
+                                            candidateTimes,
+                                        minimumGapMinutes =
+                                            minimumGapMinutes,
+                                    )
+
+                            if (valid) {
+                                slotError = null
+                                onAddSlot(
+                                    newTime
+                                )
+                            } else {
+                                slotError =
+                                    "Espace les créneaux d’au moins $minimumGapMinutes min."
+                            }
+                        }
+                    },
+                ) {
+                    Text("+ Ajouter un créneau")
+                }
             }
 
             Spacer(
@@ -423,6 +417,70 @@ fun ScheduleScreen(
             )
 
             if (showInfoLinks) {
+                Spacer(
+                    modifier =
+                        Modifier.height(24.dp),
+                )
+
+                SectionTitle(
+                    text = "Notifications"
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(10.dp),
+                )
+
+                SettingSwitchRow(
+                    title = "Son",
+                    subtitle =
+                        "Joue le son de notification Android.",
+                    checked =
+                        notificationSoundEnabled,
+                    onCheckedChange =
+                        onNotificationSoundChanged,
+                )
+
+                SettingSwitchRow(
+                    title = "Vibration",
+                    subtitle =
+                        "Vibre brièvement à chaque proposition.",
+                    checked =
+                        notificationVibrationEnabled,
+                    onCheckedChange =
+                        onNotificationVibrationChanged,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(24.dp),
+                )
+
+                SectionTitle(
+                    text = "Chrono"
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(10.dp),
+                )
+
+                SettingSwitchRow(
+                    title =
+                        "Vibration à la fin",
+                    subtitle =
+                        "Une vibration courte quand le chrono atteint 0:00.",
+                    checked =
+                        completionVibrationEnabled,
+                    onCheckedChange =
+                        onCompletionVibrationChanged,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(28.dp),
+                )
+
                 Spacer(
                     modifier =
                         Modifier.height(28.dp),
@@ -588,6 +646,11 @@ private fun WeekdayRows(
                     }
 
                     FilterChip(
+                        modifier =
+                            Modifier.semantics {
+                                contentDescription =
+                                    weekdayFullName(day)
+                            },
                         selected =
                             day in selected,
                         onClick = {
@@ -615,7 +678,7 @@ private fun WeekdayRows(
 @Composable
 private fun PreferenceRows(
     activityPreferences:
-        ActivityPreferences,
+    ActivityPreferences,
     onIntensityChanged:
         (String, Boolean) -> Unit,
 ) {
@@ -624,8 +687,8 @@ private fun PreferenceRows(
             label = "Douce",
             selected =
                 "gentle" in
-                    activityPreferences
-                        .enabledIntensities,
+                        activityPreferences
+                            .enabledIntensities,
             canDisable =
                 activityPreferences
                     .enabledIntensities
@@ -648,8 +711,8 @@ private fun PreferenceRows(
                 "Intermédiaire",
             selected =
                 "active" in
-                    activityPreferences
-                        .enabledIntensities,
+                        activityPreferences
+                            .enabledIntensities,
             canDisable =
                 activityPreferences
                     .enabledIntensities
@@ -671,8 +734,8 @@ private fun PreferenceRows(
             label = "Dynamique",
             selected =
                 "dynamic" in
-                    activityPreferences
-                        .enabledIntensities,
+                        activityPreferences
+                            .enabledIntensities,
             canDisable =
                 activityPreferences
                     .enabledIntensities
@@ -690,7 +753,7 @@ private fun PreferenceRows(
 @Composable
 private fun MovementRows(
     activityPreferences:
-        ActivityPreferences,
+    ActivityPreferences,
     onStationaryChanged:
         (Boolean) -> Unit,
     onMovingChanged:
@@ -755,6 +818,54 @@ private fun PreferenceChip(
         shape =
             RoundedCornerShape(12.dp),
     )
+}
+
+@Composable
+private fun SettingSwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(
+                    vertical = 6.dp,
+                ),
+        verticalAlignment =
+            Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier =
+                Modifier.weight(1f),
+        ) {
+            Text(
+                text = title,
+                style =
+                    MaterialTheme.typography
+                        .bodyLarge,
+            )
+
+            Text(
+                text = subtitle,
+                style =
+                    MaterialTheme.typography
+                        .bodySmall,
+                color =
+                    MaterialTheme.colorScheme
+                        .onSurfaceVariant,
+            )
+        }
+
+        Switch(
+            checked =
+                checked,
+            onCheckedChange =
+                onCheckedChange,
+        )
+    }
 }
 
 @Composable
@@ -847,5 +958,19 @@ private fun weekdayShortName(
         DayOfWeek.FRIDAY -> "V"
         DayOfWeek.SATURDAY -> "S"
         DayOfWeek.SUNDAY -> "D"
+    }
+}
+
+private fun weekdayFullName(
+    day: DayOfWeek,
+): String {
+    return when (day) {
+        DayOfWeek.MONDAY -> "Lundi"
+        DayOfWeek.TUESDAY -> "Mardi"
+        DayOfWeek.WEDNESDAY -> "Mercredi"
+        DayOfWeek.THURSDAY -> "Jeudi"
+        DayOfWeek.FRIDAY -> "Vendredi"
+        DayOfWeek.SATURDAY -> "Samedi"
+        DayOfWeek.SUNDAY -> "Dimanche"
     }
 }
