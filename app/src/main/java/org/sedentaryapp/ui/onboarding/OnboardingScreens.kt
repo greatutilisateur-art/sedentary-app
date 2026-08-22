@@ -133,28 +133,10 @@ fun PermissionsOnboardingScreen(
         ) {
             Text(
                 text =
-                    "Recevoir les propositions",
+                    "Notifications",
                 style =
                     MaterialTheme.typography
                         .headlineLarge,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(16.dp),
-            )
-
-            Text(
-                text =
-                    "Intervalles utilise deux autorisations Android pour afficher les propositions au moment choisi.",
-                style =
-                    MaterialTheme.typography
-                        .bodyLarge,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(20.dp),
             )
 
             PermissionStatusRow(
@@ -178,19 +160,7 @@ fun PermissionsOnboardingScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(28.dp),
-            )
-
-            Text(
-                text = "Alerte",
-                style =
-                    MaterialTheme.typography
-                        .titleMedium,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(10.dp),
+                    Modifier.height(24.dp),
             )
 
             PreferenceSwitchRow(
@@ -207,22 +177,6 @@ fun PermissionsOnboardingScreen(
                     vibrationEnabled,
                 onCheckedChange =
                     onVibrationChanged,
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(12.dp),
-            )
-
-            Text(
-                text =
-                    "Tu pourras modifier ces choix plus tard dans les paramètres.",
-                style =
-                    MaterialTheme.typography
-                        .bodySmall,
-                color =
-                    MaterialTheme.colorScheme
-                        .onSurfaceVariant,
             )
 
             Spacer(

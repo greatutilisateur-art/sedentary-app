@@ -38,6 +38,7 @@ enum class ActivityDisplayContext {
     SNOOZED_PROPOSAL,
     LAST_ACTIVITY,
     FUTURE_PREVIEW,
+    MANUAL_ACTIVITY,
 }
 
 data class ActivityUiState(
@@ -105,6 +106,11 @@ class ActivityViewModel(
         savedStateHandle
             .remove<String>(
                 KEY_FUTURE_OPPORTUNITY_KEY
+            )
+
+        savedStateHandle
+            .remove<String>(
+                KEY_MANUAL_SESSION_ID
             )
 
         savedStateHandle[
@@ -263,7 +269,9 @@ class ActivityViewModel(
             context !=
             ActivityDisplayContext.SNOOZED_PROPOSAL &&
             context !=
-            ActivityDisplayContext.FUTURE_PREVIEW
+            ActivityDisplayContext.FUTURE_PREVIEW &&
+            context !=
+            ActivityDisplayContext.MANUAL_ACTIVITY
         ) {
             return
         }
@@ -448,6 +456,11 @@ class ActivityViewModel(
 
     fun openLastActivity() {
 
+        savedStateHandle
+            .remove<String>(
+                KEY_MANUAL_SESSION_ID
+            )
+
         val lastId =
             savedStateHandle.get<String>(
                 KEY_LAST_PROPOSED_ACTIVITY_ID
@@ -578,6 +591,11 @@ class ActivityViewModel(
             return
         }
 
+        savedStateHandle
+            .remove<String>(
+                KEY_MANUAL_SESSION_ID
+            )
+
         clearGuidedSession()
 
         proposalSelectionJob?.cancel()
@@ -668,6 +686,11 @@ class ActivityViewModel(
             return
         }
 
+        savedStateHandle
+            .remove<String>(
+                KEY_MANUAL_SESSION_ID
+            )
+
         clearGuidedSession()
 
         val existingOpportunityKey =
@@ -737,6 +760,80 @@ class ActivityViewModel(
         ] = 0
 
         publishState()
+    }
+
+    fun openManualActivity(): Boolean {
+
+        clearGuidedSession()
+
+        proposalSelectionJob?.cancel()
+        futureOverrideJob?.cancel()
+        futureOverrideJob = null
+        snoozedActivityPersistenceJob?.cancel()
+        snoozedActivityPersistenceJob = null
+
+        clearActiveProposal()
+
+        savedStateHandle
+            .remove<String>(
+                KEY_FUTURE_OPPORTUNITY_KEY
+            )
+
+        val sessionId =
+            "manual-${System.currentTimeMillis()}"
+
+        savedStateHandle[
+            KEY_MANUAL_SESSION_ID
+        ] = sessionId
+
+        savedStateHandle[
+            KEY_DISPLAY_CONTEXT
+        ] =
+            ActivityDisplayContext
+                .MANUAL_ACTIVITY
+                .name
+
+        savedStateHandle[
+            KEY_ATTEMPT
+        ] = 0
+
+        writeExploredActivityIds(
+            emptyList()
+        )
+
+        savedStateHandle[
+            KEY_CURRENT_INDEX
+        ] = 0
+
+        val selected =
+            selectActivity(
+                excludedIds =
+                    emptySet(),
+                attempt = 0,
+            )
+                ?: run {
+                    savedStateHandle
+                        .remove<String>(
+                            KEY_MANUAL_SESSION_ID
+                        )
+
+                    savedStateHandle
+                        .remove<String>(
+                            KEY_DISPLAY_CONTEXT
+                        )
+
+                    publishState()
+                    return false
+                }
+
+        writeExploredActivityIds(
+            listOf(
+                selected.definition.id
+            )
+        )
+
+        publishState()
+        return true
     }
 
     fun completeSimpleActivity() {
@@ -1141,9 +1238,61 @@ class ActivityViewModel(
             return
         }
 
+        val manualSessionId =
+            savedStateHandle
+                .get<String>(
+                    KEY_MANUAL_SESSION_ID
+                )
+
+        if (
+            restoredContext ==
+                ActivityDisplayContext.MANUAL_ACTIVITY &&
+            !manualSessionId.isNullOrBlank() &&
+            explored.isNotEmpty()
+        ) {
+
+            writeExploredActivityIds(
+                explored
+            )
+
+            val safeIndex =
+                readCurrentIndex()
+                    .coerceIn(
+                        0,
+                        explored.lastIndex,
+                    )
+
+            savedStateHandle[
+                KEY_CURRENT_INDEX
+            ] =
+                safeIndex
+
+            savedStateHandle[
+                KEY_PROPOSAL_ACTIVE
+            ] = false
+
+            savedStateHandle
+                .remove<String>(
+                    KEY_PROPOSAL_ID
+                )
+
+            savedStateHandle
+                .remove<String>(
+                    KEY_FUTURE_OPPORTUNITY_KEY
+                )
+
+            publishState()
+            return
+        }
+
         savedStateHandle
             .remove<String>(
                 KEY_FUTURE_OPPORTUNITY_KEY
+            )
+
+        savedStateHandle
+            .remove<String>(
+                KEY_MANUAL_SESSION_ID
             )
 
         if (
@@ -1815,6 +1964,36 @@ class ActivityViewModel(
                 }
             }
 
+            ActivityDisplayContext.MANUAL_ACTIVITY -> {
+                val manualSessionId =
+                    savedStateHandle
+                        .get<String>(
+                            KEY_MANUAL_SESSION_ID
+                        )
+                        ?: "manual-$completedAt"
+
+                viewModelScope.launch {
+                    appStateRepository
+                        .saveLastActivityNow(
+                            activityId =
+                                activityId,
+                            completedAtEpochMillis =
+                                completedAt,
+                        )
+
+                    appStateRepository
+                        .recordProposal(
+                            proposalKey =
+                                manualSessionId,
+                            activityId =
+                                activityId,
+                            maxEntries =
+                                policy.scoring
+                                    .historyWindowProposals,
+                        )
+                }
+            }
+
             ActivityDisplayContext.LAST_ACTIVITY,
             null -> {
                 viewModelScope.launch {
@@ -1842,6 +2021,11 @@ class ActivityViewModel(
         savedStateHandle
             .remove<String>(
                 KEY_FUTURE_OPPORTUNITY_KEY
+            )
+
+        savedStateHandle
+            .remove<String>(
+                KEY_MANUAL_SESSION_ID
             )
 
         writeExploredActivityIds(
@@ -1977,6 +2161,12 @@ class ActivityViewModel(
                             "future-$it"
                         }
 
+                ActivityDisplayContext.MANUAL_ACTIVITY ->
+                    savedStateHandle
+                        .get<String>(
+                            KEY_MANUAL_SESSION_ID
+                        )
+
                 else ->
                     null
             }
@@ -2088,7 +2278,10 @@ class ActivityViewModel(
                                     .SNOOZED_PROPOSAL ||
                                 context ==
                                 ActivityDisplayContext
-                                    .FUTURE_PREVIEW
+                                    .FUTURE_PREVIEW ||
+                                context ==
+                                ActivityDisplayContext
+                                    .MANUAL_ACTIVITY
                         )
             ) {
 
@@ -2264,6 +2457,10 @@ class ActivityViewModel(
         private const val
                 KEY_FUTURE_OPPORTUNITY_KEY =
             "future_opportunity_key"
+
+        private const val
+                KEY_MANUAL_SESSION_ID =
+            "manual_session_id"
 
         private const val
                 KEY_GUIDED_STATE =

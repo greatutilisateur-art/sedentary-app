@@ -14,6 +14,7 @@ import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import org.sedentaryapp.data.AppStateRepository
 import org.sedentaryapp.data.PolicyRepository
+import org.sedentaryapp.data.NextProposalOverride
 import org.sedentaryapp.data.SnoozedProposal
 
 class ProposalAlarmScheduler(
@@ -83,8 +84,23 @@ class ProposalAlarmScheduler(
                 .snoozedProposal
                 .first()
 
+        var nextProposalOverride =
+            appStateRepository
+                .nextProposalOverride
+                .first()
+
         val now =
             LocalDateTime.now()
+
+        nextProposalOverride =
+            normalizeNextProposalOverride(
+                nextProposalOverride =
+                    nextProposalOverride,
+                now =
+                    now,
+                appStateRepository =
+                    appStateRepository,
+            )
 
         val nextFixedOpportunity =
             OpportunityRuntimePlanner
@@ -100,31 +116,60 @@ class ProposalAlarmScheduler(
                         consumedEarly,
                 )
 
+        val scheduledOpportunityForConflict =
+            nextProposalOverride
+                ?.at
+                ?: nextFixedOpportunity
+
         snoozedProposal =
             normalizeSnooze(
                 snoozedProposal =
                     snoozedProposal,
                 nextFixedOpportunity =
-                    nextFixedOpportunity,
+                    scheduledOpportunityForConflict,
                 appStateRepository =
                     appStateRepository,
             )
 
         val fixedEvent =
-            nextFixedOpportunity
-                ?.let { opportunity ->
+            if (nextProposalOverride == null) {
+                nextFixedOpportunity
+                    ?.let { opportunity ->
+                        ScheduledEvent(
+                            triggerAtEpochMillis =
+                                opportunity
+                                    .atZone(
+                                        ZoneId.systemDefault()
+                                    )
+                                    .toInstant()
+                                    .toEpochMilli(),
+                            eventType =
+                                EVENT_TYPE_FIXED,
+                            proposalKey =
+                                opportunity.toString(),
+                            activityId =
+                                null,
+                        )
+                    }
+            } else {
+                null
+            }
+
+        val overrideEvent =
+            nextProposalOverride
+                ?.let { override ->
                     ScheduledEvent(
                         triggerAtEpochMillis =
-                            opportunity
+                            override.at
                                 .atZone(
                                     ZoneId.systemDefault()
                                 )
                                 .toInstant()
                                 .toEpochMilli(),
                         eventType =
-                            EVENT_TYPE_FIXED,
+                            EVENT_TYPE_ONE_OFF,
                         proposalKey =
-                            opportunity.toString(),
+                            override.at.toString(),
                         activityId =
                             null,
                     )
@@ -148,7 +193,7 @@ class ProposalAlarmScheduler(
 
         val nextEvent =
             listOfNotNull(
-                fixedEvent,
+                overrideEvent ?: fixedEvent,
                 snoozeEvent,
             )
                 .minByOrNull {
@@ -188,6 +233,32 @@ class ProposalAlarmScheduler(
                     ),
             )
         )
+    }
+
+    private suspend fun normalizeNextProposalOverride(
+        nextProposalOverride: NextProposalOverride?,
+        now: LocalDateTime,
+        appStateRepository: AppStateRepository,
+    ): NextProposalOverride? {
+
+        val override =
+            nextProposalOverride
+                ?: return null
+
+        if (
+            override.at.isBefore(
+                now.minusMinutes(
+                    MAX_LATE_DELIVERY_MINUTES
+                )
+            )
+        ) {
+            appStateRepository
+                .clearNextProposalOverride()
+
+            return null
+        }
+
+        return override
     }
 
     private suspend fun normalizeSnooze(
@@ -367,8 +438,11 @@ class ProposalAlarmScheduler(
         const val EVENT_TYPE_SNOOZE =
             "snooze"
 
+        const val EVENT_TYPE_ONE_OFF =
+            "one_off"
+
         const val SNOOZE_MINUTES =
-            2L
+            30L
 
         const val MAX_LATE_DELIVERY_MINUTES =
             10L

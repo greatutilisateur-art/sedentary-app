@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
         )
 
     private lateinit var proposalAlarmScheduler:
-            ProposalAlarmScheduler
+        ProposalAlarmScheduler
 
     private var continuePermissionSetupAfterNotificationResult =
         false
@@ -209,124 +209,131 @@ class MainActivity : ComponentActivity() {
             SedentaryAppTheme {
 
                 val activityState by
-                viewModel.uiState
-                    .collectAsState()
+                    viewModel.uiState
+                        .collectAsState()
 
                 val scheduleSettings by
-                appStateRepository
-                    .scheduleSettings
-                    .collectAsState(
-                        initial =
-                            appStateRepository
-                                .defaultScheduleSettings
-                    )
+                    appStateRepository
+                        .scheduleSettings
+                        .collectAsState(
+                            initial =
+                                appStateRepository
+                                    .defaultScheduleSettings
+                        )
 
                 val proposalsPaused by
-                appStateRepository
-                    .proposalsPaused
-                    .collectAsState(
-                        initial = false
-                    )
+                    appStateRepository
+                        .proposalsPaused
+                        .collectAsState(
+                            initial = false
+                        )
 
                 val completionVibrationEnabled by
-                appStateRepository
-                    .completionVibrationEnabled
-                    .collectAsState(
-                        initial = true
-                    )
+                    appStateRepository
+                        .completionVibrationEnabled
+                        .collectAsState(
+                            initial = true
+                        )
 
                 val notificationAlertSettings by
-                appStateRepository
-                    .notificationAlertSettings
-                    .collectAsState(
-                        initial =
-                            NotificationAlertSettings()
-                    )
+                    appStateRepository
+                        .notificationAlertSettings
+                        .collectAsState(
+                            initial =
+                                NotificationAlertSettings()
+                        )
 
                 val activeProposal by
-                appStateRepository
-                    .activeProposal
-                    .collectAsState(
-                        initial = null
-                    )
+                    appStateRepository
+                        .activeProposal
+                        .collectAsState(
+                            initial = null
+                        )
 
                 val snoozedProposal by
-                appStateRepository
-                    .snoozedProposal
-                    .collectAsState(
-                        initial = null
-                    )
+                    appStateRepository
+                        .snoozedProposal
+                        .collectAsState(
+                            initial = null
+                        )
 
                 val notificationsAllowed by
-                notificationPermissionAllowedState
-                    .collectAsState()
+                    notificationPermissionAllowedState
+                        .collectAsState()
 
                 val exactAlarmsAllowed by
-                exactAlarmAllowedState
-                    .collectAsState()
+                    exactAlarmAllowedState
+                        .collectAsState()
 
                 val onboardingCompleted by
-                onboardingCompletedState
-                    .collectAsState()
+                    onboardingCompletedState
+                        .collectAsState()
 
                 val pendingNotificationProposalKey by
-                pendingNotificationProposalKeyState
-                    .collectAsState()
+                    pendingNotificationProposalKeyState
+                        .collectAsState()
 
                 val pendingAutoStartGuidedProposalKey by
-                pendingAutoStartGuidedProposalKeyState
-                    .collectAsState()
+                    pendingAutoStartGuidedProposalKeyState
+                        .collectAsState()
 
                 val notificationPermissionRequested by
-                appStateRepository
-                    .notificationPermissionRequested
-                    .collectAsState(
-                        initial = false
-                    )
+                    appStateRepository
+                        .notificationPermissionRequested
+                        .collectAsState(
+                            initial = false
+                        )
 
                 val plannedActivityOverride by
-                appStateRepository
-                    .plannedActivityOverride
-                    .collectAsState(
-                        initial = null
-                    )
+                    appStateRepository
+                        .plannedActivityOverride
+                        .collectAsState(
+                            initial = null
+                        )
+
+                val nextProposalOverride by
+                    appStateRepository
+                        .nextProposalOverride
+                        .collectAsState(
+                            initial = null
+                        )
 
                 val consumedEarlyOpportunityKeys by
-                appStateRepository
-                    .consumedEarlyOpportunityKeys
-                    .collectAsState(
-                        initial =
-                            emptySet()
-                    )
+                    appStateRepository
+                        .consumedEarlyOpportunityKeys
+                        .collectAsState(
+                            initial =
+                                emptySet()
+                        )
 
                 val lastProposalAtEpochMillis by
-                appStateRepository
-                    .lastProposalAtEpochMillis
-                    .collectAsState(
-                        initial = null
-                    )
+                    appStateRepository
+                        .lastProposalAtEpochMillis
+                        .collectAsState(
+                            initial = null
+                        )
 
                 val coroutineScope =
                     rememberCoroutineScope()
 
                 var screen by
-                rememberSaveable {
-                    mutableStateOf("home")
-                }
+                    rememberSaveable {
+                        mutableStateOf("home")
+                    }
 
                 var lastActivityClockMillis by
-                remember {
-                    mutableStateOf(
-                        System.currentTimeMillis()
-                    )
-                }
+                    remember {
+                        mutableStateOf(
+                            System.currentTimeMillis()
+                        )
+                    }
 
                 var activeProposalClockMillis by
-                remember {
-                    mutableStateOf(
-                        System.currentTimeMillis()
-                    )
-                }
+                    remember {
+                        mutableStateOf(
+                            System.currentTimeMillis()
+                        )
+                    }
 
                 LaunchedEffect(
                     lastProposalAtEpochMillis
@@ -340,15 +347,15 @@ class MainActivity : ComponentActivity() {
 
                     val remainingMillis =
                         LAST_ACTIVITY_VISIBILITY_MILLIS -
-                                (
-                                        System.currentTimeMillis() -
-                                                proposedAt
-                                        )
+                            (
+                                System.currentTimeMillis() -
+                                    proposedAt
+                            )
 
                     if (remainingMillis > 0L) {
                         delay(
                             remainingMillis +
-                                    250L
+                                250L
                         )
 
                         lastActivityClockMillis =
@@ -370,15 +377,15 @@ class MainActivity : ComponentActivity() {
 
                     val remainingMillis =
                         LAST_ACTIVITY_VISIBILITY_MILLIS -
-                                (
-                                        System.currentTimeMillis() -
-                                                proposedAt
-                                        )
+                            (
+                                System.currentTimeMillis() -
+                                    proposedAt
+                            )
 
                     if (remainingMillis > 0L) {
                         delay(
                             remainingMillis +
-                                    250L
+                                250L
                         )
 
                         activeProposalClockMillis =
@@ -403,7 +410,7 @@ class MainActivity : ComponentActivity() {
                                 .first()
                                 ?.takeIf {
                                     it.proposalKey ==
-                                            proposalKey
+                                        proposalKey
                                 }
 
                         if (deliveredProposal != null) {
@@ -451,21 +458,21 @@ class MainActivity : ComponentActivity() {
                         activeProposal
                             ?.takeIf {
                                 it.proposalKey ==
-                                        proposalKey
+                                    proposalKey
                             }
                             ?: return@LaunchedEffect
 
                     val readyToStart =
                         screen == "activity" &&
-                                activityState.context ==
+                            activityState.context ==
                                 org.sedentaryapp.ui.activity
                                     .ActivityDisplayContext
                                     .CURRENT_PROPOSAL &&
-                                activityState.guidedSessionState ==
+                            activityState.guidedSessionState ==
                                 GuidedSessionState.READY &&
-                                activityState.activity
-                                    ?.definition
-                                    ?.id ==
+                            activityState.activity
+                                ?.definition
+                                ?.id ==
                                 active.activityId
 
                     if (readyToStart) {
@@ -486,9 +493,9 @@ class MainActivity : ComponentActivity() {
                 }
 
                 var onboardingStep by
-                rememberSaveable {
-                    mutableStateOf(0)
-                }
+                    rememberSaveable {
+                        mutableStateOf(0)
+                    }
 
                 LaunchedEffect(
                     notificationsAllowed,
@@ -510,19 +517,69 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                val regularNextOpportunity =
+                    nextOpportunity(
+                        settings =
+                            scheduleSettings,
+                        minimumGapMinutes =
+                            minimumGapMinutes,
+                        consumedEarlyOpportunityKeys =
+                            consumedEarlyOpportunityKeys,
+                    )
+
+                val nextProposalOverrideAt =
+                    nextProposalOverride
+                        ?.at
+
+                LaunchedEffect(
+                    nextProposalOverrideAt,
+                    notificationsAllowed,
+                    exactAlarmsAllowed,
+                ) {
+                    val overrideAt =
+                        nextProposalOverrideAt
+                            ?: return@LaunchedEffect
+
+                    val now =
+                        LocalDateTime.now()
+
+                    val tooLate =
+                        overrideAt.isBefore(
+                            now.minusMinutes(
+                                ProposalAlarmScheduler
+                                    .MAX_LATE_DELIVERY_MINUTES
+                            )
+                        )
+
+                    val cannotBeDeliveredAndAlreadyPassed =
+                        (
+                            !notificationsAllowed ||
+                                !exactAlarmsAllowed
+                        ) &&
+                            !overrideAt.isAfter(
+                                now
+                            )
+
+                    if (
+                        tooLate ||
+                        cannotBeDeliveredAndAlreadyPassed
+                    ) {
+                        appStateRepository
+                            .clearNextProposalOverride()
+                    }
+                }
+
                 val nextOpportunity =
                     if (proposalsPaused) {
                         null
                     } else {
-                        nextOpportunity(
-                            settings =
-                                scheduleSettings,
-                            minimumGapMinutes =
-                                minimumGapMinutes,
-                            consumedEarlyOpportunityKeys =
-                                consumedEarlyOpportunityKeys,
-                        )
+                        nextProposalOverrideAt
+                            ?: regularNextOpportunity
                     }
+
+                val settingsNextProposal =
+                    nextProposalOverrideAt
+                        ?: regularNextOpportunity
 
                 LaunchedEffect(
                     scheduleSettings,
@@ -531,6 +588,7 @@ class MainActivity : ComponentActivity() {
                     notificationsAllowed,
                     exactAlarmsAllowed,
                     onboardingCompleted,
+                    nextProposalOverrideAt,
                 ) {
                     proposalAlarmScheduler
                         .reconcile()
@@ -545,7 +603,7 @@ class MainActivity : ComponentActivity() {
                         nextOpportunityKey != null &&
                         plannedActivityOverride
                             ?.opportunityKey ==
-                        nextOpportunityKey
+                            nextOpportunityKey
                     ) {
                         plannedActivityOverride
                             ?.activityId
@@ -607,7 +665,7 @@ class MainActivity : ComponentActivity() {
                             activities
                                 .firstOrNull {
                                     it.definition.id ==
-                                            activityId
+                                        activityId
                                 }
                         }
 
@@ -616,19 +674,19 @@ class MainActivity : ComponentActivity() {
                         ?.proposedAtEpochMillis
                         ?.let { proposedAt ->
                             activeProposalClockMillis -
-                                    proposedAt
+                                proposedAt
                         }
 
                 val activeProposalIsRecent =
                     activeProposalAgeMillis != null &&
-                            activeProposalAgeMillis >= 0L &&
-                            activeProposalAgeMillis <=
+                        activeProposalAgeMillis >= 0L &&
+                        activeProposalAgeMillis <=
                             LAST_ACTIVITY_VISIBILITY_MILLIS
 
                 val activeProposalIsNext =
                     !proposalsPaused &&
-                            activeProposalIsRecent &&
-                            activeActivity != null
+                        activeProposalIsRecent &&
+                        activeActivity != null
 
                 val activeAt =
                     activeProposal
@@ -651,7 +709,7 @@ class MainActivity : ComponentActivity() {
                             activities
                                 .firstOrNull {
                                     it.definition.id ==
-                                            activityId
+                                        activityId
                                 }
                         }
 
@@ -679,15 +737,15 @@ class MainActivity : ComponentActivity() {
 
                 val snoozeIsNext =
                     !activeProposalIsNext &&
-                            !proposalsPaused &&
-                            snoozedProposal != null &&
-                            snoozedActivity != null &&
-                            (
-                                    fixedAtEpochMillis == null ||
-                                            snoozedProposal!!
-                                                .triggerAtEpochMillis <=
-                                            fixedAtEpochMillis
-                                    )
+                        !proposalsPaused &&
+                        snoozedProposal != null &&
+                        snoozedActivity != null &&
+                        (
+                            fixedAtEpochMillis == null ||
+                                snoozedProposal!!
+                                    .triggerAtEpochMillis <=
+                                fixedAtEpochMillis
+                        )
 
                 val homeNextActivity =
                     when {
@@ -704,13 +762,13 @@ class MainActivity : ComponentActivity() {
                 val homeNextWhenText =
                     when {
                         activeProposalIsNext &&
-                                activeAt != null ->
+                            activeAt != null ->
                             opportunityLabel(
                                 activeAt
                             )
 
                         snoozeIsNext &&
-                                snoozedAt != null ->
+                            snoozedAt != null ->
                             opportunityLabel(
                                 snoozedAt
                             )
@@ -726,7 +784,7 @@ class MainActivity : ComponentActivity() {
 
                 val snoozedProposalOpen =
                     screen == "activity" &&
-                            activityState.context ==
+                        activityState.context ==
                             org.sedentaryapp.ui.activity
                                 .ActivityDisplayContext
                                 .SNOOZED_PROPOSAL
@@ -738,13 +796,13 @@ class MainActivity : ComponentActivity() {
                     lastProposalAtEpochMillis
                         ?.let { proposedAt ->
                             lastActivityClockMillis -
-                                    proposedAt
+                                proposedAt
                         }
 
                 val lastActivityIsRecent =
                     lastActivityAgeMillis != null &&
-                            lastActivityAgeMillis >= 0L &&
-                            lastActivityAgeMillis <=
+                        lastActivityAgeMillis >= 0L &&
+                        lastActivityAgeMillis <=
                             LAST_ACTIVITY_VISIBILITY_MILLIS
 
                 val visibleLastActivity =
@@ -769,7 +827,7 @@ class MainActivity : ComponentActivity() {
 
                 val showingOnboardingConfig =
                     onboardingCompleted == false &&
-                            onboardingStep == 1
+                        onboardingStep == 1
 
                 when {
 
@@ -778,7 +836,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     onboardingCompleted == false &&
-                            onboardingStep == 0 -> {
+                        onboardingStep == 0 -> {
 
                         WelcomeScreen(
                             onConfigure = {
@@ -788,7 +846,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     onboardingCompleted == false &&
-                            onboardingStep == 2 -> {
+                        onboardingStep == 2 -> {
 
                         BackHandler {
                             onboardingStep = 1
@@ -833,22 +891,22 @@ class MainActivity : ComponentActivity() {
 
                                     val runtimePermissionMissing =
                                         Build.VERSION.SDK_INT >=
-                                                Build.VERSION_CODES.TIRAMISU &&
-                                                checkSelfPermission(
-                                                    Manifest.permission
-                                                        .POST_NOTIFICATIONS
-                                                ) !=
-                                                PackageManager.PERMISSION_GRANTED
+                                            Build.VERSION_CODES.TIRAMISU &&
+                                            checkSelfPermission(
+                                                Manifest.permission
+                                                    .POST_NOTIFICATIONS
+                                            ) !=
+                                            PackageManager.PERMISSION_GRANTED
 
                                     if (
                                         runtimePermissionMissing &&
                                         (
-                                                !notificationPermissionRequested ||
-                                                        shouldShowRequestPermissionRationale(
-                                                            Manifest.permission
-                                                                .POST_NOTIFICATIONS
-                                                        )
+                                            !notificationPermissionRequested ||
+                                                shouldShowRequestPermissionRationale(
+                                                    Manifest.permission
+                                                        .POST_NOTIFICATIONS
                                                 )
+                                        )
                                     ) {
                                         coroutineScope.launch {
                                             appStateRepository
@@ -922,7 +980,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     screen == "activity" &&
-                            activity != null -> {
+                        activity != null -> {
 
                         BackHandler {
 
@@ -1122,7 +1180,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     showingOnboardingConfig ||
-                            screen == "schedule" -> {
+                        screen == "schedule" -> {
 
                         BackHandler {
                             if (showingOnboardingConfig) {
@@ -1156,6 +1214,12 @@ class MainActivity : ComponentActivity() {
 
                             minimumGapMinutes =
                                 minimumGapMinutes,
+
+                            nextProposalAt =
+                                settingsNextProposal,
+
+                            nextProposalOverrideActive =
+                                nextProposalOverrideAt != null,
 
                             title =
                                 if (showingOnboardingConfig) {
@@ -1310,6 +1374,31 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
 
+                            onNextProposalChanged = {
+                                    at,
+                                ->
+
+                                coroutineScope.launch {
+                                    appStateRepository
+                                        .saveNextProposalOverride(
+                                            at
+                                        )
+
+                                    proposalAlarmScheduler
+                                        .reconcile()
+                                }
+                            },
+
+                            onClearNextProposalOverride = {
+                                coroutineScope.launch {
+                                    appStateRepository
+                                        .clearNextProposalOverride()
+
+                                    proposalAlarmScheduler
+                                        .reconcile()
+                                }
+                            },
+
                             showInfoLinks =
                                 !showingOnboardingConfig,
 
@@ -1339,23 +1428,23 @@ class MainActivity : ComponentActivity() {
 
                             notificationPermissionRequired =
                                 !proposalsPaused &&
-                                        !notificationsAllowed &&
-                                        homeNextActivity != null,
+                                    !notificationsAllowed &&
+                                    homeNextActivity != null,
 
                             exactAlarmPermissionRequired =
                                 !proposalsPaused &&
-                                        notificationsAllowed &&
-                                        !exactAlarmsAllowed &&
-                                        homeNextActivity != null,
+                                    notificationsAllowed &&
+                                    !exactAlarmsAllowed &&
+                                    homeNextActivity != null,
 
                             nextActivity =
                                 homeNextActivity,
 
                             noEligibleActivity =
                                 nextOpportunity != null &&
-                                        fixedNextActivity == null &&
-                                        !snoozeIsNext &&
-                                        !activeProposalIsNext,
+                                    fixedNextActivity == null &&
+                                    !snoozeIsNext &&
+                                    !activeProposalIsNext,
 
                             nextActivityWhenText =
                                 homeNextWhenText,
@@ -1388,22 +1477,22 @@ class MainActivity : ComponentActivity() {
 
                                 val runtimePermissionMissing =
                                     Build.VERSION.SDK_INT >=
-                                            Build.VERSION_CODES.TIRAMISU &&
-                                            checkSelfPermission(
-                                                Manifest.permission
-                                                    .POST_NOTIFICATIONS
-                                            ) !=
-                                            PackageManager.PERMISSION_GRANTED
+                                        Build.VERSION_CODES.TIRAMISU &&
+                                        checkSelfPermission(
+                                            Manifest.permission
+                                                .POST_NOTIFICATIONS
+                                        ) !=
+                                        PackageManager.PERMISSION_GRANTED
 
                                 if (
                                     runtimePermissionMissing &&
                                     (
-                                            !notificationPermissionRequested ||
-                                                    shouldShowRequestPermissionRationale(
-                                                        Manifest.permission
-                                                            .POST_NOTIFICATIONS
-                                                    )
+                                        !notificationPermissionRequested ||
+                                            shouldShowRequestPermissionRationale(
+                                                Manifest.permission
+                                                    .POST_NOTIFICATIONS
                                             )
+                                    )
                                 ) {
                                     coroutineScope.launch {
                                         appStateRepository
@@ -1485,6 +1574,15 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
 
+                            onMoveNow = {
+                                if (
+                                    viewModel
+                                        .openManualActivity()
+                                ) {
+                                    screen = "activity"
+                                }
+                            },
+
                             onOpenLastActivity = {
                                 viewModel
                                     .openLastActivity()
@@ -1554,27 +1652,27 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun areNotificationsAllowed():
-            Boolean {
+        Boolean {
 
         val runtimePermissionGranted =
             Build.VERSION.SDK_INT <
-                    Build.VERSION_CODES.TIRAMISU ||
-                    checkSelfPermission(
-                        Manifest.permission
-                            .POST_NOTIFICATIONS
-                    ) ==
-                    PackageManager.PERMISSION_GRANTED
+                Build.VERSION_CODES.TIRAMISU ||
+                checkSelfPermission(
+                    Manifest.permission
+                        .POST_NOTIFICATIONS
+                ) ==
+                PackageManager.PERMISSION_GRANTED
 
         return runtimePermissionGranted &&
-                NotificationManagerCompat
-                    .from(
-                        this
-                    )
-                    .areNotificationsEnabled()
+            NotificationManagerCompat
+                .from(
+                    this
+                )
+                .areNotificationsEnabled()
     }
 
     private fun canScheduleExactAlarms():
-            Boolean {
+        Boolean {
 
         if (
             Build.VERSION.SDK_INT <
@@ -1635,7 +1733,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private const val
-        LAST_ACTIVITY_VISIBILITY_MILLIS =
+    LAST_ACTIVITY_VISIBILITY_MILLIS =
     45L * 60_000L
 
 private fun lastActivityLabel(
@@ -1679,7 +1777,7 @@ private fun nextOpportunity(
     settings: ScheduleSettings,
     minimumGapMinutes: Long,
     consumedEarlyOpportunityKeys:
-    Set<String>,
+        Set<String>,
 ): LocalDateTime? {
 
     return OpportunityRuntimePlanner
@@ -1776,8 +1874,8 @@ private fun postureLabel(
             "Debout nécessaire"
 
         activity.preferredPosture ==
-                "standing" ->
-            "Debout conseillé"
+            "standing" ->
+            "Si tu peux, lève-toi"
 
         else ->
             null

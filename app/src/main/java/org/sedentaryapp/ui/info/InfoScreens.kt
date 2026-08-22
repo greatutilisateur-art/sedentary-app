@@ -33,7 +33,6 @@ fun WhyAppScreen(
                 "Au travail, il est facile de rester assis longtemps sans y penser.",
                 "Intervalles propose de courtes occasions de bouger pendant la journée de travail, aux horaires que tu choisis.",
                 "L’objectif n’est pas de faire du sport ni de mesurer une performance. Chaque proposition reste une invitation : tu peux la faire, la reporter ou l’ignorer.",
-                "Les textes scientifiques détaillés et leurs sources seront intégrés uniquement après validation du référentiel scientifique.",
             ),
         onBack =
             onBack,

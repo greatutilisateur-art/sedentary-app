@@ -414,9 +414,9 @@ private fun LandscapeActivityContent(
                                     activity.guidanceMode ==
                                     ActivityGuidanceMode.TIMER
                                 ) {
-                                    "C’est parti"
+                                    "Commencer"
                                 } else {
-                                    "Je le fais"
+                                    "Commencer"
                                 }
                             )
                         }
@@ -701,9 +701,9 @@ private fun ReadyContent(
                 activity.guidanceMode ==
                 ActivityGuidanceMode.TIMER
             ) {
-                "C’est parti"
+                "Commencer"
             } else {
-                "Je le fais"
+                "Commencer"
             }
         )
     }

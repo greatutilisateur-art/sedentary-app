@@ -1,5 +1,5 @@
 {
-  "policy_version": "decision-policy-v1.0.2",
+  "policy_version": "decision-policy-v1.0.3",
   "selector_version": "weighted-selector-v1.0.0",
   "default_slots": [
     "10:00",
@@ -25,12 +25,6 @@
     "allow_after_work_end": true,
     "does_not_move_standard_slots": true,
     "hide_option_if_too_close_to_fixed_slot": true
-  },
-  "start_of_day": {
-    "supported": true,
-    "enabled_by_default": false,
-    "included_in_default_four_slots": false,
-    "minimum_gap_to_standard_slots_minutes": 20
   },
   "scoring": {
     "min_weight": 0.05,

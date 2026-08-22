@@ -1,6 +1,6 @@
 {
   "$schema": "./activity_catalog_schema_v1.json",
-  "catalog_version": "1.0.3",
+  "catalog_version": "1.0.5",
   "policy_compatibility": "1.0.x",
   "vocabulary_version": "1.0.0",
   "status": "published",
@@ -12,15 +12,17 @@
     "Les niveaux de preuve sont documentaires et ne sont pas des multiplicateurs de score.",
     "Les activités publiées restent comprises entre 30 secondes et 5 minutes.",
     "Les recommandations de posture sont affichées par l’UX à partir des métadonnées; elles ne sont pas répétées dans les consignes.",
-    "guidance_mode explicite le parcours V0 : timer pour les activités nécessitant un guidage temporel, simple sinon."
+    "guidance_mode explicite le parcours V0 : timer pour les activités nécessitant un guidage temporel, simple sinon.",
+    "Les nombres de répétitions servent de repères pratiques pour l’utilisateur et ne constituent pas une dose scientifiquement optimale.",
+    "START01 et START02 sont conservées pour compatibilité d’identifiants mais sont désormais des activités standard, proposées comme les autres."
   ],
   "activities": [
     {
       "id": "MOUV01",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Une petite marche ?",
-      "instruction": "Et si tu allais marcher 2 à 5 minutes pour te dégourdir les jambes ?",
+      "instruction": "Marche quelques minutes pour faire une pause et te dégourdir les jambes.",
       "user_category": "mouvement",
       "internal_family": "walking",
       "intensity": "active",
@@ -57,10 +59,10 @@
     },
     {
       "id": "MOUV02",
-      "revision": 3,
+      "revision": 4,
       "status": "published",
       "title": "Un verre d’eau ?",
-      "instruction": "Lève-toi, marche un peu et profite-en pour aller prendre un verre d’eau.",
+      "instruction": "Marche un peu et profite-en pour aller prendre un verre d’eau.",
       "user_category": "mouvement",
       "internal_family": "walking_hydration_anchor",
       "intensity": "gentle",
@@ -95,10 +97,10 @@
     },
     {
       "id": "MOUV03",
-      "revision": 3,
+      "revision": 4,
       "status": "published",
       "title": "Un petit tour par les escaliers ?",
-      "instruction": "Si tu as des escaliers à proximité, monte ou descends un étage tranquillement. Tu peux en profiter pour aller prendre l’air ou simplement faire un petit détour.",
+      "instruction": "Si tu as des escaliers à proximité, monte ou descends un ou plusieurs étages. Tu peux en profiter pour aller prendre l’air ou simplement faire un petit détour.",
       "user_category": "mouvement",
       "internal_family": "stairs",
       "intensity": "dynamic",
@@ -135,10 +137,10 @@
     },
     {
       "id": "MOUV04",
-      "revision": 3,
+      "revision": 4,
       "status": "published",
       "title": "Prendre un peu l’air ?",
-      "instruction": "Si tu peux sortir quelques minutes, va marcher tranquillement dehors.",
+      "instruction": "Si tu peux sortir quelques minutes, va marcher dehors.",
       "user_category": "mouvement",
       "internal_family": "outdoor_walk",
       "intensity": "gentle",
@@ -173,10 +175,10 @@
     },
     {
       "id": "MOB01",
-      "revision": 3,
+      "revision": 5,
       "status": "published",
       "title": "Quelques cercles d’épaules ?",
-      "instruction": "Fais lentement quelques cercles avec les épaules, puis laisse-les redescendre.",
+      "instruction": "Fais 5 cercles lents avec les épaules vers l’arrière, puis 5 vers l’avant.",
       "user_category": "mobilite",
       "internal_family": "shoulder_mobility",
       "intensity": "gentle",
@@ -214,10 +216,10 @@
     },
     {
       "id": "MOB02",
-      "revision": 4,
+      "revision": 6,
       "status": "published",
-      "title": "Tourne doucement le haut du corps",
-      "instruction": "Tourne doucement le buste vers la droite, reviens au centre, puis vers la gauche. Répète sans forcer.",
+      "title": "Tourne le haut du corps",
+      "instruction": "Tourne le buste vers la droite puis vers la gauche. Répète 4 fois de chaque côté.",
       "user_category": "mobilite",
       "internal_family": "thoracic_rotation",
       "intensity": "gentle",
@@ -256,10 +258,10 @@
     },
     {
       "id": "MOB03",
-      "revision": 4,
+      "revision": 5,
       "status": "published",
       "title": "Fais bouger tes chevilles",
-      "instruction": "Fais quelques mouvements ou rotations avec chaque cheville, tranquillement.",
+      "instruction": "Fais 5 rotations dans un sens puis 5 dans l’autre avec une cheville, puis change de côté.",
       "user_category": "mobilite",
       "internal_family": "ankle_mobility",
       "intensity": "gentle",
@@ -296,10 +298,10 @@
     },
     {
       "id": "MOB04",
-      "revision": 4,
+      "revision": 6,
       "status": "published",
-      "title": "Mobilise doucement l’arrière des jambes",
-      "instruction": "Penche doucement le buste vers l’avant, remonte, puis recommence quelques fois, sans chercher à tenir la position.",
+      "title": "Penche-toi vers l’avant quelques fois",
+      "instruction": "Penche le buste vers l’avant, remonte, puis recommence 5 fois.",
       "user_category": "mobilite",
       "internal_family": "posterior_chain_mobility",
       "intensity": "gentle",
@@ -341,10 +343,10 @@
     },
     {
       "id": "MOB05",
-      "revision": 4,
+      "revision": 5,
       "status": "published",
-      "title": "Ouvre doucement le haut du corps",
-      "instruction": "Amène doucement les épaules vers l’arrière, ouvre la poitrine quelques secondes, puis relâche.",
+      "title": "Ramène doucement les épaules vers l’arrière",
+      "instruction": "Amène doucement les épaules vers l’arrière, ouvre la poitrine 2 à 3 secondes, puis relâche. Répète 5 fois.",
       "user_category": "mobilite",
       "internal_family": "chest_opening",
       "intensity": "gentle",
@@ -383,10 +385,10 @@
     },
     {
       "id": "MOB06",
-      "revision": 4,
+      "revision": 6,
       "status": "published",
-      "title": "Fais bouger doucement tes hanches",
-      "instruction": "Fais quelques petits cercles avec le bassin dans un sens, puis dans l’autre, sans forcer.",
+      "title": "Quelques petits cercles de hanches ?",
+      "instruction": "Fais 5 petits cercles avec le bassin dans un sens, puis 5 dans l’autre.",
       "user_category": "mobilite",
       "internal_family": "hip_mobility",
       "intensity": "gentle",
@@ -424,10 +426,10 @@
     },
     {
       "id": "ETIR01",
-      "revision": 3,
+      "revision": 4,
       "status": "published",
       "title": "Un petit étirement des mollets ?",
-      "instruction": "Place un pied légèrement derrière l’autre et amène doucement le talon arrière vers le sol. Puis change de côté.",
+      "instruction": "Face à un mur ou à un bureau, prends appui avec les mains. Recule un pied, garde le talon au sol et la jambe arrière tendue, puis avance le bassin vers l’avant jusqu’à sentir l’étirement du mollet. Change de côté à mi-parcours.",
       "user_category": "etirement",
       "internal_family": "calf_stretch",
       "intensity": "gentle",
@@ -464,10 +466,10 @@
     },
     {
       "id": "ETIR02",
-      "revision": 3,
+      "revision": 4,
       "status": "published",
       "title": "Un peu d’étirement pour l’arrière des jambes ?",
-      "instruction": "Pose un talon légèrement devant toi et incline doucement le bassin vers l’avant, sans forcer. Puis change de jambe.",
+      "instruction": "Pose un talon légèrement devant toi et incline le bassin vers l’avant jusqu’à sentir l’étirement à l’arrière de la cuisse. Change de jambe à mi-parcours.",
       "user_category": "etirement",
       "internal_family": "hamstring_stretch",
       "intensity": "gentle",
@@ -504,10 +506,10 @@
     },
     {
       "id": "ETIR03",
-      "revision": 4,
+      "revision": 5,
       "status": "published",
       "title": "Grandis-toi quelques secondes",
-      "instruction": "Lève les bras, grandis-toi doucement, puis relâche.",
+      "instruction": "Lève les bras, grandis-toi doucement 2 à 3 secondes, puis relâche. Répète 3 fois.",
       "user_category": "etirement",
       "internal_family": "global_reach",
       "intensity": "gentle",
@@ -541,14 +543,14 @@
         "grandir",
         "s’étirer"
       ],
-      "guidance_mode": "timer"
+      "guidance_mode": "simple"
     },
     {
       "id": "DYN01",
-      "revision": 3,
+      "revision": 4,
       "status": "published",
-      "title": "Quelques squats tranquilles ?",
-      "instruction": "Fais 5 à 8 squats tranquilles, à ton rythme.",
+      "title": "Quelques squats ?",
+      "instruction": "Fais 5 à 8 squats, à ton rythme.",
       "user_category": "dynamique",
       "internal_family": "squat",
       "intensity": "dynamic",
@@ -626,10 +628,10 @@
     },
     {
       "id": "DYN03",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Quelques levers de chaise ?",
-      "instruction": "Lève-toi puis rassieds-toi tranquillement 5 à 8 fois.",
+      "instruction": "Lève-toi puis rassieds-toi 5 à 8 fois, à ton rythme.",
       "user_category": "dynamique",
       "internal_family": "sit_to_stand",
       "intensity": "active",
@@ -822,10 +824,10 @@
     },
     {
       "id": "VIS02",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Une petite pause pour les yeux",
-      "instruction": "Ferme les yeux quelques instants, relâche ton regard, puis regarde à nouveau au loin.",
+      "instruction": "Ferme les yeux quelques secondes, puis ouvre-les et regarde un point éloigné pendant quelques instants.",
       "user_category": "visuel",
       "internal_family": "visual_rest",
       "intensity": "gentle",
@@ -859,12 +861,12 @@
     },
     {
       "id": "START01",
-      "revision": 3,
+      "revision": 4,
       "status": "published",
-      "title": "Pour commencer : le haut du corps",
-      "instruction": "Fais quelques cercles d’épaules, puis tourne doucement le buste de chaque côté et ouvre la poitrine quelques secondes. Recommence tranquillement pendant environ 2 minutes.",
+      "title": "Quelques mouvements pour le haut du corps ?",
+      "instruction": "Fais 5 cercles d’épaules, tourne le buste 4 fois de chaque côté, puis ramène les épaules vers l’arrière 5 fois. Recommence à ton rythme pendant environ 2 minutes.",
       "user_category": "mobilite",
-      "internal_family": "start_upper_body",
+      "internal_family": "upper_body_sequence",
       "intensity": "gentle",
       "duration_seconds_min": 120,
       "duration_seconds_max": 120,
@@ -876,7 +878,7 @@
       "standing_required": false,
       "walking_required": false,
       "eligible_opportunity_types": [
-        "start_of_day"
+        "standard"
       ],
       "sedentary_break_effect": "probable",
       "space_required": "small",
@@ -893,18 +895,20 @@
       "base_weight": 6,
       "variant_of": null,
       "search_synonyms": [
-        "début journée haut corps"
+        "haut du corps",
+        "mobilité épaules",
+        "mobilité buste"
       ],
       "guidance_mode": "timer"
     },
     {
       "id": "START02",
-      "revision": 3,
+      "revision": 4,
       "status": "published",
-      "title": "Pour commencer : jambes et hanches",
-      "instruction": "Fais quelques mouvements de chevilles, quelques petits cercles de hanches, puis quelques flexions de jambes tranquilles. Recommence à ton rythme pendant environ 2 minutes.",
+      "title": "Quelques mouvements pour les jambes ?",
+      "instruction": "Fais 5 rotations de chevilles dans chaque sens, 5 petits cercles de hanches dans chaque sens, puis 5 flexions de jambes. Recommence à ton rythme pendant environ 2 minutes.",
       "user_category": "mobilite",
-      "internal_family": "start_lower_body",
+      "internal_family": "lower_body_sequence",
       "intensity": "gentle",
       "duration_seconds_min": 120,
       "duration_seconds_max": 120,
@@ -915,7 +919,7 @@
       "standing_required": true,
       "walking_required": false,
       "eligible_opportunity_types": [
-        "start_of_day"
+        "standard"
       ],
       "sedentary_break_effect": "certain",
       "space_required": "small",
@@ -933,7 +937,9 @@
       "base_weight": 6,
       "variant_of": null,
       "search_synonyms": [
-        "début journée jambes"
+        "jambes",
+        "hanches",
+        "chevilles"
       ],
       "guidance_mode": "timer"
     }

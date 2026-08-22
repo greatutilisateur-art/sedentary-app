@@ -61,7 +61,7 @@ fun ExactAlarmOnboardingScreen(
 
             Text(
                 text =
-                    "Pour déclencher les propositions au plus près des horaires choisis, Android demande l’accès « Alarmes et rappels ».",
+                    "Pour recevoir les notifications aux horaires choisis, Android demande l’accès « Alarmes et rappels ».",
                 style =
                     MaterialTheme.typography
                         .bodyLarge,
@@ -88,18 +88,37 @@ fun ExactAlarmOnboardingScreen(
                         defaultElevation = 0.dp
                     ),
             ) {
-                Text(
+                Column(
                     modifier =
                         Modifier.padding(18.dp),
-                    text =
-                        "L’application programme uniquement la prochaine proposition et ne reste pas active en arrière-plan.",
-                    style =
-                        MaterialTheme.typography
-                            .bodyMedium,
-                    color =
-                        MaterialTheme.colorScheme
-                            .onSurfaceVariant,
-                )
+                ) {
+                    Text(
+                        text =
+                            "Intervalles programme uniquement la prochaine notification et n’a pas besoin de fonctionner en permanence en arrière-plan.",
+                        style =
+                            MaterialTheme.typography
+                                .bodyMedium,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(10.dp),
+                    )
+
+                    Text(
+                        text =
+                            "Sans cet accès, tu peux toujours utiliser Intervalles et consulter la prochaine activité dans l’application.",
+                        style =
+                            MaterialTheme.typography
+                                .bodyMedium,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                    )
+                }
             }
 
             Spacer(

@@ -206,7 +206,7 @@ object NotificationPublisher {
         builder.addAction(
             Notification.Action.Builder(
                 null,
-                "Je le fais",
+                "Commencer",
                 doNowPendingIntent,
             ).build()
         )

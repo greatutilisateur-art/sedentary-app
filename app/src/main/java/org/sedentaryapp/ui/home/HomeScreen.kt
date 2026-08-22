@@ -46,6 +46,7 @@ fun HomeScreen(
     onRequestNotificationPermission: () -> Unit,
     onRequestExactAlarmPermission: () -> Unit,
     onOpenNextActivity: () -> Unit,
+    onMoveNow: () -> Unit,
     onOpenLastActivity: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -150,6 +151,22 @@ fun HomeScreen(
                     Text("Réactiver")
                 }
 
+                Spacer(
+                    modifier =
+                        Modifier.height(12.dp),
+                )
+
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick =
+                        onMoveNow,
+                    shape =
+                        RoundedCornerShape(14.dp),
+                ) {
+                    Text("Bouger maintenant")
+                }
+
                 return@Column
             }
 
@@ -225,6 +242,22 @@ fun HomeScreen(
                             "Aucune proposition prévue."
                         },
                 )
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(12.dp),
+            )
+
+            OutlinedButton(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick =
+                    onMoveNow,
+                shape =
+                    RoundedCornerShape(14.dp),
+            ) {
+                Text("Bouger maintenant")
             }
 
             if (

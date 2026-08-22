@@ -127,6 +127,19 @@ class ProposalAlarmReceiver :
                         )
                             ?: return,
                 )
+
+            ProposalAlarmScheduler
+                .EVENT_TYPE_ONE_OFF ->
+                deliverOneOffProposal(
+                    context =
+                        context,
+                    proposalKey =
+                        intent.getStringExtra(
+                            ProposalAlarmScheduler
+                                .EXTRA_PROPOSAL_KEY
+                        )
+                            ?: return,
+                )
         }
     }
 
@@ -311,6 +324,207 @@ class ProposalAlarmReceiver :
             .clearPlannedActivityOverrideIfOpportunity(
                 proposalKey
             )
+
+        val alertSettings =
+            dependencies
+                .appStateRepository
+                .notificationAlertSettings
+                .first()
+
+        NotificationPublisher
+            .show(
+                context =
+                    context,
+                activity =
+                    activity,
+                proposalKey =
+                    proposalKey,
+                allowSnooze =
+                    true,
+                soundEnabled =
+                    alertSettings
+                        .soundEnabled,
+                vibrationEnabled =
+                    alertSettings
+                        .vibrationEnabled,
+            )
+
+        dependencies.scheduler
+            .reconcile()
+    }
+
+    private suspend fun deliverOneOffProposal(
+        context: Context,
+        proposalKey: String,
+    ) {
+
+        val dependencies =
+            dependencies(
+                context
+            )
+
+        if (
+            !deliveryStillAllowed(
+                dependencies
+            )
+        ) {
+            dependencies.scheduler
+                .reconcile()
+
+            return
+        }
+
+        val override =
+            dependencies
+                .appStateRepository
+                .nextProposalOverride
+                .first()
+
+        if (
+            override == null ||
+            override.at.toString() !=
+            proposalKey
+        ) {
+            dependencies.scheduler
+                .reconcile()
+
+            return
+        }
+
+        val opportunity =
+            override.at
+
+        val now =
+            LocalDateTime.now()
+
+        if (
+            opportunity.isAfter(
+                now.plusMinutes(1)
+            )
+        ) {
+            dependencies.scheduler
+                .reconcile()
+
+            return
+        }
+
+        val lateMinutes =
+            Duration
+                .between(
+                    opportunity,
+                    now,
+                )
+                .toMinutes()
+
+        if (
+            lateMinutes >
+            ProposalAlarmScheduler
+                .MAX_LATE_DELIVERY_MINUTES
+        ) {
+            dependencies
+                .appStateRepository
+                .clearNextProposalOverride()
+
+            dependencies.scheduler
+                .reconcile()
+
+            return
+        }
+
+        val history =
+            dependencies
+                .appStateRepository
+                .proposalHistory
+                .first()
+
+        if (
+            history.any {
+                it.proposalKey ==
+                    proposalKey
+            }
+        ) {
+            dependencies
+                .appStateRepository
+                .clearNextProposalOverride()
+
+            dependencies.scheduler
+                .reconcile()
+
+            return
+        }
+
+        val activity =
+            ProposalSelector
+                .select(
+                    opportunityKey =
+                        proposalKey,
+                    activities =
+                        dependencies
+                            .catalogRepository
+                            .loadActivities(),
+                    policy =
+                        dependencies.policy,
+                    activityPreferences =
+                        dependencies
+                            .appStateRepository
+                            .activityPreferences
+                            .first(),
+                    proposalHistory =
+                        history,
+                    plannedOverride =
+                        dependencies
+                            .appStateRepository
+                            .plannedActivityOverride
+                            .first(),
+                )
+                ?: run {
+                    dependencies
+                        .appStateRepository
+                        .clearNextProposalOverride()
+
+                    dependencies.scheduler
+                        .reconcile()
+
+                    return
+                }
+
+        val activityId =
+            activity.definition.id
+
+        dependencies
+            .appStateRepository
+            .recordProposal(
+                proposalKey =
+                    proposalKey,
+                activityId =
+                    activityId,
+                maxEntries =
+                    dependencies
+                        .policy
+                        .scoring
+                        .historyWindowProposals,
+            )
+
+        dependencies
+            .appStateRepository
+            .saveActiveProposal(
+                activityId =
+                    activityId,
+                proposalKey =
+                    proposalKey,
+                proposedAtEpochMillis =
+                    System.currentTimeMillis(),
+            )
+
+        dependencies
+            .appStateRepository
+            .clearPlannedActivityOverrideIfOpportunity(
+                proposalKey
+            )
+
+        dependencies
+            .appStateRepository
+            .clearNextProposalOverride()
 
         val alertSettings =
             dependencies

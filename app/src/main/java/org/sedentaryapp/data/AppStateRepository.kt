@@ -77,6 +77,10 @@ data class ActiveProposal(
     val proposedAtEpochMillis: Long,
 )
 
+data class NextProposalOverride(
+    val at: LocalDateTime,
+)
+
 class AppStateRepository(
     context: Context,
     defaultSlotTimes: List<LocalTime>,
@@ -201,6 +205,18 @@ class AppStateRepository(
                 parsePlannedActivityOverride(
                     preferences[
                         PLANNED_ACTIVITY_OVERRIDE
+                    ]
+                )
+            }
+
+    val nextProposalOverride:
+            Flow<NextProposalOverride?> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                parseNextProposalOverride(
+                    preferences[
+                        NEXT_PROPOSAL_OVERRIDE
                     ]
                 )
             }
@@ -762,6 +778,56 @@ class AppStateRepository(
         }
     }
 
+    suspend fun saveNextProposalOverride(
+        at: LocalDateTime,
+    ) {
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                NEXT_PROPOSAL_OVERRIDE
+            ] = at
+                .withSecond(0)
+                .withNano(0)
+                .toString()
+
+            preferences.remove(
+                PLANNED_ACTIVITY_OVERRIDE
+            )
+        }
+    }
+
+    suspend fun clearNextProposalOverride() {
+        appContext.appStateDataStore.edit { preferences ->
+            val current =
+                parseNextProposalOverride(
+                    preferences[
+                        NEXT_PROPOSAL_OVERRIDE
+                    ]
+                )
+
+            if (current != null) {
+                val planned =
+                    parsePlannedActivityOverride(
+                        preferences[
+                            PLANNED_ACTIVITY_OVERRIDE
+                        ]
+                    )
+
+                if (
+                    planned?.opportunityKey ==
+                    current.at.toString()
+                ) {
+                    preferences.remove(
+                        PLANNED_ACTIVITY_OVERRIDE
+                    )
+                }
+            }
+
+            preferences.remove(
+                NEXT_PROPOSAL_OVERRIDE
+            )
+        }
+    }
+
     suspend fun saveActiveProposal(
         proposalKey: String,
         activityId: String,
@@ -968,6 +1034,24 @@ class AppStateRepository(
             ) {
                 preferences.remove(
                     SNOOZED_PROPOSAL
+                )
+            }
+
+            val currentNextOverride =
+                parseNextProposalOverride(
+                    preferences[
+                        NEXT_PROPOSAL_OVERRIDE
+                    ]
+                )
+
+            if (
+                currentNextOverride
+                    ?.at
+                    ?.toString() ==
+                opportunityKey
+            ) {
+                preferences.remove(
+                    NEXT_PROPOSAL_OVERRIDE
                 )
             }
         }
@@ -1515,6 +1599,27 @@ class AppStateRepository(
         )
     }
 
+    private fun parseNextProposalOverride(
+        value: String?,
+    ): NextProposalOverride? {
+
+        if (value.isNullOrBlank()) {
+            return null
+        }
+
+        val at =
+            runCatching {
+                LocalDateTime.parse(
+                    value
+                )
+            }.getOrNull()
+                ?: return null
+
+        return NextProposalOverride(
+            at = at
+        )
+    }
+
     private fun parsePlannedActivityOverride(
         value: String?,
     ): PlannedActivityOverride? {
@@ -2037,6 +2142,11 @@ class AppStateRepository(
         val PLANNED_ACTIVITY_OVERRIDE =
             stringPreferencesKey(
                 "planned_activity_override"
+            )
+
+        val NEXT_PROPOSAL_OVERRIDE =
+            stringPreferencesKey(
+                "next_proposal_override"
             )
 
         val CONSUMED_EARLY_OPPORTUNITY_KEYS =

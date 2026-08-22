@@ -1,5 +1,6 @@
 package org.sedentaryapp.ui.schedule
 
+import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -41,7 +43,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import org.sedentaryapp.R
 import org.sedentaryapp.data.ActivityPreferences
 import org.sedentaryapp.data.ScheduleSettings
@@ -56,6 +61,8 @@ fun ScheduleScreen(
     notificationSoundEnabled: Boolean,
     notificationVibrationEnabled: Boolean,
     minimumGapMinutes: Long,
+    nextProposalAt: LocalDateTime?,
+    nextProposalOverrideActive: Boolean,
     title: String = "Tes réglages",
     showPauseControl: Boolean = true,
     bottomActionLabel: String = "Fermer",
@@ -70,6 +77,8 @@ fun ScheduleScreen(
     onCompletionVibrationChanged: (Boolean) -> Unit,
     onNotificationSoundChanged: (Boolean) -> Unit,
     onNotificationVibrationChanged: (Boolean) -> Unit,
+    onNextProposalChanged: (LocalDateTime) -> Unit,
+    onClearNextProposalOverride: () -> Unit,
     showInfoLinks: Boolean = true,
     onOpenWhy: () -> Unit,
     onOpenAbout: () -> Unit,
@@ -79,11 +88,18 @@ fun ScheduleScreen(
         LocalContext.current
 
     var slotError by
-    remember {
-        mutableStateOf<String?>(
-            null
-        )
-    }
+        remember {
+            mutableStateOf<String?>(
+                null
+            )
+        }
+
+    var nextProposalError by
+        remember {
+            mutableStateOf<String?>(
+                null
+            )
+        }
 
     Surface(
         modifier =
@@ -344,7 +360,7 @@ fun ScheduleScreen(
                                     .map {
                                         it.time
                                     } +
-                                        newTime
+                                    newTime
 
                             val valid =
                                 NextOpportunityPlanner
@@ -368,6 +384,155 @@ fun ScheduleScreen(
                     },
                 ) {
                     Text("+ Ajouter un créneau")
+                }
+            }
+
+            if (showInfoLinks) {
+                Spacer(
+                    modifier =
+                        Modifier.height(24.dp),
+                )
+
+                SectionTitle(
+                    text =
+                        "Prochaine proposition d’activité"
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(10.dp),
+                )
+
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    shape =
+                        RoundedCornerShape(18.dp),
+                    border =
+                        BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme
+                                .outlineVariant,
+                        ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme.colorScheme
+                                    .surface,
+                        ),
+                    elevation =
+                        CardDefaults.cardElevation(
+                            defaultElevation = 0.dp
+                        ),
+                ) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = 16.dp,
+                                    vertical = 10.dp,
+                                ),
+                        verticalAlignment =
+                            Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            modifier =
+                                Modifier.weight(1f),
+                            text =
+                                nextProposalAt
+                                    ?.let {
+                                        formatNextProposalDateTime(
+                                            it
+                                        )
+                                    }
+                                    ?: "Aucune proposition prévue",
+                            style =
+                                MaterialTheme.typography
+                                    .bodyLarge,
+                        )
+
+                        TextButton(
+                            onClick = {
+                                val initial =
+                                    nextProposalAt
+                                        ?.takeIf {
+                                            it.isAfter(
+                                                LocalDateTime.now()
+                                            )
+                                        }
+                                        ?: LocalDateTime
+                                            .now()
+                                            .plusDays(1)
+                                            .withHour(10)
+                                            .withMinute(0)
+                                            .withSecond(0)
+                                            .withNano(0)
+
+                                showDateTimePicker(
+                                    context =
+                                        context,
+                                    initialDateTime =
+                                        initial,
+                                ) { selected ->
+                                    if (
+                                        !selected.isAfter(
+                                            LocalDateTime.now()
+                                        )
+                                    ) {
+                                        nextProposalError =
+                                            "Choisis une date et une heure à venir."
+                                    } else {
+                                        nextProposalError = null
+                                        onNextProposalChanged(
+                                            selected
+                                        )
+                                    }
+                                }
+                            },
+                        ) {
+                            Text(
+                                if (
+                                    nextProposalAt == null
+                                ) {
+                                    "Planifier"
+                                } else {
+                                    "Modifier"
+                                }
+                            )
+                        }
+                    }
+                }
+
+                nextProposalError
+                    ?.let {
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp),
+                        )
+
+                        Text(
+                            text = it,
+                            color =
+                                MaterialTheme.colorScheme
+                                    .error,
+                            style =
+                                MaterialTheme.typography
+                                    .bodySmall,
+                        )
+                    }
+
+                if (nextProposalOverrideActive) {
+                    TextButton(
+                        onClick = {
+                            nextProposalError = null
+                            onClearNextProposalOverride()
+                        },
+                    ) {
+                        Text(
+                            "Revenir au planning habituel"
+                        )
+                    }
                 }
             }
 
@@ -678,7 +843,7 @@ private fun WeekdayRows(
 @Composable
 private fun PreferenceRows(
     activityPreferences:
-    ActivityPreferences,
+        ActivityPreferences,
     onIntensityChanged:
         (String, Boolean) -> Unit,
 ) {
@@ -687,8 +852,8 @@ private fun PreferenceRows(
             label = "Douce",
             selected =
                 "gentle" in
-                        activityPreferences
-                            .enabledIntensities,
+                    activityPreferences
+                        .enabledIntensities,
             canDisable =
                 activityPreferences
                     .enabledIntensities
@@ -711,8 +876,8 @@ private fun PreferenceRows(
                 "Intermédiaire",
             selected =
                 "active" in
-                        activityPreferences
-                            .enabledIntensities,
+                    activityPreferences
+                        .enabledIntensities,
             canDisable =
                 activityPreferences
                     .enabledIntensities
@@ -734,8 +899,8 @@ private fun PreferenceRows(
             label = "Dynamique",
             selected =
                 "dynamic" in
-                        activityPreferences
-                            .enabledIntensities,
+                    activityPreferences
+                        .enabledIntensities,
             canDisable =
                 activityPreferences
                     .enabledIntensities
@@ -753,7 +918,7 @@ private fun PreferenceRows(
 @Composable
 private fun MovementRows(
     activityPreferences:
-    ActivityPreferences,
+        ActivityPreferences,
     onStationaryChanged:
         (Boolean) -> Unit,
     onMovingChanged:
@@ -815,6 +980,30 @@ private fun PreferenceChip(
         label = {
             Text(label)
         },
+        leadingIcon =
+            if (selected) {
+                {
+                    Text("✓")
+                }
+            } else {
+                null
+            },
+        colors =
+            FilterChipDefaults
+                .filterChipColors(
+                    containerColor =
+                        MaterialTheme.colorScheme
+                            .surface,
+                    labelColor =
+                        MaterialTheme.colorScheme
+                            .onSurfaceVariant,
+                    selectedContainerColor =
+                        MaterialTheme.colorScheme
+                            .primaryContainer,
+                    selectedLabelColor =
+                        MaterialTheme.colorScheme
+                            .onPrimaryContainer,
+                ),
         shape =
             RoundedCornerShape(12.dp),
     )
@@ -906,6 +1095,76 @@ private fun InfoRow(
                     .onSurfaceVariant,
         )
     }
+}
+
+private fun showDateTimePicker(
+    context: android.content.Context,
+    initialDateTime: LocalDateTime,
+    onDateTimeSelected: (LocalDateTime) -> Unit,
+) {
+    val dateDialog =
+        DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                val selectedDate =
+                    LocalDate.of(
+                        year,
+                        month + 1,
+                        dayOfMonth,
+                    )
+
+                TimePickerDialog(
+                    context,
+                    { _, hour, minute ->
+                        onDateTimeSelected(
+                            LocalDateTime.of(
+                                selectedDate,
+                                LocalTime.of(
+                                    hour,
+                                    minute,
+                                ),
+                            )
+                        )
+                    },
+                    initialDateTime.hour,
+                    initialDateTime.minute,
+                    true,
+                ).show()
+            },
+            initialDateTime.year,
+            initialDateTime.monthValue - 1,
+            initialDateTime.dayOfMonth,
+        )
+
+    dateDialog.datePicker.minDate =
+        LocalDate.now()
+            .atStartOfDay(
+                ZoneId.systemDefault()
+            )
+            .toInstant()
+            .toEpochMilli()
+
+    dateDialog.show()
+}
+
+private fun formatNextProposalDateTime(
+    dateTime: LocalDateTime,
+): String {
+
+    val day =
+        "%02d/%02d/%04d".format(
+            dateTime.dayOfMonth,
+            dateTime.monthValue,
+            dateTime.year,
+        )
+
+    val time =
+        "%02d:%02d".format(
+            dateTime.hour,
+            dateTime.minute,
+        )
+
+    return "$day · $time"
 }
 
 private fun showTimePicker(
