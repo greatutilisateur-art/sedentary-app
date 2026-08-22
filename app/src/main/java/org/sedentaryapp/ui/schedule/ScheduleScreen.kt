@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,9 +40,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -744,10 +748,15 @@ private fun SlotRow(
 
         IconButton(
             modifier =
-                Modifier.semantics {
-                    contentDescription =
-                        "Supprimer le créneau de ${formatTimeForTalkBack(time)}"
-                },
+                Modifier
+                    .sizeIn(
+                        minWidth = 48.dp,
+                        minHeight = 48.dp,
+                    )
+                    .semantics {
+                        contentDescription =
+                            "Supprimer le créneau de ${formatTimeForTalkBack(time)}"
+                    },
             enabled =
                 canRemove,
             onClick =
@@ -769,73 +778,47 @@ private fun WeekdayRows(
     onChanged:
         (DayOfWeek, Boolean) -> Unit,
 ) {
-    val rows =
+    val days =
         listOf(
-            listOf(
-                DayOfWeek.MONDAY,
-                DayOfWeek.TUESDAY,
-                DayOfWeek.WEDNESDAY,
-                DayOfWeek.THURSDAY,
-            ),
-            listOf(
-                DayOfWeek.FRIDAY,
-                DayOfWeek.SATURDAY,
-                DayOfWeek.SUNDAY,
-            ),
+            DayOfWeek.MONDAY,
+            DayOfWeek.TUESDAY,
+            DayOfWeek.WEDNESDAY,
+            DayOfWeek.THURSDAY,
+            DayOfWeek.FRIDAY,
+            DayOfWeek.SATURDAY,
+            DayOfWeek.SUNDAY,
         )
 
-    Column {
-        rows.forEachIndexed {
-                index,
-                days,
-            ->
-
-            if (index > 0) {
-                Spacer(
-                    modifier =
-                        Modifier.height(8.dp),
-                )
-            }
-
-            Row {
-                days.forEachIndexed {
-                        dayIndex,
+    Row(
+        modifier =
+            Modifier.fillMaxWidth(),
+        horizontalArrangement =
+            Arrangement.spacedBy(4.dp),
+    ) {
+        days.forEach { day ->
+            SelectionChip(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .semantics {
+                            contentDescription =
+                                weekdayFullName(day)
+                        },
+                label =
+                    weekdayShortName(
+                        day
+                    ),
+                selected =
+                    day in selected,
+                compact =
+                    true,
+                onClick = {
+                    onChanged(
                         day,
-                    ->
-
-                    if (dayIndex > 0) {
-                        Spacer(
-                            modifier =
-                                Modifier.size(8.dp),
-                        )
-                    }
-
-                    FilterChip(
-                        modifier =
-                            Modifier.semantics {
-                                contentDescription =
-                                    weekdayFullName(day)
-                            },
-                        selected =
-                            day in selected,
-                        onClick = {
-                            onChanged(
-                                day,
-                                day !in selected,
-                            )
-                        },
-                        label = {
-                            Text(
-                                weekdayShortName(
-                                    day
-                                )
-                            )
-                        },
-                        shape =
-                            RoundedCornerShape(12.dp),
+                        day !in selected,
                     )
-                }
-            }
+                },
+            )
         }
     }
 }
@@ -847,71 +830,162 @@ private fun PreferenceRows(
     onIntensityChanged:
         (String, Boolean) -> Unit,
 ) {
-    Column {
-        PreferenceChip(
-            label = "Douce",
-            selected =
-                "gentle" in
-                    activityPreferences
-                        .enabledIntensities,
-            canDisable =
-                activityPreferences
-                    .enabledIntensities
-                    .size > 1,
-            onChanged = {
-                onIntensityChanged(
-                    "gentle",
-                    it,
-                )
-            },
-        )
+    val fontScale =
+        LocalDensity.current
+            .fontScale
 
-        Spacer(
+    if (fontScale < 1.3f) {
+        Row(
             modifier =
-                Modifier.height(8.dp),
-        )
-
-        PreferenceChip(
-            label =
-                "Intermédiaire",
-            selected =
-                "active" in
+                Modifier.fillMaxWidth(),
+        ) {
+            PreferenceChip(
+                modifier =
+                    Modifier.weight(1f),
+                label = "Douce",
+                selected =
+                    "gentle" in
+                        activityPreferences
+                            .enabledIntensities,
+                canDisable =
                     activityPreferences
-                        .enabledIntensities,
-            canDisable =
-                activityPreferences
-                    .enabledIntensities
-                    .size > 1,
-            onChanged = {
-                onIntensityChanged(
-                    "active",
-                    it,
-                )
-            },
-        )
+                        .enabledIntensities
+                        .size > 1,
+                onChanged = {
+                    onIntensityChanged(
+                        "gentle",
+                        it,
+                    )
+                },
+            )
 
-        Spacer(
+            Spacer(
+                modifier =
+                    Modifier.size(8.dp),
+            )
+
+            PreferenceChip(
+                modifier =
+                    Modifier.weight(1f),
+                label =
+                    "Modérée",
+                selected =
+                    "active" in
+                        activityPreferences
+                            .enabledIntensities,
+                canDisable =
+                    activityPreferences
+                        .enabledIntensities
+                        .size > 1,
+                onChanged = {
+                    onIntensityChanged(
+                        "active",
+                        it,
+                    )
+                },
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.size(8.dp),
+            )
+
+            PreferenceChip(
+                modifier =
+                    Modifier.weight(1f),
+                label = "Dynamique",
+                selected =
+                    "dynamic" in
+                        activityPreferences
+                            .enabledIntensities,
+                canDisable =
+                    activityPreferences
+                        .enabledIntensities
+                        .size > 1,
+                onChanged = {
+                    onIntensityChanged(
+                        "dynamic",
+                        it,
+                    )
+                },
+            )
+        }
+    } else {
+        Column(
             modifier =
-                Modifier.height(8.dp),
-        )
-
-        PreferenceChip(
-            label = "Dynamique",
-            selected =
-                "dynamic" in
+                Modifier.fillMaxWidth(),
+        ) {
+            PreferenceChip(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                label = "Douce",
+                selected =
+                    "gentle" in
+                        activityPreferences
+                            .enabledIntensities,
+                canDisable =
                     activityPreferences
-                        .enabledIntensities,
-            canDisable =
-                activityPreferences
-                    .enabledIntensities
-                    .size > 1,
-            onChanged = {
-                onIntensityChanged(
-                    "dynamic",
-                    it,
-                )
-            },
-        )
+                        .enabledIntensities
+                        .size > 1,
+                onChanged = {
+                    onIntensityChanged(
+                        "gentle",
+                        it,
+                    )
+                },
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp),
+            )
+
+            PreferenceChip(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                label =
+                    "Modérée",
+                selected =
+                    "active" in
+                        activityPreferences
+                            .enabledIntensities,
+                canDisable =
+                    activityPreferences
+                        .enabledIntensities
+                        .size > 1,
+                onChanged = {
+                    onIntensityChanged(
+                        "active",
+                        it,
+                    )
+                },
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp),
+            )
+
+            PreferenceChip(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                label = "Dynamique",
+                selected =
+                    "dynamic" in
+                        activityPreferences
+                            .enabledIntensities,
+                canDisable =
+                    activityPreferences
+                        .enabledIntensities
+                        .size > 1,
+                onChanged = {
+                    onIntensityChanged(
+                        "dynamic",
+                        it,
+                    )
+                },
+            )
+        }
     }
 }
 
@@ -924,47 +998,104 @@ private fun MovementRows(
     onMovingChanged:
         (Boolean) -> Unit,
 ) {
-    Column {
-        PreferenceChip(
-            label = "Sur place",
-            selected =
-                activityPreferences
-                    .stationaryEnabled,
-            canDisable =
-                activityPreferences
-                    .movingEnabled,
-            onChanged =
-                onStationaryChanged,
-        )
+    val fontScale =
+        LocalDensity.current
+            .fontScale
 
-        Spacer(
+    if (fontScale < 1.3f) {
+        Row(
             modifier =
-                Modifier.height(8.dp),
-        )
+                Modifier.fillMaxWidth(),
+        ) {
+            PreferenceChip(
+                modifier =
+                    Modifier.weight(1f),
+                label = "Sur place",
+                selected =
+                    activityPreferences
+                        .stationaryEnabled,
+                canDisable =
+                    activityPreferences
+                        .movingEnabled,
+                onChanged =
+                    onStationaryChanged,
+            )
 
-        PreferenceChip(
-            label =
-                "En mouvement",
-            selected =
-                activityPreferences
-                    .movingEnabled,
-            canDisable =
-                activityPreferences
-                    .stationaryEnabled,
-            onChanged =
-                onMovingChanged,
-        )
+            Spacer(
+                modifier =
+                    Modifier.size(8.dp),
+            )
+
+            PreferenceChip(
+                modifier =
+                    Modifier.weight(1f),
+                label =
+                    "En mouvement",
+                selected =
+                    activityPreferences
+                        .movingEnabled,
+                canDisable =
+                    activityPreferences
+                        .stationaryEnabled,
+                onChanged =
+                    onMovingChanged,
+            )
+        }
+    } else {
+        Column(
+            modifier =
+                Modifier.fillMaxWidth(),
+        ) {
+            PreferenceChip(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                label = "Sur place",
+                selected =
+                    activityPreferences
+                        .stationaryEnabled,
+                canDisable =
+                    activityPreferences
+                        .movingEnabled,
+                onChanged =
+                    onStationaryChanged,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp),
+            )
+
+            PreferenceChip(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                label =
+                    "En mouvement",
+                selected =
+                    activityPreferences
+                        .movingEnabled,
+                canDisable =
+                    activityPreferences
+                        .stationaryEnabled,
+                onChanged =
+                    onMovingChanged,
+            )
+        }
     }
 }
 
 @Composable
 private fun PreferenceChip(
+    modifier: Modifier = Modifier,
     label: String,
     selected: Boolean,
     canDisable: Boolean,
     onChanged: (Boolean) -> Unit,
 ) {
-    FilterChip(
+    SelectionChip(
+        modifier =
+            modifier,
+        label =
+            label,
         selected =
             selected,
         onClick = {
@@ -977,17 +1108,49 @@ private fun PreferenceChip(
                 )
             }
         },
+    )
+}
+
+@Composable
+private fun SelectionChip(
+    modifier: Modifier = Modifier,
+    label: String,
+    selected: Boolean,
+    compact: Boolean = false,
+    onClick: () -> Unit,
+) {
+    FilterChip(
+        modifier =
+            modifier,
+        selected =
+            selected,
+        onClick =
+            onClick,
         label = {
-            Text(label)
+            Text(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                text =
+                    if (
+                        selected &&
+                        !compact
+                    ) {
+                        "✓ $label"
+                    } else {
+                        label
+                    },
+                textAlign =
+                    TextAlign.Center,
+                maxLines =
+                    if (compact) {
+                        1
+                    } else {
+                        2
+                    },
+                softWrap =
+                    !compact,
+            )
         },
-        leadingIcon =
-            if (selected) {
-                {
-                    Text("✓")
-                }
-            } else {
-                null
-            },
         colors =
             FilterChipDefaults
                 .filterChipColors(
@@ -1129,12 +1292,20 @@ private fun showDateTimePicker(
                     initialDateTime.hour,
                     initialDateTime.minute,
                     true,
-                ).show()
+                ).apply {
+                    setTitle(
+                        "Heure de cette prochaine proposition"
+                    )
+                }.show()
             },
             initialDateTime.year,
             initialDateTime.monthValue - 1,
             initialDateTime.dayOfMonth,
         )
+
+    dateDialog.setTitle(
+        "Modifier uniquement la prochaine proposition"
+    )
 
     dateDialog.datePicker.minDate =
         LocalDate.now()

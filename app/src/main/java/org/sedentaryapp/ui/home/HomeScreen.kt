@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -15,6 +16,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -156,16 +159,10 @@ fun HomeScreen(
                         Modifier.height(12.dp),
                 )
 
-                OutlinedButton(
-                    modifier =
-                        Modifier.fillMaxWidth(),
+                MoveNowButton(
                     onClick =
                         onMoveNow,
-                    shape =
-                        RoundedCornerShape(14.dp),
-                ) {
-                    Text("Bouger maintenant")
-                }
+                )
 
                 return@Column
             }
@@ -249,16 +246,10 @@ fun HomeScreen(
                     Modifier.height(12.dp),
             )
 
-            OutlinedButton(
-                modifier =
-                    Modifier.fillMaxWidth(),
+            MoveNowButton(
                 onClick =
                     onMoveNow,
-                shape =
-                    RoundedCornerShape(14.dp),
-            ) {
-                Text("Bouger maintenant")
-            }
+            )
 
             if (
                 lastActivity != null &&
@@ -313,6 +304,57 @@ fun HomeScreen(
                     Modifier.height(16.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun MoveNowButton(
+    onClick: () -> Unit,
+) {
+    FilledTonalButton(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(
+                    min = 56.dp
+                ),
+        onClick =
+            onClick,
+        shape =
+            RoundedCornerShape(18.dp),
+        colors =
+            ButtonDefaults
+                .filledTonalButtonColors(
+                    containerColor =
+                        MaterialTheme.colorScheme
+                            .secondaryContainer,
+                    contentColor =
+                        MaterialTheme.colorScheme
+                            .onSecondaryContainer,
+                ),
+    ) {
+        Icon(
+            modifier =
+                Modifier.size(20.dp),
+            painter =
+                painterResource(
+                    R.drawable.ic_intervalles_mark
+                ),
+            contentDescription = null,
+        )
+
+        Spacer(
+            modifier =
+                Modifier.size(10.dp),
+        )
+
+        Text(
+            text =
+                "Bouger maintenant",
+            style =
+                MaterialTheme.typography
+                    .titleLarge,
+        )
     }
 }
 
