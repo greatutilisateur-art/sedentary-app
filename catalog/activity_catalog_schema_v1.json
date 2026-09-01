@@ -73,7 +73,6 @@
         "preferred_posture",
         "standing_required",
         "walking_required",
-        "eligible_opportunity_types",
         "sedentary_break_effect",
         "space_required",
         "discretion",
@@ -140,8 +139,8 @@
             "slow_breathing",
             "squat",
             "stairs",
-            "start_lower_body",
-            "start_upper_body",
+            "lower_body_sequence",
+            "upper_body_sequence",
             "thoracic_rotation",
             "visual_rest",
             "walking",
@@ -157,13 +156,13 @@
         },
         "duration_seconds_min": {
           "type": "integer",
-          "minimum": 10,
+          "minimum": 30,
           "maximum": 300
         },
         "duration_seconds_max": {
           "type": "integer",
-          "minimum": 10,
-          "maximum": 600
+          "minimum": 30,
+          "maximum": 300
         },
         "compatible_postures": {
           "type": "array",
@@ -194,17 +193,6 @@
         },
         "walking_required": {
           "type": "boolean"
-        },
-        "eligible_opportunity_types": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": {
-            "enum": [
-              "standard",
-              "start_of_day"
-            ]
-          }
         },
         "sedentary_break_effect": {
           "enum": [
@@ -313,6 +301,10 @@
             "simple",
             "timer"
           ]
+        },
+        "illustration_resource": {
+          "type": "string",
+          "pattern": "^ill_[a-z0-9_]+$"
         }
       },
       "additionalProperties": false

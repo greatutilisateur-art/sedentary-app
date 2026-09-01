@@ -1,8 +1,8 @@
 {
   "$schema": "./activity_catalog_schema_v1.json",
-  "catalog_version": "1.0.5",
+  "catalog_version": "1.0.9",
   "policy_compatibility": "1.0.x",
-  "vocabulary_version": "1.0.0",
+  "vocabulary_version": "1.0.1",
   "status": "published",
   "activity_count": 23,
   "notes": [
@@ -14,12 +14,14 @@
     "Les recommandations de posture sont affichées par l’UX à partir des métadonnées; elles ne sont pas répétées dans les consignes.",
     "guidance_mode explicite le parcours V0 : timer pour les activités nécessitant un guidage temporel, simple sinon.",
     "Les nombres de répétitions servent de repères pratiques pour l’utilisateur et ne constituent pas une dose scientifiquement optimale.",
-    "START01 et START02 sont conservées pour compatibilité d’identifiants mais sont désormais des activités standard, proposées comme les autres."
+    "START01 et START02 sont conservées pour compatibilité d’identifiants mais sont désormais des activités standard, proposées comme les autres.",
+    "En V0.5, le chrono guide par défaut les activités pratiquées pendant une durée. Les activités ponctuelles avec un objectif de fin évident restent en mode simple. Ce choix répond au RETEX utilisateur et n'est pas présenté comme une dose scientifique optimale.",
+    "Le champ optionnel illustration_resource permet d'afficher une illustration fonctionnelle sur la fiche. S'il est absent, aucun espace vide n'est réservé."
   ],
   "activities": [
     {
       "id": "MOUV01",
-      "revision": 3,
+      "revision": 4,
       "status": "published",
       "title": "Une petite marche ?",
       "instruction": "Marche quelques minutes pour faire une pause et te dégourdir les jambes.",
@@ -34,9 +36,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": true,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "outside_desk",
       "discretion": "medium",
@@ -55,7 +54,8 @@
         "marche",
         "marcher"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_mouv01"
     },
     {
       "id": "MOUV02",
@@ -74,9 +74,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": true,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "outside_desk",
       "discretion": "medium",
@@ -93,7 +90,8 @@
         "eau",
         "fontaine"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "simple",
+      "illustration_resource": "ill_mouv02"
     },
     {
       "id": "MOUV03",
@@ -112,9 +110,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": true,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "building",
       "discretion": "low",
@@ -133,7 +128,8 @@
         "escaliers",
         "étage"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "simple",
+      "illustration_resource": "ill_mouv03"
     },
     {
       "id": "MOUV04",
@@ -152,9 +148,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": true,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "outside",
       "discretion": "low",
@@ -171,7 +164,8 @@
         "dehors",
         "extérieur"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_mouv04"
     },
     {
       "id": "MOB01",
@@ -191,9 +185,6 @@
       "preferred_posture": null,
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "optional",
       "space_required": "desk",
       "discretion": "high",
@@ -212,11 +203,12 @@
         "cercles épaules",
         "épaules"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_mob01"
     },
     {
       "id": "MOB02",
-      "revision": 6,
+      "revision": 7,
       "status": "published",
       "title": "Tourne le haut du corps",
       "instruction": "Tourne le buste vers la droite puis vers la gauche. Répète 4 fois de chaque côté.",
@@ -232,9 +224,6 @@
       "preferred_posture": "standing",
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "probable",
       "space_required": "desk",
       "discretion": "medium",
@@ -254,7 +243,8 @@
         "torsion",
         "tourner le buste"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_mob02"
     },
     {
       "id": "MOB03",
@@ -274,9 +264,6 @@
       "preferred_posture": "standing",
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "probable",
       "space_required": "desk",
       "discretion": "high",
@@ -294,7 +281,8 @@
         "cercles chevilles",
         "chevilles"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_mob03"
     },
     {
       "id": "MOB04",
@@ -314,9 +302,6 @@
       "preferred_posture": "standing",
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "probable",
       "space_required": "desk",
       "discretion": "medium",
@@ -339,7 +324,8 @@
         "chaîne postérieure",
         "toucher le sol"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_mob04"
     },
     {
       "id": "MOB05",
@@ -359,9 +345,6 @@
       "preferred_posture": "standing",
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "probable",
       "space_required": "desk",
       "discretion": "medium",
@@ -381,7 +364,8 @@
         "haut du corps",
         "ouvrir poitrine"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_mob05"
     },
     {
       "id": "MOB06",
@@ -401,9 +385,6 @@
       "preferred_posture": "standing",
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "probable",
       "space_required": "small",
       "discretion": "medium",
@@ -422,7 +403,8 @@
         "bassin",
         "hanches"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_mob06"
     },
     {
       "id": "ETIR01",
@@ -441,9 +423,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "small",
       "discretion": "medium",
@@ -462,7 +441,8 @@
         "mollets",
         "étirement mollet"
       ],
-      "guidance_mode": "timer"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_etir01"
     },
     {
       "id": "ETIR02",
@@ -481,9 +461,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "small",
       "discretion": "medium",
@@ -502,7 +479,8 @@
         "arrière cuisses",
         "ischios"
       ],
-      "guidance_mode": "timer"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_etir02"
     },
     {
       "id": "ETIR03",
@@ -522,9 +500,6 @@
       "preferred_posture": "standing",
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "probable",
       "space_required": "small",
       "discretion": "medium",
@@ -543,7 +518,8 @@
         "grandir",
         "s’étirer"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_etir03"
     },
     {
       "id": "DYN01",
@@ -562,9 +538,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "small",
       "discretion": "low",
@@ -584,7 +557,8 @@
         "flexions jambes",
         "squats"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_dyn01"
     },
     {
       "id": "DYN02",
@@ -603,9 +577,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "desk",
       "discretion": "medium",
@@ -624,7 +595,8 @@
         "pointes pieds",
         "élévations mollets"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_dyn02"
     },
     {
       "id": "DYN03",
@@ -644,9 +616,6 @@
       "preferred_posture": null,
       "standing_required": true,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "desk",
       "discretion": "low",
@@ -666,7 +635,8 @@
         "assis debout",
         "lever chaise"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_dyn03"
     },
     {
       "id": "DYN04",
@@ -685,9 +655,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": true,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "outside_desk",
       "discretion": "low",
@@ -705,7 +672,8 @@
         "bon pas",
         "marche rapide"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_dyn04"
     },
     {
       "id": "BIEN01",
@@ -725,9 +693,6 @@
       "preferred_posture": null,
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "adjacent_only",
       "space_required": "desk",
       "discretion": "high",
@@ -744,7 +709,8 @@
         "respiration",
         "souffler"
       ],
-      "guidance_mode": "timer"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_bien01"
     },
     {
       "id": "BIEN02",
@@ -764,9 +730,6 @@
       "preferred_posture": null,
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "optional",
       "space_required": "desk",
       "discretion": "high",
@@ -783,7 +746,8 @@
       "search_synonyms": [
         "relâchement épaules"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_bien02"
     },
     {
       "id": "VIS01",
@@ -803,9 +767,6 @@
       "preferred_posture": null,
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "adjacent_only",
       "space_required": "desk",
       "discretion": "high",
@@ -820,7 +781,8 @@
         "fenêtre",
         "regarder loin"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_vis01"
     },
     {
       "id": "VIS02",
@@ -840,9 +802,6 @@
       "preferred_posture": null,
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "adjacent_only",
       "space_required": "desk",
       "discretion": "high",
@@ -857,7 +816,8 @@
         "fermer les yeux",
         "repos yeux"
       ],
-      "guidance_mode": "simple"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_vis02"
     },
     {
       "id": "START01",
@@ -877,9 +837,6 @@
       "preferred_posture": "standing",
       "standing_required": false,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "probable",
       "space_required": "small",
       "discretion": "medium",
@@ -899,7 +856,8 @@
         "mobilité épaules",
         "mobilité buste"
       ],
-      "guidance_mode": "timer"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_start01"
     },
     {
       "id": "START02",
@@ -918,9 +876,6 @@
       "preferred_posture": "standing",
       "standing_required": true,
       "walking_required": false,
-      "eligible_opportunity_types": [
-        "standard"
-      ],
       "sedentary_break_effect": "certain",
       "space_required": "small",
       "discretion": "medium",
@@ -941,7 +896,8 @@
         "hanches",
         "chevilles"
       ],
-      "guidance_mode": "timer"
+      "guidance_mode": "timer",
+      "illustration_resource": "ill_start02"
     }
   ]
 }

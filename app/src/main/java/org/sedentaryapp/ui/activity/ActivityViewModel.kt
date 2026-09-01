@@ -762,7 +762,9 @@ class ActivityViewModel(
         publishState()
     }
 
-    fun openManualActivity(): Boolean {
+    fun openManualActivity(
+        preferredActivityId: String? = null,
+    ): Boolean {
 
         clearGuidedSession()
 
@@ -805,12 +807,23 @@ class ActivityViewModel(
             KEY_CURRENT_INDEX
         ] = 0
 
+        val preferredActivity =
+            preferredActivityId
+                ?.let { id ->
+                    activities
+                        .firstOrNull { activity ->
+                            activity.definition.id ==
+                                id
+                        }
+                }
+
         val selected =
-            selectActivity(
-                excludedIds =
-                    emptySet(),
-                attempt = 0,
-            )
+            preferredActivity
+                ?: selectActivity(
+                    excludedIds =
+                        emptySet(),
+                    attempt = 0,
+                )
                 ?: run {
                     savedStateHandle
                         .remove<String>(
@@ -836,11 +849,11 @@ class ActivityViewModel(
         return true
     }
 
-    fun completeSimpleActivity() {
+    fun markCurrentActivityDone() {
 
         if (
             readGuidedSessionState() !=
-            GuidedSessionState.READY
+                GuidedSessionState.READY
         ) {
             return
         }
@@ -849,13 +862,13 @@ class ActivityViewModel(
             currentDisplayedActivity()
                 ?: return
 
-        if (
-            activity.guidanceMode !=
-            ActivityGuidanceMode.SIMPLE
-        ) {
-            return
-        }
-
+        // Utilisé par :
+        // - `Fait` pour une activité ponctuelle SIMPLE ;
+        // - `Déjà fait` pour une activité TIMER réalisée sans lancer le chrono.
+        //
+        // La sémantique de réalisation reste centralisée dans
+        // recordActivityAsDone(), qui traite correctement les contextes
+        // proposition courante, reportée, future et manuelle.
         recordActivityAsDone(
             activity.definition.id
         )
@@ -2128,8 +2141,6 @@ class ActivityViewModel(
                     .enabledIntensities,
             requiredWalking =
                 requiredWalking,
-            opportunityType =
-                "standard",
             excludedActivityIds =
                 excludedIds,
         )

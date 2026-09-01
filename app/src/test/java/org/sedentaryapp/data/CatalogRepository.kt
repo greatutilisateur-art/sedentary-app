@@ -63,8 +63,6 @@ class CatalogRepository(
                                 item.getBoolean("standing_required"),
                             walkingRequired =
                                 item.getBoolean("walking_required"),
-                            eligibleOpportunityTypes =
-                                opportunityTypes,
                             baseWeight =
                                 item.getDouble("base_weight"),
                         ),

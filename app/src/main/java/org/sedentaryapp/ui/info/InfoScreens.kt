@@ -27,12 +27,13 @@ fun WhyAppScreen(
 ) {
     InfoScreen(
         title =
-            "Pourquoi ces pauses ?",
+            "Pourquoi Intervalles ?",
         paragraphs =
             listOf(
                 "Au travail, il est facile de rester assis longtemps sans y penser.",
-                "Intervalles propose de courtes occasions de bouger pendant la journée de travail, aux horaires que tu choisis.",
-                "L’objectif n’est pas de faire du sport ni de mesurer une performance. Chaque proposition reste une invitation : tu peux la faire, la reporter ou l’ignorer.",
+                "Intervalles propose donc de courtes activités pour bouger pendant la journée de travail, aux horaires que tu choisis.",
+                "L’objectif n’est ni sportif ni  de performance mais de lutter contre notre sédentarité.",
+                "Chaque proposition reste une invitation : tu peux la faire, la reporter ou l’ignorer."
             ),
         onBack =
             onBack,
@@ -48,10 +49,10 @@ fun AboutScreen(
             "À propos",
         paragraphs =
             listOf(
-                "Intervalles — V0",
-                "Une application Android gratuite et open source conçue pour aider à interrompre la sédentarité au travail grâce à de courtes activités.",
+                "Intervalles V0.5",
+                "Intervalles est une application Android gratuite et open source conçue pour aider à limiter la sédentarité au travail grâce à de courtes activités.",
                 "Tes réglages restent sur ton appareil. Aucun compte n’est nécessaire et l’application fonctionne hors ligne.",
-                "Intervalles est un outil de prévention et de soutien au quotidien. Il ne remplace pas un professionnel de santé.",
+                "Intervalles est un outil de prévention et ne remplace pas un professionnel de santé.",
             ),
         onBack =
             onBack,

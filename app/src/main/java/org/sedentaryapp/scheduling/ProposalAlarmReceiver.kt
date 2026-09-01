@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.ZoneId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -230,8 +231,9 @@ class ProposalAlarmReceiver :
 
         if (
             lateMinutes >
-            ProposalAlarmScheduler
-                .MAX_LATE_DELIVERY_MINUTES
+            dependencies.policy
+                .scheduling
+                .technicalLatenessToleranceMinutes
         ) {
             dependencies.scheduler
                 .reconcile()
@@ -331,6 +333,12 @@ class ProposalAlarmReceiver :
                 .notificationAlertSettings
                 .first()
 
+        val snoozeOption =
+            snoozeOption(
+                dependencies = dependencies,
+                proposalKey = proposalKey,
+            )
+
         NotificationPublisher
             .show(
                 context =
@@ -340,7 +348,9 @@ class ProposalAlarmReceiver :
                 proposalKey =
                     proposalKey,
                 allowSnooze =
-                    true,
+                    snoozeOption.allowed,
+                snoozeDurationMinutes =
+                    snoozeOption.durationMinutes,
                 soundEnabled =
                     alertSettings
                         .soundEnabled,
@@ -418,8 +428,9 @@ class ProposalAlarmReceiver :
 
         if (
             lateMinutes >
-            ProposalAlarmScheduler
-                .MAX_LATE_DELIVERY_MINUTES
+            dependencies.policy
+                .scheduling
+                .technicalLatenessToleranceMinutes
         ) {
             dependencies
                 .appStateRepository
@@ -532,6 +543,12 @@ class ProposalAlarmReceiver :
                 .notificationAlertSettings
                 .first()
 
+        val snoozeOption =
+            snoozeOption(
+                dependencies = dependencies,
+                proposalKey = proposalKey,
+            )
+
         NotificationPublisher
             .show(
                 context =
@@ -541,7 +558,9 @@ class ProposalAlarmReceiver :
                 proposalKey =
                     proposalKey,
                 allowSnooze =
-                    true,
+                    snoozeOption.allowed,
+                snoozeDurationMinutes =
+                    snoozeOption.durationMinutes,
                 soundEnabled =
                     alertSettings
                         .soundEnabled,
@@ -605,8 +624,9 @@ class ProposalAlarmReceiver :
 
         if (
             lateMillis >
-            ProposalAlarmScheduler
-                .MAX_LATE_DELIVERY_MINUTES *
+            dependencies.policy
+                .scheduling
+                .technicalLatenessToleranceMinutes *
             60_000L
         ) {
             dependencies
@@ -669,6 +689,10 @@ class ProposalAlarmReceiver :
                     proposalKey,
                 allowSnooze =
                     false,
+                snoozeDurationMinutes =
+                    dependencies.policy
+                        .snooze
+                        .defaultDurationMinutes,
                 soundEnabled =
                     alertSettings
                         .soundEnabled,
@@ -725,6 +749,90 @@ class ProposalAlarmReceiver :
             return
         }
 
+        val persistedDuration =
+            dependencies
+                .appStateRepository
+                .snoozeDurationMinutes
+                .first()
+
+        val requestedDuration =
+            intent.getIntExtra(
+                ProposalAlarmScheduler
+                    .EXTRA_SNOOZE_MINUTES,
+                persistedDuration,
+            )
+
+        val snoozePolicy =
+            dependencies.policy
+                .snooze
+
+        val durationMinutes =
+            requestedDuration
+                .takeIf { minutes ->
+                    minutes >=
+                        snoozePolicy
+                            .minimumDurationMinutes &&
+                        minutes <=
+                        snoozePolicy
+                            .maximumDurationMinutes
+                }
+                ?: persistedDuration
+
+        val now =
+            LocalDateTime.now()
+
+        val target =
+            now.plusMinutes(
+                durationMinutes.toLong()
+            )
+
+        val canSnooze =
+            SnoozePlanner
+                .canSchedule(
+                    target = target,
+                    currentProposalKey =
+                        proposalKey,
+                    now = now,
+                    settings =
+                        dependencies
+                            .appStateRepository
+                            .scheduleSettings
+                            .first(),
+                    consumedEarlyOpportunityKeys =
+                        dependencies
+                            .appStateRepository
+                            .consumedEarlyOpportunityKeys
+                            .first(),
+                    nextProposalOverride =
+                        dependencies
+                            .appStateRepository
+                            .nextProposalOverride
+                            .first(),
+                    minimumGapMinutes =
+                        dependencies.policy
+                            .scheduling
+                            .minimumGapBetweenDistinctOpportunitiesMinutes,
+                )
+
+        dependencies
+            .appStateRepository
+            .clearActiveProposalIfProposalKey(
+                proposalKey
+            )
+
+        if (!canSnooze) {
+            dependencies
+                .appStateRepository
+                .clearSnoozedProposalIfProposalKey(
+                    proposalKey
+                )
+
+            dependencies.scheduler
+                .reconcile()
+
+            return
+        }
+
         dependencies
             .appStateRepository
             .saveSnoozedProposal(
@@ -733,16 +841,12 @@ class ProposalAlarmReceiver :
                 activityId =
                     activityId,
                 triggerAtEpochMillis =
-                    System.currentTimeMillis() +
-                            ProposalAlarmScheduler
-                                .SNOOZE_MINUTES *
-                            60_000L,
-            )
-
-        dependencies
-            .appStateRepository
-            .clearActiveProposalIfProposalKey(
-                proposalKey
+                    target
+                        .atZone(
+                            ZoneId.systemDefault()
+                        )
+                        .toInstant()
+                        .toEpochMilli(),
             )
 
         dependencies.scheduler
@@ -920,6 +1024,60 @@ class ProposalAlarmReceiver :
             .reconcile()
     }
 
+    private suspend fun snoozeOption(
+        dependencies: Dependencies,
+        proposalKey: String,
+    ): SnoozeOption {
+
+        val durationMinutes =
+            dependencies
+                .appStateRepository
+                .snoozeDurationMinutes
+                .first()
+
+        val now =
+            LocalDateTime.now()
+
+        val target =
+            now.plusMinutes(
+                durationMinutes.toLong()
+            )
+
+        val allowed =
+            SnoozePlanner
+                .canSchedule(
+                    target = target,
+                    currentProposalKey =
+                        proposalKey,
+                    now = now,
+                    settings =
+                        dependencies
+                            .appStateRepository
+                            .scheduleSettings
+                            .first(),
+                    consumedEarlyOpportunityKeys =
+                        dependencies
+                            .appStateRepository
+                            .consumedEarlyOpportunityKeys
+                            .first(),
+                    nextProposalOverride =
+                        dependencies
+                            .appStateRepository
+                            .nextProposalOverride
+                            .first(),
+                    minimumGapMinutes =
+                        dependencies.policy
+                            .scheduling
+                            .minimumGapBetweenDistinctOpportunitiesMinutes,
+                )
+
+        return SnoozeOption(
+            durationMinutes =
+                durationMinutes,
+            allowed = allowed,
+        )
+    }
+
     private suspend fun deliveryStillAllowed(
         dependencies: Dependencies,
     ): Boolean {
@@ -951,6 +1109,10 @@ class ProposalAlarmReceiver :
                 context
             )
 
+        val policy =
+            policyRepository
+                .loadDecisionPolicy()
+
         val appStateRepository =
             AppStateRepository(
                 context =
@@ -958,6 +1120,15 @@ class ProposalAlarmReceiver :
                 defaultSlotTimes =
                     policyRepository
                         .loadDefaultSlots(),
+                defaultSnoozeDurationMinutes =
+                    policy.snooze
+                        .defaultDurationMinutes,
+                minimumSnoozeDurationMinutes =
+                    policy.snooze
+                        .minimumDurationMinutes,
+                maximumSnoozeDurationMinutes =
+                    policy.snooze
+                        .maximumDurationMinutes,
             )
 
         return Dependencies(
@@ -969,15 +1140,18 @@ class ProposalAlarmReceiver :
                 CatalogRepository(
                     context
                 ),
-            policy =
-                policyRepository
-                    .loadDecisionPolicy(),
+            policy = policy,
             scheduler =
                 ProposalAlarmScheduler(
                     context
                 ),
         )
     }
+
+    private data class SnoozeOption(
+        val durationMinutes: Int,
+        val allowed: Boolean,
+    )
 
     private data class Dependencies(
         val context: Context,

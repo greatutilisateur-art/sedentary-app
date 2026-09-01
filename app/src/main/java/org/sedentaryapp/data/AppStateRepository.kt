@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -84,10 +85,29 @@ data class NextProposalOverride(
 class AppStateRepository(
     context: Context,
     defaultSlotTimes: List<LocalTime>,
+    defaultSnoozeDurationMinutes: Int,
+    minimumSnoozeDurationMinutes: Int,
+    maximumSnoozeDurationMinutes: Int,
 ) {
 
     private val appContext =
         context.applicationContext
+
+    private val snoozeDurationRange =
+        minimumSnoozeDurationMinutes..
+                maximumSnoozeDurationMinutes
+
+    private val snoozeDurationDefault =
+        defaultSnoozeDurationMinutes.also { default ->
+            require(
+                minimumSnoozeDurationMinutes > 0 &&
+                        maximumSnoozeDurationMinutes >=
+                        minimumSnoozeDurationMinutes &&
+                        default in snoozeDurationRange
+            ) {
+                "Invalid snooze duration defaults."
+            }
+        }
 
     private val slotDefaults =
         defaultSlotTimes.also {
@@ -175,6 +195,21 @@ class AppStateRepository(
                             NOTIFICATION_VIBRATION_ENABLED
                         ] ?: true,
                 )
+            }
+
+    val snoozeDurationMinutes:
+            Flow<Int> =
+        appContext.appStateDataStore.data
+            .safePreferences()
+            .map { preferences ->
+                preferences[
+                    SNOOZE_DURATION_MINUTES
+                ]
+                    ?.takeIf { value ->
+                        value in
+                                snoozeDurationRange
+                    }
+                    ?: snoozeDurationDefault
             }
 
     val notificationPermissionRequested:
@@ -461,7 +496,7 @@ class AppStateRepository(
             if (
                 current.any { entry ->
                     entry.proposalKey ==
-                        proposalKey
+                            proposalKey
                 }
             ) {
                 return@edit
@@ -469,16 +504,16 @@ class AppStateRepository(
 
             val updated =
                 (
-                    current +
-                        ProposalHistoryEntry(
-                            proposalKey =
-                                proposalKey,
-                            activityId =
-                                activityId,
-                        )
-                ).takeLast(
-                    maxEntries
-                )
+                        current +
+                                ProposalHistoryEntry(
+                                    proposalKey =
+                                        proposalKey,
+                                    activityId =
+                                        activityId,
+                                )
+                        ).takeLast(
+                        maxEntries
+                    )
 
             preferences[
                 PROPOSAL_HISTORY
@@ -536,6 +571,23 @@ class AppStateRepository(
             preferences[
                 NOTIFICATION_VIBRATION_ENABLED
             ] = enabled
+        }
+    }
+
+    suspend fun setSnoozeDurationMinutes(
+        minutes: Int,
+    ) {
+        require(
+            minutes in
+                    snoozeDurationRange
+        ) {
+            "Snooze duration must be within the policy range."
+        }
+
+        appContext.appStateDataStore.edit { preferences ->
+            preferences[
+                SNOOZE_DURATION_MINUTES
+            ] = minutes
         }
     }
 
@@ -989,9 +1041,9 @@ class AppStateRepository(
                             )
 
                         parsed != null &&
-                            !parsed.isBefore(
-                                cutoff
-                            )
+                                !parsed.isBefore(
+                                    cutoff
+                                )
                     }
                     .toMutableSet()
 
@@ -1013,7 +1065,7 @@ class AppStateRepository(
             if (
                 currentOverride
                     ?.opportunityKey ==
-                    opportunityKey
+                opportunityKey
             ) {
                 preferences.remove(
                     PLANNED_ACTIVITY_OVERRIDE
@@ -1063,7 +1115,7 @@ class AppStateRepository(
     ) {
         require(
             intensity in
-                SUPPORTED_INTENSITIES
+                    SUPPORTED_INTENSITIES
         )
 
         appContext.appStateDataStore.edit { preferences ->
@@ -1316,7 +1368,7 @@ class AppStateRepository(
                 times.withIndex()
                     .any { indexedValue ->
                         indexedValue.index != index &&
-                            indexedValue.value == time
+                                indexedValue.value == time
                     }
 
             if (duplicateExists) {
@@ -1493,7 +1545,7 @@ class AppStateRepository(
             ]
                 ?.filter {
                     it in
-                        SUPPORTED_INTENSITIES
+                            SUPPORTED_INTENSITIES
                 }
                 ?.toSet()
 
@@ -1634,7 +1686,7 @@ class AppStateRepository(
         if (
             separatorIndex <= 0 ||
             separatorIndex >=
-                value.lastIndex
+            value.lastIndex
         ) {
             return null
         }
@@ -1680,7 +1732,7 @@ class AppStateRepository(
                         key
                     )
                         ?.dayOfWeek ==
-                        day
+                            day
                 }
                 ?.toSet()
                 ?: emptySet()
@@ -1705,7 +1757,7 @@ class AppStateRepository(
                         key
                     )
                         ?.toLocalTime() ==
-                        time
+                            time
                 }
                 ?.toSet()
                 ?: emptySet()
@@ -1740,9 +1792,9 @@ class AppStateRepository(
                             ?: return@filter false
 
                     opportunity.dayOfWeek in
-                        selectedWeekdays &&
-                        opportunity.toLocalTime() in
-                        validTimes
+                            selectedWeekdays &&
+                            opportunity.toLocalTime() in
+                            validTimes
                 }
                 ?.toSet()
                 ?: emptySet()
@@ -2122,6 +2174,11 @@ class AppStateRepository(
         val NOTIFICATION_VIBRATION_ENABLED =
             booleanPreferencesKey(
                 "notification_vibration_enabled"
+            )
+
+        val SNOOZE_DURATION_MINUTES =
+            intPreferencesKey(
+                "snooze_duration_minutes"
             )
 
         val NOTIFICATION_PERMISSION_REQUESTED =

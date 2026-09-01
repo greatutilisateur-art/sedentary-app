@@ -16,8 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -50,6 +48,7 @@ fun HomeScreen(
     onRequestExactAlarmPermission: () -> Unit,
     onOpenNextActivity: () -> Unit,
     onMoveNow: () -> Unit,
+    onOpenCatalog: () -> Unit,
     onOpenLastActivity: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -128,13 +127,39 @@ fun HomeScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(28.dp),
+                    Modifier.height(20.dp),
+            )
+
+            MoveNowCard(
+                onClick =
+                    onMoveNow,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp),
+            )
+
+            OutlinedButton(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick =
+                    onOpenCatalog,
+                shape =
+                    RoundedCornerShape(14.dp),
+            ) {
+                Text("Catalogue d’activités")
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(24.dp),
             )
 
             if (proposalsPaused) {
                 Text(
                     text =
-                        "Propositions en pause",
+                        "Propositions d'activités en pause",
                     style =
                         MaterialTheme.typography
                             .titleLarge,
@@ -153,16 +178,6 @@ fun HomeScreen(
                 ) {
                     Text("Réactiver")
                 }
-
-                Spacer(
-                    modifier =
-                        Modifier.height(12.dp),
-                )
-
-                MoveNowButton(
-                    onClick =
-                        onMoveNow,
-                )
 
                 return@Column
             }
@@ -241,16 +256,6 @@ fun HomeScreen(
                 )
             }
 
-            Spacer(
-                modifier =
-                    Modifier.height(12.dp),
-            )
-
-            MoveNowButton(
-                onClick =
-                    onMoveNow,
-            )
-
             if (
                 lastActivity != null &&
                 lastActivityWhenText != null
@@ -296,7 +301,7 @@ fun HomeScreen(
                 shape =
                     RoundedCornerShape(14.dp),
             ) {
-                Text("Mettre en pause")
+                Text("Mettre les propositions d’activité en pause")
             }
 
             Spacer(
@@ -308,53 +313,88 @@ fun HomeScreen(
 }
 
 @Composable
-private fun MoveNowButton(
+private fun MoveNowCard(
     onClick: () -> Unit,
 ) {
-    FilledTonalButton(
+    Card(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .heightIn(
-                    min = 56.dp
+                    min = 104.dp
+                )
+                .clickable(
+                    onClick =
+                        onClick
                 ),
-        onClick =
-            onClick,
         shape =
             RoundedCornerShape(18.dp),
         colors =
-            ButtonDefaults
-                .filledTonalButtonColors(
-                    containerColor =
-                        MaterialTheme.colorScheme
-                            .secondaryContainer,
-                    contentColor =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme
+                        .secondaryContainer,
+                contentColor =
+                    MaterialTheme.colorScheme
+                        .onSecondaryContainer,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 0.dp
+            ),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
+            verticalAlignment =
+                Alignment.CenterVertically,
+        ) {
+            Icon(
+                modifier =
+                    Modifier.size(24.dp),
+                painter =
+                    painterResource(
+                        R.drawable.ic_intervalles_mark
+                    ),
+                contentDescription = null,
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.size(14.dp),
+            )
+
+            Column(
+                modifier =
+                    Modifier.weight(1f),
+            ) {
+                Text(
+                    text =
+                        "Bouger maintenant",
+                    style =
+                        MaterialTheme.typography
+                            .titleLarge,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(4.dp),
+                )
+
+                Text(
+                    text =
+                        "Une activité aléatoire à faire tout de suite.",
+                    style =
+                        MaterialTheme.typography
+                            .bodyMedium,
+                    color =
                         MaterialTheme.colorScheme
                             .onSecondaryContainer,
-                ),
-    ) {
-        Icon(
-            modifier =
-                Modifier.size(20.dp),
-            painter =
-                painterResource(
-                    R.drawable.ic_intervalles_mark
-                ),
-            contentDescription = null,
-        )
-
-        Spacer(
-            modifier =
-                Modifier.size(10.dp),
-        )
-
-        Text(
-            text =
-                "Bouger maintenant",
-            style =
-                MaterialTheme.typography
-                    .titleLarge,
-        )
+                )
+            }
+        }
     }
 }
 

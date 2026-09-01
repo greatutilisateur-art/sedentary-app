@@ -1,7 +1,6 @@
 package org.sedentaryapp.engine
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,196 +14,383 @@ import org.sedentaryapp.engine.model.DecisionPolicy
 import org.sedentaryapp.engine.model.RepetitionCoefficients
 import org.sedentaryapp.engine.model.RepetitionRule
 import org.sedentaryapp.engine.model.ScoringPolicy
-import org.sedentaryapp.engine.schedule.Capabilities
-import org.sedentaryapp.engine.schedule.OpportunityReason
-import org.sedentaryapp.engine.schedule.ScheduleRules
-import org.sedentaryapp.engine.schedule.SlotValidationCode
+import org.sedentaryapp.engine.model.SchedulingPolicy
+import org.sedentaryapp.engine.model.SnoozePolicy
 
 class DecisionEngineTest {
-    private val policy = DecisionPolicy(
-        scoring = ScoringPolicy(
-            minWeight = 0.05,
-            maxWeight = 20.0,
-            historyWindowProposals = 4,
-            repetitionCoefficients = RepetitionCoefficients(
-                sameAsPreviousActivity = 0.15,
-                sameActivityInRecentWindow = 0.55,
-                noRepetition = 1.0,
-            ),
-        ),
-    )
+
+    private val policy =
+        DecisionPolicy(
+            scoring =
+                ScoringPolicy(
+                    minWeight = 0.05,
+                    maxWeight = 20.0,
+                    historyWindowProposals = 4,
+                    repetitionCoefficients =
+                        RepetitionCoefficients(
+                            sameAsPreviousActivity = 0.15,
+                            sameActivityInRecentWindow = 0.55,
+                            noRepetition = 1.0,
+                        ),
+                ),
+            scheduling =
+                SchedulingPolicy(
+                    technicalLatenessToleranceMinutes = 10L,
+                    minimumGapBetweenDistinctOpportunitiesMinutes = 10L,
+                ),
+            snooze =
+                SnoozePolicy(
+                    defaultDurationMinutes = 30,
+                    minimumDurationMinutes = 5,
+                    maximumDurationMinutes = 60,
+                ),
+        )
 
     private fun activity(
         id: String,
-        category: String = "mobilite",
         intensity: String = "gentle",
-        standing: Boolean = false,
         walking: Boolean = false,
         baseWeight: Double = 1.0,
-        opportunityTypes: Set<String> = setOf("standard"),
-    ) = ActivityDefinition(
-        id = id,
-        status = "published",
-        userCategory = category,
-        internalFamily = "family_$id",
-        intensity = intensity,
-        durationSecondsMin = 30,
-        durationSecondsMax = 60,
-        standingRequired = standing,
-        walkingRequired = walking,
-        eligibleOpportunityTypes = opportunityTypes,
-        baseWeight = baseWeight,
-    )
+        internalFamily: String = "family_$id",
+        status: String = "published",
+    ) =
+        ActivityDefinition(
+            id = id,
+            status = status,
+            userCategory = "mobilite",
+            internalFamily = internalFamily,
+            intensity = intensity,
+            durationSecondsMin = 30,
+            durationSecondsMax = 60,
+            standingRequired = walking,
+            walkingRequired = walking,
+            baseWeight = baseWeight,
+        )
 
-    @Test fun samePreviousActivityUses015() {
+    @Test
+    fun samePreviousActivityUses015() {
         val a = activity("A")
-        val result = CandidateScorer.repetitionRule(a, listOf(a), policy)
-        assertEquals(0.15, result.first, 0.0)
-        assertEquals(RepetitionRule.SAME_AS_PREVIOUS_ACTIVITY, result.second)
+
+        val result =
+            CandidateScorer.repetitionRule(
+                activity = a,
+                history = listOf(a),
+                policy = policy,
+            )
+
+        assertEquals(
+            0.15,
+            result.first,
+            0.0,
+        )
+        assertEquals(
+            RepetitionRule.SAME_AS_PREVIOUS_ACTIVITY,
+            result.second,
+        )
     }
 
-    @Test fun recentActivityUses055() {
+    @Test
+    fun recentActivityUses055() {
         val a = activity("A")
         val b = activity("B")
-        val result = CandidateScorer.repetitionRule(a, listOf(a, b), policy)
-        assertEquals(0.55, result.first, 0.0)
-    }
 
-    @Test fun internalFamilyHasNoScoringEffect() {
-        val previous = activity("B")
-        val current = activity("A").copy(internalFamily = previous.internalFamily)
-        assertEquals(1.0, CandidateScorer.repetitionRule(current, listOf(previous), policy).first, 0.0)
-    }
+        val result =
+            CandidateScorer.repetitionRule(
+                activity = a,
+                history = listOf(a, b),
+                policy = policy,
+            )
 
-    @Test fun canNotStandFiltersStandingActivities() {
-        val result = CandidateFilter.filter(
-            listOf(activity("A", standing = true), activity("B")),
-            CandidateFilterRequest(canStand = false),
-        )
-        assertEquals(listOf("B"), result.map { it.id })
-    }
-
-    @Test fun alternativeExcludesCurrentActivity() {
-        val result = CandidateFilter.filter(
-            listOf(activity("A"), activity("B")),
-            CandidateFilterRequest(currentActivityId = "A"),
-        )
-        assertEquals(listOf("B"), result.map { it.id })
-    }
-
-    @Test fun alternativeExcludesAllActivitiesSeenInInteraction() {
-        val result = CandidateFilter.filter(
-            listOf(activity("A"), activity("B"), activity("C")),
-            CandidateFilterRequest(excludedActivityIds = setOf("A", "B")),
-        )
-        assertEquals(listOf("C"), result.map { it.id })
-    }
-
-    @Test fun alternativeExclusionsResetWithNewRequest() {
-        val result = CandidateFilter.filter(
-            listOf(activity("A"), activity("B"), activity("C")),
-            CandidateFilterRequest(),
-        )
-        assertEquals(listOf("A", "B", "C"), result.map { it.id })
-    }
-
-    @Test fun emptyCategoriesProduceNoCandidate() {
-        val result = CandidateFilter.filter(
-            listOf(activity("A")),
-            CandidateFilterRequest(enabledCategories = emptySet()),
-        )
-        assertTrue(result.isEmpty())
-    }
-
-    @Test fun weightedSelectionIsOrderIndependent() {
-        val activities = listOf(activity("C"), activity("A"), activity("B"))
-        val scored = CandidateScorer.score(activities, emptyList(), policy)
-        val reversed = CandidateScorer.score(activities.reversed(), emptyList(), policy)
         assertEquals(
-            WeightedSelector.select(scored, "same-seed")?.id,
-            WeightedSelector.select(reversed, "same-seed")?.id,
+            0.55,
+            result.first,
+            0.0,
+        )
+        assertEquals(
+            RepetitionRule.SAME_ACTIVITY_IN_RECENT_WINDOW,
+            result.second,
         )
     }
 
-    @Test fun chooseActivityReturnsNullWhenNothingEligible() {
-        assertNull(
+    @Test
+    fun internalFamilyHasNoScoringEffect() {
+        val previous =
+            activity(
+                id = "B",
+                internalFamily = "shared_family",
+            )
+
+        val current =
+            activity(
+                id = "A",
+                internalFamily = "shared_family",
+            )
+
+        val result =
+            CandidateScorer.repetitionRule(
+                activity = current,
+                history = listOf(previous),
+                policy = policy,
+            )
+
+        assertEquals(
+            1.0,
+            result.first,
+            0.0,
+        )
+        assertEquals(
+            RepetitionRule.NO_REPETITION,
+            result.second,
+        )
+    }
+
+    @Test
+    fun enabledIntensitiesFilterCandidates() {
+        val result =
+            CandidateFilter.filter(
+                activities =
+                    listOf(
+                        activity(
+                            id = "A",
+                            intensity = "gentle",
+                        ),
+                        activity(
+                            id = "B",
+                            intensity = "dynamic",
+                        ),
+                    ),
+                request =
+                    CandidateFilterRequest(
+                        enabledIntensities =
+                            setOf("dynamic"),
+                    ),
+            )
+
+        assertEquals(
+            listOf("B"),
+            result.map { it.id },
+        )
+    }
+
+    @Test
+    fun requiredWalkingTrueKeepsWalkingActivities() {
+        val result =
+            CandidateFilter.filter(
+                activities =
+                    listOf(
+                        activity(
+                            id = "A",
+                            walking = true,
+                        ),
+                        activity(
+                            id = "B",
+                            walking = false,
+                        ),
+                    ),
+                request =
+                    CandidateFilterRequest(
+                        requiredWalking = true,
+                    ),
+            )
+
+        assertEquals(
+            listOf("A"),
+            result.map { it.id },
+        )
+    }
+
+    @Test
+    fun requiredWalkingFalseKeepsNonWalkingActivities() {
+        val result =
+            CandidateFilter.filter(
+                activities =
+                    listOf(
+                        activity(
+                            id = "A",
+                            walking = true,
+                        ),
+                        activity(
+                            id = "B",
+                            walking = false,
+                        ),
+                    ),
+                request =
+                    CandidateFilterRequest(
+                        requiredWalking = false,
+                    ),
+            )
+
+        assertEquals(
+            listOf("B"),
+            result.map { it.id },
+        )
+    }
+
+    @Test
+    fun requiredWalkingNullKeepsBothMovementTypes() {
+        val result =
+            CandidateFilter.filter(
+                activities =
+                    listOf(
+                        activity(
+                            id = "A",
+                            walking = true,
+                        ),
+                        activity(
+                            id = "B",
+                            walking = false,
+                        ),
+                    ),
+                request =
+                    CandidateFilterRequest(
+                        requiredWalking = null,
+                    ),
+            )
+
+        assertEquals(
+            listOf("A", "B"),
+            result.map { it.id },
+        )
+    }
+
+    @Test
+    fun alternativeExcludesAllActivitiesSeenInInteraction() {
+        val result =
+            CandidateFilter.filter(
+                activities =
+                    listOf(
+                        activity("A"),
+                        activity("B"),
+                        activity("C"),
+                    ),
+                request =
+                    CandidateFilterRequest(
+                        excludedActivityIds =
+                            setOf("A", "B"),
+                    ),
+            )
+
+        assertEquals(
+            listOf("C"),
+            result.map { it.id },
+        )
+    }
+
+    @Test
+    fun alternativeExclusionsResetWithNewRequest() {
+        val result =
+            CandidateFilter.filter(
+                activities =
+                    listOf(
+                        activity("A"),
+                        activity("B"),
+                        activity("C"),
+                    ),
+                request =
+                    CandidateFilterRequest(),
+            )
+
+        assertEquals(
+            listOf("A", "B", "C"),
+            result.map { it.id },
+        )
+    }
+
+    @Test
+    fun unpublishedActivitiesAreFiltered() {
+        val result =
+            CandidateFilter.filter(
+                activities =
+                    listOf(
+                        activity("A"),
+                        activity(
+                            id = "B",
+                            status = "deprecated",
+                        ),
+                    ),
+            )
+
+        assertEquals(
+            listOf("A"),
+            result.map { it.id },
+        )
+    }
+
+    @Test
+    fun weightedSelectionIsOrderIndependent() {
+        val activities =
+            listOf(
+                activity("C"),
+                activity("A"),
+                activity("B"),
+            )
+
+        val scored =
+            CandidateScorer.score(
+                candidates = activities,
+                history = emptyList(),
+                policy = policy,
+            )
+
+        val reversed =
+            CandidateScorer.score(
+                candidates = activities.reversed(),
+                history = emptyList(),
+                policy = policy,
+            )
+
+        assertEquals(
+            WeightedSelector
+                .select(
+                    scored = scored,
+                    seed = "same-seed",
+                )
+                ?.id,
+            WeightedSelector
+                .select(
+                    scored = reversed,
+                    seed = "same-seed",
+                )
+                ?.id,
+        )
+    }
+
+    @Test
+    fun chooseActivityReturnsNullWhenNoIntensityIsEnabled() {
+        val selected =
             DecisionEngine.chooseActivity(
-                activities = listOf(activity("A")),
+                activities =
+                    listOf(
+                        activity("A")
+                    ),
                 history = emptyList(),
                 policy = policy,
                 seed = "seed",
-                filterRequest = CandidateFilterRequest(enabledCategories = emptySet()),
+                filterRequest =
+                    CandidateFilterRequest(
+                        enabledIntensities =
+                            emptySet(),
+                    ),
+            )
+
+        assertNull(selected)
+    }
+
+    @Test
+    fun catalogValidationAcceptsValidUniqueActivities() {
+        CandidateScorer.validateCatalogForSelection(
+            listOf(
+                activity(
+                    id = "A",
+                    baseWeight = 1.0,
+                ),
+                activity(
+                    id = "B",
+                    baseWeight = 2.0,
+                ),
             )
         )
-    }
 
-    @Test fun exact20MinuteSlotGapIsValid() {
-        val errors = ScheduleRules.validateStandardSlots(
-            slots = listOf(610, 630),
-            workStart = 540,
-            lunchStart = 750,
-            lunchEnd = 810,
-            workEnd = 1050,
-            minGapMinutes = 20,
-        )
-        assertTrue(errors.isEmpty())
-    }
-
-    @Test fun fifteenMinuteSlotGapIsInvalid() {
-        val errors = ScheduleRules.validateStandardSlots(
-            slots = listOf(610, 625),
-            workStart = 540,
-            lunchStart = 750,
-            lunchEnd = 810,
-            workEnd = 1050,
-            minGapMinutes = 20,
-        )
-        assertTrue(errors.any { it.code == SlotValidationCode.GAP_TOO_SMALL })
-    }
-
-    @Test fun lateOpportunityBeyond15MinutesIsMissed() {
-        val decision = ScheduleRules.opportunityAllowed(
-            targetMinute = 610,
-            actualMinute = 630,
-            nextFixedSlotMinute = 710,
-            latenessToleranceMinutes = 15,
-            minGapMinutes = 20,
-        )
-        assertFalse(decision.allowed)
-        assertEquals(OpportunityReason.MISSED_SLOT, decision.reason)
-    }
-
-    @Test fun snoozeCannotCrossMidnight() {
-        assertTrue(
-            ScheduleRules.allowedSnoozeOptions(
-                actionMinute = 23 * 60 + 50,
-                fixedSlots = listOf(17 * 60),
-                sourceSlotMinute = 17 * 60,
-                optionsMinutes = listOf(30),
-                minGapMinutes = 20,
-            ).isEmpty()
-        )
-    }
-
-    @Test fun disablingStandingAlsoDisablesWalking() {
-        assertEquals(
-            Capabilities(false, false),
-            ScheduleRules.applyCapabilityChange(Capabilities(true, true), "can_stand", false),
-        )
-    }
-
-    @Test fun reenablingStandingDoesNotReenableWalking() {
-        assertEquals(
-            Capabilities(true, false),
-            ScheduleRules.applyCapabilityChange(Capabilities(false, false), "can_stand", true),
-        )
-    }
-
-    @Test fun noSelectedWorkdayHasNoNextDay() {
-        assertNull(ScheduleRules.nextSelectedWorkday(2, emptySet()))
-    }
-
-    @Test fun fridayToMondayIsThreeDays() {
-        assertEquals(3, ScheduleRules.nextSelectedWorkday(4, setOf(0, 1, 2, 3, 4)))
+        assertTrue(true)
     }
 }

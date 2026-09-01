@@ -5,6 +5,7 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,14 +19,16 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -64,6 +67,9 @@ fun ScheduleScreen(
     completionVibrationEnabled: Boolean,
     notificationSoundEnabled: Boolean,
     notificationVibrationEnabled: Boolean,
+    snoozeDurationMinutes: Int,
+    snoozeMinimumDurationMinutes: Int,
+    snoozeMaximumDurationMinutes: Int,
     minimumGapMinutes: Long,
     nextProposalAt: LocalDateTime?,
     nextProposalOverrideActive: Boolean,
@@ -81,6 +87,7 @@ fun ScheduleScreen(
     onCompletionVibrationChanged: (Boolean) -> Unit,
     onNotificationSoundChanged: (Boolean) -> Unit,
     onNotificationVibrationChanged: (Boolean) -> Unit,
+    onSnoozeDurationChanged: (Int) -> Unit,
     onNextProposalChanged: (LocalDateTime) -> Unit,
     onClearNextProposalOverride: () -> Unit,
     showInfoLinks: Boolean = true,
@@ -104,6 +111,163 @@ fun ScheduleScreen(
                 null
             )
         }
+
+    var infoDialog by
+        remember {
+            mutableStateOf<InfoDialogContent?>(
+                null
+            )
+        }
+
+    var customSnoozeDialogOpen by
+        remember {
+            mutableStateOf(false)
+        }
+
+    var customSnoozeDraftMinutes by
+        remember(snoozeDurationMinutes) {
+            mutableStateOf(
+                snoozeDurationMinutes
+                    .coerceIn(
+                        snoozeMinimumDurationMinutes,
+                        snoozeMaximumDurationMinutes,
+                    )
+            )
+        }
+
+    infoDialog
+        ?.let { content ->
+            AlertDialog(
+                onDismissRequest = {
+                    infoDialog = null
+                },
+                title = {
+                    Text(
+                        text =
+                            content.title
+                    )
+                },
+                text = {
+                    Text(
+                        text =
+                            content.body
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            infoDialog = null
+                        },
+                    ) {
+                        Text("OK")
+                    }
+                },
+            )
+        }
+
+    if (customSnoozeDialogOpen) {
+        AlertDialog(
+            onDismissRequest = {
+                customSnoozeDialogOpen = false
+            },
+            title = {
+                Text(
+                    text = "Autre durée"
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text =
+                            "Choisis entre $snoozeMinimumDurationMinutes et $snoozeMaximumDurationMinutes min, par pas de 5."
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(18.dp),
+                    )
+
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(12.dp),
+                        verticalAlignment =
+                            Alignment.CenterVertically,
+                    ) {
+                        OutlinedButton(
+                            modifier =
+                                Modifier.weight(1f),
+                            enabled =
+                                customSnoozeDraftMinutes >
+                                    snoozeMinimumDurationMinutes,
+                            onClick = {
+                                customSnoozeDraftMinutes =
+                                    (customSnoozeDraftMinutes -
+                                        SNOOZE_CUSTOM_STEP_MINUTES)
+                                        .coerceAtLeast(
+                                            snoozeMinimumDurationMinutes
+                                        )
+                            },
+                        ) {
+                            Text("−")
+                        }
+
+                        Text(
+                            modifier =
+                                Modifier.weight(1.2f),
+                            text =
+                                "$customSnoozeDraftMinutes min",
+                            textAlign =
+                                TextAlign.Center,
+                            style =
+                                MaterialTheme.typography
+                                    .titleMedium,
+                        )
+
+                        OutlinedButton(
+                            modifier =
+                                Modifier.weight(1f),
+                            enabled =
+                                customSnoozeDraftMinutes <
+                                    snoozeMaximumDurationMinutes,
+                            onClick = {
+                                customSnoozeDraftMinutes =
+                                    (customSnoozeDraftMinutes +
+                                        SNOOZE_CUSTOM_STEP_MINUTES)
+                                        .coerceAtMost(
+                                            snoozeMaximumDurationMinutes
+                                        )
+                            },
+                        ) {
+                            Text("+")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onSnoozeDurationChanged(
+                            customSnoozeDraftMinutes
+                        )
+                        customSnoozeDialogOpen = false
+                    },
+                ) {
+                    Text("Utiliser")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        customSnoozeDialogOpen = false
+                    },
+                ) {
+                    Text("Annuler")
+                }
+            },
+        )
+    }
 
     Surface(
         modifier =
@@ -160,24 +324,47 @@ fun ScheduleScreen(
             }
 
             if (showPauseControl) {
-                FilledTonalButton(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    onClick = {
-                        onPauseChanged(
-                            !proposalsPaused
-                        )
-                    },
-                    shape =
-                        RoundedCornerShape(14.dp),
-                ) {
+                if (proposalsPaused) {
                     Text(
-                        if (proposalsPaused) {
-                            "Réactiver"
-                        } else {
-                            "Mettre en pause"
-                        }
+                        text =
+                            "Propositions d'activités en pause",
+                        style =
+                            MaterialTheme.typography
+                                .titleLarge,
                     )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(16.dp),
+                    )
+
+                    Button(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick = {
+                            onPauseChanged(
+                                false
+                            )
+                        },
+                    ) {
+                        Text("Réactiver")
+                    }
+                } else {
+                    FilledTonalButton(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick = {
+                            onPauseChanged(
+                                true
+                            )
+                        },
+                        shape =
+                            RoundedCornerShape(14.dp),
+                    ) {
+                        Text(
+                            "Mettre les propositions d’activité en pause"
+                        )
+                    }
                 }
 
                 Spacer(
@@ -217,102 +404,108 @@ fun ScheduleScreen(
                     Modifier.height(10.dp),
             )
 
-            Card(
-                modifier =
-                    Modifier.fillMaxWidth(),
-                shape =
-                    RoundedCornerShape(18.dp),
-                border =
-                    BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme
-                            .outlineVariant,
-                    ),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme
-                                .surface,
-                    ),
-                elevation =
-                    CardDefaults.cardElevation(
-                        defaultElevation = 0.dp
-                    ),
-            ) {
-                Column {
+            val slotFontScale =
+                LocalDensity.current
+                    .fontScale
+
+            val slotRows =
+                if (slotFontScale < 1.3f) {
                     settings.slots
-                        .forEachIndexed {
-                                rowIndex,
-                                slot,
-                            ->
-
-                            SlotRow(
-                                time =
-                                    slot.time,
-                                canRemove =
-                                    settings.slots.size > 1,
-                                onEdit = {
-                                    showTimePicker(
-                                        context =
-                                            context,
-                                        initialTime =
-                                            slot.time,
-                                    ) { newTime ->
-                                        val candidateTimes =
-                                            settings.slots
-                                                .map {
-                                                        currentSlot ->
-
-                                                    if (
-                                                        currentSlot.index ==
-                                                        slot.index
-                                                    ) {
-                                                        newTime
-                                                    } else {
-                                                        currentSlot.time
-                                                    }
-                                                }
-
-                                        val valid =
-                                            NextOpportunityPlanner
-                                                .hasValidSpacing(
-                                                    activeSlotTimes =
-                                                        candidateTimes,
-                                                    minimumGapMinutes =
-                                                        minimumGapMinutes,
-                                                )
-
-                                        if (valid) {
-                                            slotError = null
-                                            onSlotTimeChanged(
-                                                slot.index,
-                                                newTime,
-                                            )
-                                        } else {
-                                            slotError =
-                                                "Espace les créneaux d’au moins $minimumGapMinutes min."
-                                        }
-                                    }
-                                },
-                                onRemove = {
-                                    slotError = null
-                                    onRemoveSlot(
-                                        slot.index
-                                    )
-                                },
-                            )
-
-                            if (
-                                rowIndex <
-                                settings.slots.lastIndex
-                            ) {
-                                HorizontalDivider(
-                                    color =
-                                        MaterialTheme.colorScheme
-                                            .outlineVariant,
-                                )
-                            }
+                        .chunked(2)
+                } else {
+                    settings.slots
+                        .map {
+                            listOf(it)
                         }
+                }
+
+            slotRows.forEachIndexed {
+                    gridRowIndex,
+                    rowSlots,
+                ->
+
+                if (gridRowIndex > 0) {
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp),
+                    )
+                }
+
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    horizontalArrangement =
+                        Arrangement.spacedBy(8.dp),
+                ) {
+                    rowSlots.forEach { slot ->
+                        SlotTile(
+                            modifier =
+                                Modifier.weight(1f),
+                            time =
+                                slot.time,
+                            canRemove =
+                                settings.slots.size > 1,
+                            onEdit = {
+                                showTimePicker(
+                                    context =
+                                        context,
+                                    initialTime =
+                                        slot.time,
+                                ) { newTime ->
+                                    val candidateTimes =
+                                        settings.slots
+                                            .map {
+                                                    currentSlot ->
+
+                                                if (
+                                                    currentSlot.index ==
+                                                    slot.index
+                                                ) {
+                                                    newTime
+                                                } else {
+                                                    currentSlot.time
+                                                }
+                                            }
+
+                                    val valid =
+                                        NextOpportunityPlanner
+                                            .hasValidSpacing(
+                                                activeSlotTimes =
+                                                    candidateTimes,
+                                                minimumGapMinutes =
+                                                    minimumGapMinutes,
+                                            )
+
+                                    if (valid) {
+                                        slotError = null
+                                        onSlotTimeChanged(
+                                            slot.index,
+                                            newTime,
+                                        )
+                                    } else {
+                                        slotError =
+                                            "Espace les créneaux d’au moins $minimumGapMinutes min."
+                                    }
+                                }
+                            },
+                            onRemove = {
+                                slotError = null
+                                onRemoveSlot(
+                                    slot.index
+                                )
+                            },
+                        )
+                    }
+
+                    if (
+                        rowSlots.size == 1 &&
+                        slotFontScale < 1.3f
+                    ) {
+                        Spacer(
+                            modifier =
+                                Modifier.weight(1f),
+                        )
+                    }
                 }
             }
 
@@ -397,9 +590,18 @@ fun ScheduleScreen(
                         Modifier.height(24.dp),
                 )
 
-                SectionTitle(
+                SectionTitleWithInfo(
                     text =
-                        "Prochaine proposition d’activité"
+                        "Prochaine proposition d’activité",
+                    onInfo = {
+                        infoDialog =
+                            InfoDialogContent(
+                                title =
+                                    "Prochaine proposition d’activité",
+                                body =
+                                    "Tu modifies la prochaine proposition. Ensuite, Intervalles reprend automatiquement le planning habituel à partir de cette date et de cette heure.",
+                            )
+                    },
                 )
 
                 Spacer(
@@ -444,13 +646,17 @@ fun ScheduleScreen(
                             modifier =
                                 Modifier.weight(1f),
                             text =
-                                nextProposalAt
-                                    ?.let {
-                                        formatNextProposalDateTime(
-                                            it
-                                        )
-                                    }
-                                    ?: "Aucune proposition prévue",
+                                if (proposalsPaused) {
+                                    "En pause"
+                                } else {
+                                    nextProposalAt
+                                        ?.let {
+                                            formatNextProposalDateTime(
+                                                it
+                                            )
+                                        }
+                                        ?: "Aucune proposition prévue"
+                                },
                             style =
                                 MaterialTheme.typography
                                     .bodyLarge,
@@ -506,6 +712,28 @@ fun ScheduleScreen(
                             )
                         }
                     }
+
+                    if (
+                        proposalsPaused &&
+                        nextProposalAt != null
+                    ) {
+                        Text(
+                            modifier =
+                                Modifier.padding(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    bottom = 14.dp,
+                                ),
+                            text =
+                                "Planning prévu : ${formatNextProposalDateTime(nextProposalAt)}",
+                            style =
+                                MaterialTheme.typography
+                                    .bodySmall,
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant,
+                        )
+                    }
                 }
 
                 nextProposalError
@@ -545,8 +773,18 @@ fun ScheduleScreen(
                     Modifier.height(24.dp),
             )
 
-            SectionTitle(
-                text = "Intensité"
+            SectionTitleWithInfo(
+                text =
+                    "Intensité",
+                onInfo = {
+                    infoDialog =
+                        InfoDialogContent(
+                            title =
+                                "Intensité",
+                            body =
+                                "Douce, Modérée ou Dynamique indiquent le niveau de mouvement proposé. Tu peux en choisir plusieurs.",
+                        )
+                },
             )
 
             Spacer(
@@ -566,9 +804,18 @@ fun ScheduleScreen(
                     Modifier.height(24.dp),
             )
 
-            SectionTitle(
+            SectionTitleWithInfo(
                 text =
-                    "Type de mouvement"
+                    "Type de mouvement",
+                onInfo = {
+                    infoDialog =
+                        InfoDialogContent(
+                            title =
+                                "Type de mouvement",
+                            body =
+                                "Sur place : sans te déplacer. En mouvement : activités qui impliquent de marcher ou de te déplacer.",
+                        )
+                },
             )
 
             Spacer(
@@ -618,6 +865,44 @@ fun ScheduleScreen(
                         notificationVibrationEnabled,
                     onCheckedChange =
                         onNotificationVibrationChanged,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(24.dp),
+                )
+
+                SectionTitleWithInfo(
+                    text = "Report",
+                    onInfo = {
+                        infoDialog =
+                            InfoDialogContent(
+                                title = "Report",
+                                body =
+                                    "Une proposition peut être reportée une seule fois. Choisis ici la durée du report. Si ce report placerait la proposition à moins de $minimumGapMinutes minutes d’un autre créneau prévu, le bouton de report n’est pas proposé. Dans ce cas, la prochaine proposition arrive au prochain créneau prévu.",
+                            )
+                    },
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(10.dp),
+                )
+
+                SnoozeDurationRows(
+                    selectedMinutes =
+                        snoozeDurationMinutes,
+                    onPresetSelected =
+                        onSnoozeDurationChanged,
+                    onCustomSelected = {
+                        customSnoozeDraftMinutes =
+                            snoozeDurationMinutes
+                                .coerceIn(
+                                    snoozeMinimumDurationMinutes,
+                                    snoozeMaximumDurationMinutes,
+                                )
+                        customSnoozeDialogOpen = true
+                    },
                 )
 
                 Spacer(
@@ -677,6 +962,44 @@ fun ScheduleScreen(
             } else {
                 Spacer(
                     modifier =
+                        Modifier.height(24.dp),
+                )
+
+                SectionTitleWithInfo(
+                    text = "Report",
+                    onInfo = {
+                        infoDialog =
+                            InfoDialogContent(
+                                title = "Report",
+                                body =
+                                    "Une proposition peut être reportée une seule fois. Choisis ici la durée du report. Si ce report placerait la proposition à moins de $minimumGapMinutes minutes d’un autre créneau prévu, le bouton de report n’est pas proposé. Dans ce cas, la prochaine proposition arrive au prochain créneau prévu.",
+                            )
+                    },
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(10.dp),
+                )
+
+                SnoozeDurationRows(
+                    selectedMinutes =
+                        snoozeDurationMinutes,
+                    onPresetSelected =
+                        onSnoozeDurationChanged,
+                    onCustomSelected = {
+                        customSnoozeDraftMinutes =
+                            snoozeDurationMinutes
+                                .coerceIn(
+                                    snoozeMinimumDurationMinutes,
+                                    snoozeMaximumDurationMinutes,
+                                )
+                        customSnoozeDialogOpen = true
+                    },
+                )
+
+                Spacer(
+                    modifier =
                         Modifier.height(28.dp),
                 )
 
@@ -712,62 +1035,136 @@ private fun SectionTitle(
     )
 }
 
+private data class InfoDialogContent(
+    val title: String,
+    val body: String,
+)
+
 @Composable
-private fun SlotRow(
+private fun SectionTitleWithInfo(
+    text: String,
+    onInfo: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier.fillMaxWidth(),
+        verticalAlignment =
+            Alignment.CenterVertically,
+    ) {
+        Text(
+            modifier =
+                Modifier.weight(1f),
+            text =
+                text,
+            style =
+                MaterialTheme.typography
+                    .titleMedium,
+        )
+
+        IconButton(
+            modifier =
+                Modifier.sizeIn(
+                    minWidth = 48.dp,
+                    minHeight = 48.dp,
+                ),
+            onClick =
+                onInfo,
+        ) {
+            Text(
+                text = "ⓘ",
+                style =
+                    MaterialTheme.typography
+                        .titleMedium,
+                color =
+                    MaterialTheme.colorScheme
+                        .primary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SlotTile(
+    modifier: Modifier = Modifier,
     time: LocalTime,
     canRemove: Boolean,
     onEdit: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    Row(
+    Card(
         modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-        verticalAlignment =
-            Alignment.CenterVertically,
+            modifier,
+        shape =
+            RoundedCornerShape(14.dp),
+        border =
+            BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme
+                    .outlineVariant,
+            ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme
+                        .surface,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 0.dp
+            ),
     ) {
-        TextButton(
-            modifier =
-                Modifier.weight(1f),
-            onClick =
-                onEdit,
-        ) {
-            Text(
-                modifier =
-                    Modifier.fillMaxWidth(),
-                text =
-                    formatTime(
-                        time
-                    ),
-                style =
-                    MaterialTheme.typography
-                        .bodyLarge,
-            )
-        }
-
-        IconButton(
+        Row(
             modifier =
                 Modifier
-                    .sizeIn(
-                        minWidth = 48.dp,
-                        minHeight = 48.dp,
-                    )
-                    .semantics {
-                        contentDescription =
-                            "Supprimer le créneau de ${formatTimeForTalkBack(time)}"
-                    },
-            enabled =
-                canRemove,
-            onClick =
-                onRemove,
+                    .fillMaxWidth()
+                    .height(56.dp),
+            verticalAlignment =
+                Alignment.CenterVertically,
         ) {
-            Text(
-                text = "−",
-                style =
-                    MaterialTheme.typography
-                        .titleLarge,
-            )
+            TextButton(
+                modifier =
+                    Modifier.weight(1f),
+                onClick =
+                    onEdit,
+            ) {
+                Text(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    text =
+                        formatTime(
+                            time
+                        ),
+                    textAlign =
+                        TextAlign.Center,
+                    style =
+                        MaterialTheme.typography
+                            .bodyLarge,
+                )
+            }
+
+            IconButton(
+                modifier =
+                    Modifier
+                        .sizeIn(
+                            minWidth = 48.dp,
+                            minHeight = 48.dp,
+                        )
+                        .semantics {
+                            contentDescription =
+                                "Supprimer le créneau de ${formatTimeForTalkBack(time)}"
+                        },
+                enabled =
+                    canRemove,
+                onClick =
+                    onRemove,
+            ) {
+                Text(
+                    text = "−",
+                    style =
+                        MaterialTheme.typography
+                            .titleLarge,
+                )
+            }
         }
     }
 }
@@ -834,157 +1231,271 @@ private fun PreferenceRows(
         LocalDensity.current
             .fontScale
 
-    if (fontScale < 1.3f) {
+    BoxWithConstraints(
+        modifier =
+            Modifier.fillMaxWidth(),
+    ) {
+        val effectiveWidth =
+            maxWidth / fontScale
+
+        val oneRow =
+            effectiveWidth >= 300.dp
+
+        if (oneRow) {
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(6.dp),
+            ) {
+                PreferenceChip(
+                    modifier =
+                        Modifier.weight(0.85f),
+                    label = "Douce",
+                    selected =
+                        "gentle" in
+                            activityPreferences
+                                .enabledIntensities,
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "gentle",
+                            it,
+                        )
+                    },
+                )
+
+                PreferenceChip(
+                    modifier =
+                        Modifier.weight(1.0f),
+                    label =
+                        "Modérée",
+                    selected =
+                        "active" in
+                            activityPreferences
+                                .enabledIntensities,
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "active",
+                            it,
+                        )
+                    },
+                )
+
+                PreferenceChip(
+                    modifier =
+                        Modifier.weight(1.15f),
+                    label = "Dynamique",
+                    selected =
+                        "dynamic" in
+                            activityPreferences
+                                .enabledIntensities,
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "dynamic",
+                            it,
+                        )
+                    },
+                )
+            }
+        } else {
+            Column(
+                modifier =
+                    Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    horizontalArrangement =
+                        Arrangement.spacedBy(8.dp),
+                ) {
+                    PreferenceChip(
+                        modifier =
+                            Modifier.weight(1f),
+                        label = "Douce",
+                        selected =
+                            "gentle" in
+                                activityPreferences
+                                    .enabledIntensities,
+                        canDisable =
+                            activityPreferences
+                                .enabledIntensities
+                                .size > 1,
+                        onChanged = {
+                            onIntensityChanged(
+                                "gentle",
+                                it,
+                            )
+                        },
+                    )
+
+                    PreferenceChip(
+                        modifier =
+                            Modifier.weight(1f),
+                        label =
+                            "Modérée",
+                        selected =
+                            "active" in
+                                activityPreferences
+                                    .enabledIntensities,
+                        canDisable =
+                            activityPreferences
+                                .enabledIntensities
+                                .size > 1,
+                        onChanged = {
+                            onIntensityChanged(
+                                "active",
+                                it,
+                            )
+                        },
+                    )
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(8.dp),
+                )
+
+                PreferenceChip(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    label = "Dynamique",
+                    selected =
+                        "dynamic" in
+                            activityPreferences
+                                .enabledIntensities,
+                    canDisable =
+                        activityPreferences
+                            .enabledIntensities
+                            .size > 1,
+                    onChanged = {
+                        onIntensityChanged(
+                            "dynamic",
+                            it,
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SnoozeDurationRows(
+    selectedMinutes: Int,
+    onPresetSelected: (Int) -> Unit,
+    onCustomSelected: () -> Unit,
+) {
+    val presets =
+        listOf(
+            15,
+            30,
+            60,
+        )
+
+    val customSelected =
+        selectedMinutes !in presets
+
+    val choices =
+        listOf(
+            Pair(
+                "15 min",
+                { onPresetSelected(15) },
+            ),
+            Pair(
+                "30 min",
+                { onPresetSelected(30) },
+            ),
+            Pair(
+                "60 min",
+                { onPresetSelected(60) },
+            ),
+            Pair(
+                if (customSelected) {
+                    "Autre · $selectedMinutes min"
+                } else {
+                    "Autre…"
+                },
+                onCustomSelected,
+            ),
+        )
+
+    val fontScale =
+        LocalDensity.current
+            .fontScale
+
+    val rows =
+        if (fontScale < 1.3f) {
+            choices.chunked(2)
+        } else {
+            choices.map { listOf(it) }
+        }
+
+    rows.forEachIndexed {
+            rowIndex,
+            rowChoices,
+        ->
+
+        if (rowIndex > 0) {
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp),
+            )
+        }
+
         Row(
             modifier =
                 Modifier.fillMaxWidth(),
+            horizontalArrangement =
+                Arrangement.spacedBy(8.dp),
         ) {
-            PreferenceChip(
-                modifier =
-                    Modifier.weight(1f),
-                label = "Douce",
-                selected =
-                    "gentle" in
-                        activityPreferences
-                            .enabledIntensities,
-                canDisable =
-                    activityPreferences
-                        .enabledIntensities
-                        .size > 1,
-                onChanged = {
-                    onIntensityChanged(
-                        "gentle",
-                        it,
-                    )
-                },
-            )
+            rowChoices.forEachIndexed {
+                    choiceIndex,
+                    choice,
+                ->
 
-            Spacer(
-                modifier =
-                    Modifier.size(8.dp),
-            )
+                val absoluteIndex =
+                    rowIndex *
+                        (if (fontScale < 1.3f) 2 else 1) +
+                        choiceIndex
 
-            PreferenceChip(
-                modifier =
-                    Modifier.weight(1f),
-                label =
-                    "Modérée",
-                selected =
-                    "active" in
-                        activityPreferences
-                            .enabledIntensities,
-                canDisable =
-                    activityPreferences
-                        .enabledIntensities
-                        .size > 1,
-                onChanged = {
-                    onIntensityChanged(
-                        "active",
-                        it,
-                    )
-                },
-            )
+                val selected =
+                    when (absoluteIndex) {
+                        0 -> selectedMinutes == 15
+                        1 -> selectedMinutes == 30
+                        2 -> selectedMinutes == 60
+                        else -> customSelected
+                    }
 
-            Spacer(
-                modifier =
-                    Modifier.size(8.dp),
-            )
+                SelectionChip(
+                    modifier =
+                        Modifier.weight(1f),
+                    label = choice.first,
+                    selected = selected,
+                    onClick = choice.second,
+                )
+            }
 
-            PreferenceChip(
-                modifier =
-                    Modifier.weight(1f),
-                label = "Dynamique",
-                selected =
-                    "dynamic" in
-                        activityPreferences
-                            .enabledIntensities,
-                canDisable =
-                    activityPreferences
-                        .enabledIntensities
-                        .size > 1,
-                onChanged = {
-                    onIntensityChanged(
-                        "dynamic",
-                        it,
-                    )
-                },
-            )
-        }
-    } else {
-        Column(
-            modifier =
-                Modifier.fillMaxWidth(),
-        ) {
-            PreferenceChip(
-                modifier =
-                    Modifier.fillMaxWidth(),
-                label = "Douce",
-                selected =
-                    "gentle" in
-                        activityPreferences
-                            .enabledIntensities,
-                canDisable =
-                    activityPreferences
-                        .enabledIntensities
-                        .size > 1,
-                onChanged = {
-                    onIntensityChanged(
-                        "gentle",
-                        it,
-                    )
-                },
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            PreferenceChip(
-                modifier =
-                    Modifier.fillMaxWidth(),
-                label =
-                    "Modérée",
-                selected =
-                    "active" in
-                        activityPreferences
-                            .enabledIntensities,
-                canDisable =
-                    activityPreferences
-                        .enabledIntensities
-                        .size > 1,
-                onChanged = {
-                    onIntensityChanged(
-                        "active",
-                        it,
-                    )
-                },
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            PreferenceChip(
-                modifier =
-                    Modifier.fillMaxWidth(),
-                label = "Dynamique",
-                selected =
-                    "dynamic" in
-                        activityPreferences
-                            .enabledIntensities,
-                canDisable =
-                    activityPreferences
-                        .enabledIntensities
-                        .size > 1,
-                onChanged = {
-                    onIntensityChanged(
-                        "dynamic",
-                        it,
-                    )
-                },
-            )
+            if (
+                rowChoices.size == 1 &&
+                fontScale < 1.3f
+            ) {
+                Spacer(
+                    modifier =
+                        Modifier.weight(1f),
+                )
+            }
         }
     }
 }
@@ -1002,83 +1513,91 @@ private fun MovementRows(
         LocalDensity.current
             .fontScale
 
-    if (fontScale < 1.3f) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth(),
-        ) {
-            PreferenceChip(
-                modifier =
-                    Modifier.weight(1f),
-                label = "Sur place",
-                selected =
-                    activityPreferences
-                        .stationaryEnabled,
-                canDisable =
-                    activityPreferences
-                        .movingEnabled,
-                onChanged =
-                    onStationaryChanged,
-            )
+    BoxWithConstraints(
+        modifier =
+            Modifier.fillMaxWidth(),
+    ) {
+        val effectiveWidth =
+            maxWidth / fontScale
 
-            Spacer(
-                modifier =
-                    Modifier.size(8.dp),
-            )
+        val oneRow =
+            effectiveWidth >= 260.dp
 
-            PreferenceChip(
-                modifier =
-                    Modifier.weight(1f),
-                label =
-                    "En mouvement",
-                selected =
-                    activityPreferences
-                        .movingEnabled,
-                canDisable =
-                    activityPreferences
-                        .stationaryEnabled,
-                onChanged =
-                    onMovingChanged,
-            )
-        }
-    } else {
-        Column(
-            modifier =
-                Modifier.fillMaxWidth(),
-        ) {
-            PreferenceChip(
+        if (oneRow) {
+            Row(
                 modifier =
                     Modifier.fillMaxWidth(),
-                label = "Sur place",
-                selected =
-                    activityPreferences
-                        .stationaryEnabled,
-                canDisable =
-                    activityPreferences
-                        .movingEnabled,
-                onChanged =
-                    onStationaryChanged,
-            )
+                horizontalArrangement =
+                    Arrangement.spacedBy(8.dp),
+            ) {
+                PreferenceChip(
+                    modifier =
+                        Modifier.weight(0.9f),
+                    label = "Sur place",
+                    selected =
+                        activityPreferences
+                            .stationaryEnabled,
+                    canDisable =
+                        activityPreferences
+                            .movingEnabled,
+                    onChanged =
+                        onStationaryChanged,
+                )
 
-            Spacer(
-                modifier =
-                    Modifier.height(8.dp),
-            )
-
-            PreferenceChip(
+                PreferenceChip(
+                    modifier =
+                        Modifier.weight(1.1f),
+                    label =
+                        "En mouvement",
+                    selected =
+                        activityPreferences
+                            .movingEnabled,
+                    canDisable =
+                        activityPreferences
+                            .stationaryEnabled,
+                    onChanged =
+                        onMovingChanged,
+                )
+            }
+        } else {
+            Column(
                 modifier =
                     Modifier.fillMaxWidth(),
-                label =
-                    "En mouvement",
-                selected =
-                    activityPreferences
-                        .movingEnabled,
-                canDisable =
-                    activityPreferences
-                        .stationaryEnabled,
-                onChanged =
-                    onMovingChanged,
-            )
+            ) {
+                PreferenceChip(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    label = "Sur place",
+                    selected =
+                        activityPreferences
+                            .stationaryEnabled,
+                    canDisable =
+                        activityPreferences
+                            .movingEnabled,
+                    onChanged =
+                        onStationaryChanged,
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(8.dp),
+                )
+
+                PreferenceChip(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    label =
+                        "En mouvement",
+                    selected =
+                        activityPreferences
+                            .movingEnabled,
+                    canDisable =
+                        activityPreferences
+                            .stationaryEnabled,
+                    onChanged =
+                        onMovingChanged,
+                )
+            }
         }
     }
 }
@@ -1141,14 +1660,8 @@ private fun SelectionChip(
                     },
                 textAlign =
                     TextAlign.Center,
-                maxLines =
-                    if (compact) {
-                        1
-                    } else {
-                        2
-                    },
-                softWrap =
-                    !compact,
+                maxLines = 1,
+                softWrap = false,
             )
         },
         colors =
@@ -1294,7 +1807,7 @@ private fun showDateTimePicker(
                     true,
                 ).apply {
                     setTitle(
-                        "Heure de cette prochaine proposition"
+                        "Heure de la prochaine proposition"
                     )
                 }.show()
             },
@@ -1304,7 +1817,7 @@ private fun showDateTimePicker(
         )
 
     dateDialog.setTitle(
-        "Modifier uniquement la prochaine proposition"
+        "Modifier la prochaine proposition"
     )
 
     dateDialog.datePicker.minDate =
@@ -1404,3 +1917,6 @@ private fun weekdayFullName(
         DayOfWeek.SUNDAY -> "Dimanche"
     }
 }
+
+
+private const val SNOOZE_CUSTOM_STEP_MINUTES = 5

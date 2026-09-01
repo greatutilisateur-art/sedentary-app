@@ -1,5 +1,5 @@
 {
-  "vocabulary_version": "1.0.0",
+  "vocabulary_version": "1.0.1",
   "user_categories": {
     "mouvement": "Déplacement ou marche",
     "mobilite": "Mouvements articulaires ou corporels dynamiques et doux",
@@ -26,8 +26,8 @@
     "slow_breathing",
     "squat",
     "stairs",
-    "start_lower_body",
-    "start_upper_body",
+    "lower_body_sequence",
+    "upper_body_sequence",
     "thoracic_rotation",
     "visual_rest",
     "walking",
@@ -41,10 +41,6 @@
   "compatible_postures": [
     "seated",
     "standing"
-  ],
-  "opportunity_types": [
-    "standard",
-    "start_of_day"
   ],
   "sedentary_break_effects": [
     "certain",

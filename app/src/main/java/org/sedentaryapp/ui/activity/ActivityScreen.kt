@@ -1,11 +1,12 @@
 package org.sedentaryapp.ui.activity
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import android.content.Context
 import android.content.res.Configuration
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,10 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -57,6 +57,7 @@ fun ActivityScreen(
     canGoNext: Boolean,
     canRequestAnother: Boolean,
     showNotNow: Boolean,
+    showAlreadyDone: Boolean,
     guidedSessionState: GuidedSessionState,
     remainingSeconds: Int,
     shouldPlayCompletionHaptic: Boolean,
@@ -67,7 +68,7 @@ fun ActivityScreen(
     onOtherActivity: () -> Unit,
     onNotNow: () -> Unit,
     onStartGuidedSession: () -> Unit,
-    onCompleteSimpleActivity: () -> Unit,
+    onMarkActivityDone: () -> Unit,
     onPauseGuidedSession: () -> Unit,
     onResumeGuidedSession: () -> Unit,
     onEndGuidedSession: () -> Unit,
@@ -130,6 +131,8 @@ fun ActivityScreen(
                     canRequestAnother,
                 showNotNow =
                     showNotNow,
+                showAlreadyDone =
+                    showAlreadyDone,
                 guidedSessionState =
                     guidedSessionState,
                 remainingSeconds =
@@ -146,8 +149,8 @@ fun ActivityScreen(
                     onNotNow,
                 onStartGuidedSession =
                     onStartGuidedSession,
-                onCompleteSimpleActivity =
-                    onCompleteSimpleActivity,
+                onMarkActivityDone =
+                    onMarkActivityDone,
                 onPauseGuidedSession =
                     onPauseGuidedSession,
                 onResumeGuidedSession =
@@ -171,6 +174,8 @@ fun ActivityScreen(
                     canRequestAnother,
                 showNotNow =
                     showNotNow,
+                showAlreadyDone =
+                    showAlreadyDone,
                 guidedSessionState =
                     guidedSessionState,
                 remainingSeconds =
@@ -187,8 +192,8 @@ fun ActivityScreen(
                     onNotNow,
                 onStartGuidedSession =
                     onStartGuidedSession,
-                onCompleteSimpleActivity =
-                    onCompleteSimpleActivity,
+                onMarkActivityDone =
+                    onMarkActivityDone,
                 onPauseGuidedSession =
                     onPauseGuidedSession,
                 onResumeGuidedSession =
@@ -210,6 +215,7 @@ private fun PortraitActivityContent(
     canGoNext: Boolean,
     canRequestAnother: Boolean,
     showNotNow: Boolean,
+    showAlreadyDone: Boolean,
     guidedSessionState: GuidedSessionState,
     remainingSeconds: Int,
     onBack: () -> Unit,
@@ -218,7 +224,7 @@ private fun PortraitActivityContent(
     onOtherActivity: () -> Unit,
     onNotNow: () -> Unit,
     onStartGuidedSession: () -> Unit,
-    onCompleteSimpleActivity: () -> Unit,
+    onMarkActivityDone: () -> Unit,
     onPauseGuidedSession: () -> Unit,
     onResumeGuidedSession: () -> Unit,
     onEndGuidedSession: () -> Unit,
@@ -262,6 +268,8 @@ private fun PortraitActivityContent(
                         canRequestAnother,
                     showNotNow =
                         showNotNow,
+                    showAlreadyDone =
+                        showAlreadyDone,
                     onPreviousActivity =
                         onPreviousActivity,
                     onNextActivity =
@@ -272,14 +280,16 @@ private fun PortraitActivityContent(
                         onNotNow,
                     onStartGuidedSession =
                         onStartGuidedSession,
-                    onCompleteSimpleActivity =
-                        onCompleteSimpleActivity,
+                    onMarkActivityDone =
+                        onMarkActivityDone,
                 )
 
             GuidedSessionState.RUNNING ->
                 GuidedContent(
                     activity =
                         activity,
+                    postureLabel =
+                        postureLabel,
                     remainingSeconds =
                         remainingSeconds,
                     paused = false,
@@ -293,6 +303,8 @@ private fun PortraitActivityContent(
                 GuidedContent(
                     activity =
                         activity,
+                    postureLabel =
+                        postureLabel,
                     remainingSeconds =
                         remainingSeconds,
                     paused = true,
@@ -304,7 +316,6 @@ private fun PortraitActivityContent(
 
             GuidedSessionState.TIME_ELAPSED ->
                 FinishedContent(
-                    diameter = 184.dp,
                     onCloseGuidedSession =
                         onCloseGuidedSession,
                 )
@@ -320,6 +331,7 @@ private fun LandscapeActivityContent(
     canGoNext: Boolean,
     canRequestAnother: Boolean,
     showNotNow: Boolean,
+    showAlreadyDone: Boolean,
     guidedSessionState: GuidedSessionState,
     remainingSeconds: Int,
     onBack: () -> Unit,
@@ -328,7 +340,7 @@ private fun LandscapeActivityContent(
     onOtherActivity: () -> Unit,
     onNotNow: () -> Unit,
     onStartGuidedSession: () -> Unit,
-    onCompleteSimpleActivity: () -> Unit,
+    onMarkActivityDone: () -> Unit,
     onPauseGuidedSession: () -> Unit,
     onResumeGuidedSession: () -> Unit,
     onEndGuidedSession: () -> Unit,
@@ -361,28 +373,25 @@ private fun LandscapeActivityContent(
                         modifier =
                             Modifier
                                 .weight(1.15f)
+                                .verticalScroll(
+                                    rememberScrollState()
+                                )
                                 .padding(
-                                    end = 18.dp
+                                    end = 18.dp,
+                                    bottom = 8.dp,
                                 ),
                     ) {
-                        ActivityIdentity(
+                        ActivityGuidanceContent(
                             activity =
                                 activity,
                             postureLabel =
                                 postureLabel,
-                        )
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(14.dp),
-                        )
-
-                        Text(
-                            text =
-                                activity.instruction,
-                            style =
-                                MaterialTheme.typography
-                                    .bodyLarge,
+                            imageHeight =
+                                148.dp,
+                            illustrationTopSpacing =
+                                14.dp,
+                            illustrationBottomSpacing =
+                                10.dp,
                         )
                     }
 
@@ -404,7 +413,7 @@ private fun LandscapeActivityContent(
                                 ) {
                                     onStartGuidedSession
                                 } else {
-                                    onCompleteSimpleActivity
+                                    onMarkActivityDone
                                 },
                             shape =
                                 RoundedCornerShape(14.dp),
@@ -412,13 +421,28 @@ private fun LandscapeActivityContent(
                             Text(
                                 if (
                                     activity.guidanceMode ==
-                                    ActivityGuidanceMode.TIMER
+                                        ActivityGuidanceMode.TIMER
                                 ) {
                                     "Commencer"
                                 } else {
-                                    "Commencer"
+                                    "Fait"
                                 }
                             )
+                        }
+
+                        if (
+                            activity.guidanceMode ==
+                                ActivityGuidanceMode.TIMER &&
+                            showAlreadyDone
+                        ) {
+                            TextButton(
+                                modifier =
+                                    Modifier.fillMaxWidth(),
+                                onClick =
+                                    onMarkActivityDone,
+                            ) {
+                                Text("Déjà fait")
+                            }
                         }
 
                         if (
@@ -470,151 +494,83 @@ private fun LandscapeActivityContent(
                     Column(
                         modifier =
                             Modifier
-                                .weight(1f)
+                                .weight(1.15f)
+                                .verticalScroll(
+                                    rememberScrollState()
+                                )
                                 .padding(
-                                    end = 18.dp
+                                    end = 18.dp,
+                                    bottom = 8.dp,
                                 ),
                     ) {
-                        Text(
-                            text =
-                                activity.title,
-                            style =
-                                MaterialTheme.typography
-                                    .titleLarge,
-                        )
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(14.dp),
-                        )
-
-                        Text(
-                            text =
-                                activity.instruction,
-                            style =
-                                MaterialTheme.typography
-                                    .bodyLarge,
+                        ActivityGuidanceContent(
+                            activity =
+                                activity,
+                            postureLabel =
+                                postureLabel,
+                            imageHeight =
+                                148.dp,
+                            illustrationTopSpacing =
+                                14.dp,
+                            illustrationBottomSpacing =
+                                10.dp,
                         )
                     }
 
                     Column(
                         modifier =
                             Modifier
-                                .weight(1f)
+                                .weight(0.85f)
                                 .align(
                                     Alignment.CenterVertically
                                 ),
-                        horizontalAlignment =
-                            Alignment.CenterHorizontally,
                     ) {
-                        CircularCountdown(
+                        GuidedControls(
+                            activity =
+                                activity,
                             remainingSeconds =
                                 remainingSeconds,
-                            totalSeconds =
-                                activity.definition
-                                    .durationSecondsMax,
-                            diameter =
-                                142.dp,
+                            paused =
+                                paused,
                             timeFontSize =
-                                42,
-                        )
-
-                        if (paused) {
-                            Text(
-                                text = "En pause",
-                                style =
-                                    MaterialTheme.typography
-                                        .bodyMedium,
-                                color =
-                                    MaterialTheme.colorScheme
-                                        .onSurfaceVariant,
-                            )
-                        }
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(8.dp),
-                        )
-
-                        FilledTonalButton(
-                            modifier =
-                                Modifier.fillMaxWidth(),
-                            onClick =
+                                40,
+                            onPrimary =
                                 if (paused) {
                                     onResumeGuidedSession
                                 } else {
                                     onPauseGuidedSession
                                 },
-                            shape =
-                                RoundedCornerShape(14.dp),
-                        ) {
-                            Text(
-                                if (paused) {
-                                    "Reprendre"
-                                } else {
-                                    "Pause"
-                                }
-                            )
-                        }
-
-                        TextButton(
-                            modifier =
-                                Modifier.fillMaxWidth(),
-                            onClick =
+                            onEndGuidedSession =
                                 onEndGuidedSession,
-                        ) {
-                            Text("Terminer")
-                        }
+                        )
                     }
                 }
 
                 GuidedSessionState.TIME_ELAPSED -> {
                     Spacer(
                         modifier =
-                            Modifier.weight(0.2f),
+                            Modifier.weight(0.25f),
                     )
 
                     Column(
                         modifier =
                             Modifier
-                                .weight(0.8f)
+                                .weight(1.5f)
                                 .align(
                                     Alignment.CenterVertically
                                 ),
-                        horizontalAlignment =
-                            Alignment.CenterHorizontally,
                     ) {
-                        FinishedCountdown(
-                            diameter =
-                                142.dp,
+                        FinishedContent(
+                            onCloseGuidedSession =
+                                onCloseGuidedSession,
                             timeFontSize =
-                                42,
+                                40,
                         )
                     }
 
                     Spacer(
                         modifier =
-                            Modifier.weight(0.12f),
-                    )
-
-                    Button(
-                        modifier =
-                            Modifier
-                                .weight(0.8f)
-                                .align(
-                                    Alignment.CenterVertically
-                                ),
-                        onClick =
-                            onCloseGuidedSession,
-                        shape =
-                            RoundedCornerShape(14.dp),
-                    ) {
-                        Text("C’est fini !")
-                    }
-
-                    Spacer(
-                        modifier =
-                            Modifier.weight(0.2f),
+                            Modifier.weight(0.25f),
                     )
                 }
             }
@@ -642,19 +598,133 @@ private fun BackButton(
 }
 
 @Composable
-private fun ReadyContent(
+private fun ActivityIllustration(
+    resourceName: String?,
+    imageHeight: Dp = 176.dp,
+    topSpacing: Dp = 0.dp,
+    bottomSpacing: Dp = 16.dp,
+) {
+    if (resourceName.isNullOrBlank()) {
+        return
+    }
+
+    val resourceId =
+        when (resourceName) {
+            "ill_mouv01" ->
+                R.drawable.ill_mouv01
+
+            "ill_mouv02" ->
+                R.drawable.ill_mouv02
+
+            "ill_mouv03" ->
+                R.drawable.ill_mouv03
+
+            "ill_mouv04" ->
+                R.drawable.ill_mouv04
+
+            "ill_mob01" ->
+                R.drawable.ill_mob01
+
+            "ill_mob02" ->
+                R.drawable.ill_mob02
+
+            "ill_mob03" ->
+                R.drawable.ill_mob03
+
+            "ill_mob04" ->
+                R.drawable.ill_mob04
+
+            "ill_mob05" ->
+                R.drawable.ill_mob05
+
+            "ill_mob06" ->
+                R.drawable.ill_mob06
+
+            "ill_etir01" ->
+                R.drawable.ill_etir01
+
+            "ill_etir02" ->
+                R.drawable.ill_etir02
+
+            "ill_etir03" ->
+                R.drawable.ill_etir03
+
+            "ill_dyn01" ->
+                R.drawable.ill_dyn01
+
+            "ill_dyn02" ->
+                R.drawable.ill_dyn02
+
+            "ill_dyn03" ->
+                R.drawable.ill_dyn03
+
+            "ill_dyn04" ->
+                R.drawable.ill_dyn04
+
+            "ill_bien01" ->
+                R.drawable.ill_bien01
+
+            "ill_bien02" ->
+                R.drawable.ill_bien02
+
+            "ill_vis01" ->
+                R.drawable.ill_vis01
+
+            "ill_vis02" ->
+                R.drawable.ill_vis02
+
+            "ill_start01" ->
+                R.drawable.ill_start01
+
+            "ill_start02" ->
+                R.drawable.ill_start02
+
+            else ->
+                return
+        }
+
+    if (topSpacing > 0.dp) {
+        Spacer(
+            modifier =
+                Modifier.height(
+                    topSpacing
+                ),
+        )
+    }
+
+    Image(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(imageHeight),
+        painter =
+            painterResource(
+                resourceId
+            ),
+        // La consigne textuelle décrit entièrement l'activité.
+        // Éviter une annonce TalkBack redondante du type "Illustration de...".
+        contentDescription = null,
+        contentScale =
+            ContentScale.Fit,
+    )
+
+    if (bottomSpacing > 0.dp) {
+        Spacer(
+            modifier =
+                Modifier.height(
+                    bottomSpacing
+                ),
+        )
+    }
+}
+
+@Composable
+private fun ActivityGuidanceContent(
     activity: CatalogActivity,
     postureLabel: String?,
-    canGoPrevious: Boolean,
-    canGoNext: Boolean,
-    canRequestAnother: Boolean,
-    showNotNow: Boolean,
-    onPreviousActivity: () -> Unit,
-    onNextActivity: () -> Unit,
-    onOtherActivity: () -> Unit,
-    onNotNow: () -> Unit,
-    onStartGuidedSession: () -> Unit,
-    onCompleteSimpleActivity: () -> Unit,
+    imageHeight: Dp,
+    illustrationTopSpacing: Dp,
+    illustrationBottomSpacing: Dp,
 ) {
     ActivityIdentity(
         activity =
@@ -663,9 +733,15 @@ private fun ReadyContent(
             postureLabel,
     )
 
-    Spacer(
-        modifier =
-            Modifier.height(28.dp),
+    ActivityIllustration(
+        resourceName =
+            activity.illustrationResourceName,
+        imageHeight =
+            imageHeight,
+        topSpacing =
+            illustrationTopSpacing,
+        bottomSpacing =
+            illustrationBottomSpacing,
     )
 
     Text(
@@ -674,6 +750,36 @@ private fun ReadyContent(
         style =
             MaterialTheme.typography
                 .bodyLarge,
+    )
+}
+
+@Composable
+private fun ReadyContent(
+    activity: CatalogActivity,
+    postureLabel: String?,
+    canGoPrevious: Boolean,
+    canGoNext: Boolean,
+    canRequestAnother: Boolean,
+    showNotNow: Boolean,
+    showAlreadyDone: Boolean,
+    onPreviousActivity: () -> Unit,
+    onNextActivity: () -> Unit,
+    onOtherActivity: () -> Unit,
+    onNotNow: () -> Unit,
+    onStartGuidedSession: () -> Unit,
+    onMarkActivityDone: () -> Unit,
+) {
+    ActivityGuidanceContent(
+        activity =
+            activity,
+        postureLabel =
+            postureLabel,
+        imageHeight =
+            176.dp,
+        illustrationTopSpacing =
+            28.dp,
+        illustrationBottomSpacing =
+            16.dp,
     )
 
     Spacer(
@@ -691,7 +797,7 @@ private fun ReadyContent(
             ) {
                 onStartGuidedSession
             } else {
-                onCompleteSimpleActivity
+                onMarkActivityDone
             },
         shape =
             RoundedCornerShape(14.dp),
@@ -699,13 +805,33 @@ private fun ReadyContent(
         Text(
             if (
                 activity.guidanceMode ==
-                ActivityGuidanceMode.TIMER
+                    ActivityGuidanceMode.TIMER
             ) {
                 "Commencer"
             } else {
-                "Commencer"
+                "Fait"
             }
         )
+    }
+
+    if (
+        activity.guidanceMode ==
+            ActivityGuidanceMode.TIMER &&
+        showAlreadyDone
+    ) {
+        Spacer(
+            modifier =
+                Modifier.height(6.dp),
+        )
+
+        TextButton(
+            modifier =
+                Modifier.fillMaxWidth(),
+            onClick =
+                onMarkActivityDone,
+        ) {
+            Text("Déjà fait")
+        }
     }
 
     if (
@@ -919,71 +1045,70 @@ private fun AlternativeButtons(
 @Composable
 private fun GuidedContent(
     activity: CatalogActivity,
+    postureLabel: String?,
     remainingSeconds: Int,
     paused: Boolean,
     onPrimary: () -> Unit,
     onEndGuidedSession: () -> Unit,
 ) {
-    Text(
-        text =
-            activity.title,
-        style =
-            MaterialTheme.typography
-                .titleLarge,
+    ActivityGuidanceContent(
+        activity =
+            activity,
+        postureLabel =
+            postureLabel,
+        imageHeight =
+            176.dp,
+        illustrationTopSpacing =
+            28.dp,
+        illustrationBottomSpacing =
+            16.dp,
     )
 
     Spacer(
         modifier =
-            Modifier.height(30.dp),
+            Modifier.height(24.dp),
     )
 
-    CircularCountdown(
+    GuidedControls(
+        activity =
+            activity,
+        remainingSeconds =
+            remainingSeconds,
+        paused =
+            paused,
+        timeFontSize =
+            42,
+        onPrimary =
+            onPrimary,
+        onEndGuidedSession =
+            onEndGuidedSession,
+    )
+}
+
+@Composable
+private fun GuidedControls(
+    activity: CatalogActivity,
+    remainingSeconds: Int,
+    paused: Boolean,
+    timeFontSize: Int,
+    onPrimary: () -> Unit,
+    onEndGuidedSession: () -> Unit,
+) {
+    CountdownCard(
         remainingSeconds =
             remainingSeconds,
         totalSeconds =
             activity.definition
                 .durationSecondsMax,
-        diameter =
-            184.dp,
+        paused =
+            paused,
         timeFontSize =
-            56,
-    )
-
-    if (paused) {
-        Spacer(
-            modifier =
-                Modifier.height(10.dp),
-        )
-
-        Text(
-            modifier =
-                Modifier.fillMaxWidth(),
-            text = "En pause",
-            style =
-                MaterialTheme.typography
-                    .bodyMedium,
-            color =
-                MaterialTheme.colorScheme
-                    .onSurfaceVariant,
-        )
-    }
-
-    Spacer(
-        modifier =
-            Modifier.height(30.dp),
-    )
-
-    Text(
-        text =
-            activity.instruction,
-        style =
-            MaterialTheme.typography
-                .bodyLarge,
+            timeFontSize,
     )
 
     Spacer(
         modifier =
-            Modifier.height(32.dp),
+            Modifier.height(14.dp),
     )
 
     FilledTonalButton(
@@ -1014,20 +1139,16 @@ private fun GuidedContent(
 }
 
 @Composable
-private fun CircularCountdown(
+private fun CountdownCard(
     remainingSeconds: Int,
     totalSeconds: Int,
-    diameter: Dp,
+    paused: Boolean,
     timeFontSize: Int,
+    accessibilityLabel: String =
+        countdownTalkBack(
+            remainingSeconds
+        ),
 ) {
-    val trackColor =
-        MaterialTheme.colorScheme
-            .outlineVariant
-
-    val progressColor =
-        MaterialTheme.colorScheme
-            .primary
-
     val safeTotal =
         totalSeconds
             .coerceAtLeast(1)
@@ -1043,110 +1164,153 @@ private fun CircularCountdown(
                 safeTotal.toFloat()
         )
 
-    Box(
+    Surface(
         modifier =
-            Modifier.fillMaxWidth(),
-        contentAlignment =
-            Alignment.Center,
+            Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription =
+                        accessibilityLabel
+                },
+        shape =
+            RoundedCornerShape(18.dp),
+        color =
+            MaterialTheme.colorScheme.surface,
+        border =
+            BorderStroke(
+                width = 1.dp,
+                color =
+                    MaterialTheme.colorScheme
+                        .outlineVariant,
+            ),
     ) {
-        Box(
+        Column(
             modifier =
-                Modifier
-                    .size(diameter)
-                    .semantics {
-                        contentDescription =
-                            countdownTalkBack(
-                                remainingSeconds
-                            )
-                    },
-            contentAlignment =
-                Alignment.Center,
+                Modifier.padding(
+                    horizontal = 18.dp,
+                    vertical = 16.dp,
+                ),
         ) {
-            Canvas(
+            Row(
                 modifier =
-                    Modifier.fillMaxSize(),
+                    Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    Alignment.CenterVertically,
             ) {
-                val stroke =
-                    5.dp.toPx()
+                Text(
+                    text =
+                        "%d:%02d".format(
+                            remainingSeconds / 60,
+                            remainingSeconds % 60,
+                        ),
+                    fontSize =
+                        timeFontSize.sp,
+                    lineHeight =
+                        (timeFontSize + 6).sp,
+                    fontWeight =
+                        FontWeight.Medium,
+                )
 
-                val inset =
-                    stroke / 2f
+                Spacer(
+                    modifier =
+                        Modifier.weight(1f),
+                )
 
-                val arcSize =
-                    Size(
-                        width =
-                            size.width -
-                                stroke,
-                        height =
-                            size.height -
-                                stroke,
+                if (paused) {
+                    Text(
+                        text = "En pause",
+                        style =
+                            MaterialTheme.typography
+                                .bodyMedium,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
                     )
-
-                drawArc(
-                    color =
-                        trackColor,
-                    startAngle =
-                        -90f,
-                    sweepAngle =
-                        360f,
-                    useCenter =
-                        false,
-                    topLeft =
-                        Offset(
-                            inset,
-                            inset,
-                        ),
-                    size =
-                        arcSize,
-                    style =
-                        Stroke(
-                            width =
-                                stroke,
-                            cap =
-                                StrokeCap.Round,
-                        ),
-                )
-
-                // Sens horaire : la progression "tombe" vers la droite.
-                drawArc(
-                    color =
-                        progressColor,
-                    startAngle =
-                        -90f,
-                    sweepAngle =
-                        360f *
-                            fraction,
-                    useCenter =
-                        false,
-                    topLeft =
-                        Offset(
-                            inset,
-                            inset,
-                        ),
-                    size =
-                        arcSize,
-                    style =
-                        Stroke(
-                            width =
-                                stroke,
-                            cap =
-                                StrokeCap.Round,
-                        ),
-                )
+                }
             }
 
-            Text(
-                text =
-                    "%d:%02d".format(
-                        remainingSeconds / 60,
-                        remainingSeconds % 60,
+            Spacer(
+                modifier =
+                    Modifier.height(12.dp),
+            )
+
+            CountdownProgressBar(
+                fraction =
+                    fraction,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CountdownProgressBar(
+    fraction: Float,
+) {
+    val trackColor =
+        MaterialTheme.colorScheme
+            .outlineVariant
+
+    val progressColor =
+        MaterialTheme.colorScheme
+            .primary
+
+    Canvas(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(6.dp),
+    ) {
+        val y =
+            size.height / 2f
+
+        val stroke =
+            size.height
+
+        drawLine(
+            color =
+                trackColor,
+            start =
+                Offset(
+                    x = 0f,
+                    y = y,
+                ),
+            end =
+                Offset(
+                    x = size.width,
+                    y = y,
+                ),
+            strokeWidth =
+                stroke,
+            cap =
+                StrokeCap.Round,
+        )
+
+        val safeFraction =
+            fraction.coerceIn(
+                0f,
+                1f,
+            )
+
+        if (safeFraction > 0f) {
+            drawLine(
+                color =
+                    progressColor,
+                start =
+                    Offset(
+                        x = 0f,
+                        y = y,
                     ),
-                fontSize =
-                    timeFontSize.sp,
-                lineHeight =
-                    (timeFontSize + 8).sp,
-                fontWeight =
-                    FontWeight.Medium,
+                end =
+                    Offset(
+                        x =
+                            size.width *
+                                safeFraction,
+                        y = y,
+                    ),
+                strokeWidth =
+                    stroke,
+                cap =
+                    StrokeCap.Round,
             )
         }
     }
@@ -1154,24 +1318,30 @@ private fun CircularCountdown(
 
 @Composable
 private fun FinishedContent(
-    diameter: Dp,
     onCloseGuidedSession: () -> Unit,
+    timeFontSize: Int = 42,
 ) {
     Spacer(
         modifier =
-            Modifier.height(30.dp),
+            Modifier.height(24.dp),
     )
 
-    FinishedCountdown(
-        diameter =
-            diameter,
+    CountdownCard(
+        remainingSeconds =
+            0,
+        totalSeconds =
+            1,
+        paused =
+            false,
         timeFontSize =
-            56,
+            timeFontSize,
+        accessibilityLabel =
+            "Chronomètre terminé, zéro minute zéro seconde",
     )
 
     Spacer(
         modifier =
-            Modifier.height(36.dp),
+            Modifier.height(20.dp),
     )
 
     Button(
@@ -1183,88 +1353,6 @@ private fun FinishedContent(
             RoundedCornerShape(14.dp),
     ) {
         Text("C’est fini !")
-    }
-}
-
-@Composable
-private fun FinishedCountdown(
-    diameter: Dp,
-    timeFontSize: Int,
-) {
-    val trackColor =
-        MaterialTheme.colorScheme
-            .outlineVariant
-
-    Box(
-        modifier =
-            Modifier.fillMaxWidth(),
-        contentAlignment =
-            Alignment.Center,
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(diameter)
-                    .semantics {
-                        contentDescription =
-                            "Chronomètre terminé, zéro minute zéro seconde"
-                    },
-            contentAlignment =
-                Alignment.Center,
-        ) {
-            Canvas(
-                modifier =
-                    Modifier.fillMaxSize(),
-            ) {
-                val stroke =
-                    5.dp.toPx()
-
-                val inset =
-                    stroke / 2f
-
-                drawArc(
-                    color =
-                        trackColor,
-                    startAngle =
-                        -90f,
-                    sweepAngle =
-                        360f,
-                    useCenter =
-                        false,
-                    topLeft =
-                        Offset(
-                            inset,
-                            inset,
-                        ),
-                    size =
-                        Size(
-                            width =
-                                size.width -
-                                    stroke,
-                            height =
-                                size.height -
-                                    stroke,
-                        ),
-                    style =
-                        Stroke(
-                            width =
-                                stroke,
-                            cap =
-                                StrokeCap.Round,
-                        ),
-                )
-            }
-
-            Text(
-                text = "0:00",
-                fontSize =
-                    timeFontSize.sp,
-                lineHeight =
-                    (timeFontSize + 8).sp,
-                fontWeight =
-                    FontWeight.Medium,
-            )
-        }
     }
 }
 

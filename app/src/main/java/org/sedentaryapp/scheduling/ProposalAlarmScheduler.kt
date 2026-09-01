@@ -2,19 +2,20 @@ package org.sedentaryapp.scheduling
 
 import android.Manifest
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.app.NotificationManager
-import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import org.sedentaryapp.data.AppStateRepository
-import org.sedentaryapp.data.PolicyRepository
 import org.sedentaryapp.data.NextProposalOverride
+import org.sedentaryapp.data.PolicyRepository
+import org.sedentaryapp.data.ScheduleSettings
 import org.sedentaryapp.data.SnoozedProposal
 
 class ProposalAlarmScheduler(
@@ -31,13 +32,25 @@ class ProposalAlarmScheduler(
                 appContext
             )
 
+        val policy =
+            policyRepository
+                .loadDecisionPolicy()
+
         val appStateRepository =
             AppStateRepository(
-                context =
-                    appContext,
+                context = appContext,
                 defaultSlotTimes =
                     policyRepository
                         .loadDefaultSlots(),
+                defaultSnoozeDurationMinutes =
+                    policy.snooze
+                        .defaultDurationMinutes,
+                minimumSnoozeDurationMinutes =
+                    policy.snooze
+                        .minimumDurationMinutes,
+                maximumSnoozeDurationMinutes =
+                    policy.snooze
+                        .maximumDurationMinutes,
             )
 
         val onboardingCompleted =
@@ -96,37 +109,46 @@ class ProposalAlarmScheduler(
             normalizeNextProposalOverride(
                 nextProposalOverride =
                     nextProposalOverride,
-                now =
-                    now,
+                now = now,
+                technicalLatenessToleranceMinutes =
+                    policy.scheduling
+                        .technicalLatenessToleranceMinutes,
                 appStateRepository =
                     appStateRepository,
             )
 
+        val minimumGapMinutes =
+            policy.scheduling
+                .minimumGapBetweenDistinctOpportunitiesMinutes
+
         val nextFixedOpportunity =
             OpportunityRuntimePlanner
                 .next(
-                    now =
-                        now,
+                    now = now,
                     settings =
                         scheduleSettings,
                     minimumGapMinutes =
-                        policyRepository
-                            .loadMinimumGapMinutes(),
+                        minimumGapMinutes,
                     consumedEarlyOpportunityKeys =
                         consumedEarly,
                 )
-
-        val scheduledOpportunityForConflict =
-            nextProposalOverride
-                ?.at
-                ?: nextFixedOpportunity
 
         snoozedProposal =
             normalizeSnooze(
                 snoozedProposal =
                     snoozedProposal,
-                nextFixedOpportunity =
-                    scheduledOpportunityForConflict,
+                now = now,
+                settings =
+                    scheduleSettings,
+                consumedEarlyOpportunityKeys =
+                    consumedEarly,
+                nextProposalOverride =
+                    nextProposalOverride,
+                minimumGapMinutes =
+                    minimumGapMinutes,
+                technicalLatenessToleranceMinutes =
+                    policy.scheduling
+                        .technicalLatenessToleranceMinutes,
                 appStateRepository =
                     appStateRepository,
             )
@@ -147,8 +169,7 @@ class ProposalAlarmScheduler(
                                 EVENT_TYPE_FIXED,
                             proposalKey =
                                 opportunity.toString(),
-                            activityId =
-                                null,
+                            activityId = null,
                         )
                     }
             } else {
@@ -170,8 +191,7 @@ class ProposalAlarmScheduler(
                             EVENT_TYPE_ONE_OFF,
                         proposalKey =
                             override.at.toString(),
-                        activityId =
-                            null,
+                        activityId = null,
                     )
                 }
 
@@ -222,14 +242,11 @@ class ProposalAlarmScheduler(
             alarmPendingIntent(
                 event =
                     ScheduledEvent(
-                        triggerAtEpochMillis =
-                            0L,
+                        triggerAtEpochMillis = 0L,
                         eventType =
                             EVENT_TYPE_FIXED,
-                        proposalKey =
-                            "",
-                        activityId =
-                            null,
+                        proposalKey = "",
+                        activityId = null,
                     ),
             )
         )
@@ -238,6 +255,7 @@ class ProposalAlarmScheduler(
     private suspend fun normalizeNextProposalOverride(
         nextProposalOverride: NextProposalOverride?,
         now: LocalDateTime,
+        technicalLatenessToleranceMinutes: Long,
         appStateRepository: AppStateRepository,
     ): NextProposalOverride? {
 
@@ -248,7 +266,7 @@ class ProposalAlarmScheduler(
         if (
             override.at.isBefore(
                 now.minusMinutes(
-                    MAX_LATE_DELIVERY_MINUTES
+                    technicalLatenessToleranceMinutes
                 )
             )
         ) {
@@ -263,7 +281,12 @@ class ProposalAlarmScheduler(
 
     private suspend fun normalizeSnooze(
         snoozedProposal: SnoozedProposal?,
-        nextFixedOpportunity: LocalDateTime?,
+        now: LocalDateTime,
+        settings: ScheduleSettings,
+        consumedEarlyOpportunityKeys: Set<String>,
+        nextProposalOverride: NextProposalOverride?,
+        minimumGapMinutes: Long,
+        technicalLatenessToleranceMinutes: Long,
         appStateRepository: AppStateRepository,
     ): SnoozedProposal? {
 
@@ -277,7 +300,7 @@ class ProposalAlarmScheduler(
         if (
             snooze.triggerAtEpochMillis <
             nowMillis -
-                MAX_LATE_DELIVERY_MINUTES *
+                technicalLatenessToleranceMinutes *
                 60_000L
         ) {
             appStateRepository
@@ -286,32 +309,39 @@ class ProposalAlarmScheduler(
             return null
         }
 
-        if (nextFixedOpportunity == null) {
-            return snooze
-        }
-
-        val fixedMillis =
-            nextFixedOpportunity
+        val snoozeAt =
+            Instant
+                .ofEpochMilli(
+                    snooze.triggerAtEpochMillis
+                )
                 .atZone(
                     ZoneId.systemDefault()
                 )
-                .toInstant()
-                .toEpochMilli()
+                .toLocalDateTime()
 
-        val gapMinutes =
-            Duration
-                .ofMillis(
-                    kotlin.math.abs(
-                        fixedMillis -
-                            snooze.triggerAtEpochMillis
-                    )
+        // Si l'heure est arrivée (ou légèrement dépassée), on laisse le
+        // receiver traiter la livraison et sa tolérance de retard.
+        if (!snoozeAt.isAfter(now)) {
+            return snooze
+        }
+
+        val stillCompatible =
+            SnoozePlanner
+                .canSchedule(
+                    target = snoozeAt,
+                    currentProposalKey =
+                        snooze.proposalKey,
+                    now = now,
+                    settings = settings,
+                    consumedEarlyOpportunityKeys =
+                        consumedEarlyOpportunityKeys,
+                    nextProposalOverride =
+                        nextProposalOverride,
+                    minimumGapMinutes =
+                        minimumGapMinutes,
                 )
-                .toMinutes()
 
-        if (
-            gapMinutes <
-            MIN_FIXED_SNOOZE_GAP_MINUTES
-        ) {
+        if (!stillCompatible) {
             appStateRepository
                 .clearSnoozedProposal()
 
@@ -432,6 +462,9 @@ class ProposalAlarmScheduler(
         const val EXTRA_ACTIVITY_ID =
             "activity_id"
 
+        const val EXTRA_SNOOZE_MINUTES =
+            "snooze_minutes"
+
         const val EVENT_TYPE_FIXED =
             "fixed"
 
@@ -440,15 +473,6 @@ class ProposalAlarmScheduler(
 
         const val EVENT_TYPE_ONE_OFF =
             "one_off"
-
-        const val SNOOZE_MINUTES =
-            30L
-
-        const val MAX_LATE_DELIVERY_MINUTES =
-            10L
-
-        private const val
-            MIN_FIXED_SNOOZE_GAP_MINUTES = 20L
 
         private const val
             MIN_FUTURE_DELAY_MILLIS = 1_000L

@@ -10,7 +10,6 @@ data class ActivityDefinition(
     val durationSecondsMax: Int,
     val standingRequired: Boolean,
     val walkingRequired: Boolean,
-    val eligibleOpportunityTypes: Set<String>,
     val baseWeight: Double,
 )
 
@@ -27,19 +26,26 @@ data class ScoringPolicy(
     val repetitionCoefficients: RepetitionCoefficients,
 )
 
+data class SchedulingPolicy(
+    val technicalLatenessToleranceMinutes: Long,
+    val minimumGapBetweenDistinctOpportunitiesMinutes: Long,
+)
+
+data class SnoozePolicy(
+    val defaultDurationMinutes: Int,
+    val minimumDurationMinutes: Int,
+    val maximumDurationMinutes: Int,
+)
+
 data class DecisionPolicy(
     val scoring: ScoringPolicy,
+    val scheduling: SchedulingPolicy,
+    val snooze: SnoozePolicy,
 )
 
 data class CandidateFilterRequest(
-    val enabledCategories: Set<String>? = null,
     val enabledIntensities: Set<String>? = null,
-    val canStand: Boolean = true,
-    val canWalk: Boolean = true,
     val requiredWalking: Boolean? = null,
-    val opportunityType: String = "standard",
-    val availableSeconds: Int? = null,
-    val currentActivityId: String? = null,
     val excludedActivityIds: Set<String> = emptySet(),
 )
 

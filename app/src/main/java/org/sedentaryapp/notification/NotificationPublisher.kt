@@ -58,6 +58,7 @@ object NotificationPublisher {
         activity: CatalogActivity,
         proposalKey: String,
         allowSnooze: Boolean,
+        snoozeDurationMinutes: Int,
         soundEnabled: Boolean,
         vibrationEnabled: Boolean,
     ) {
@@ -189,6 +190,8 @@ object NotificationPublisher {
                             proposalKey,
                         activityId =
                             activity.definition.id,
+                        snoozeDurationMinutes =
+                            snoozeDurationMinutes,
                     ),
                     PendingIntent.FLAG_UPDATE_CURRENT or
                         PendingIntent.FLAG_IMMUTABLE,
@@ -197,7 +200,7 @@ object NotificationPublisher {
             builder.addAction(
                 Notification.Action.Builder(
                     null,
-                    "+ 30 min",
+                    "+ $snoozeDurationMinutes min",
                     snoozePendingIntent,
                 ).build()
             )
@@ -260,6 +263,7 @@ object NotificationPublisher {
         action: String,
         proposalKey: String,
         activityId: String,
+        snoozeDurationMinutes: Int? = null,
     ): Intent {
 
         return Intent(
@@ -280,6 +284,15 @@ object NotificationPublisher {
                     .EXTRA_ACTIVITY_ID,
                 activityId,
             )
+
+            snoozeDurationMinutes
+                ?.let { minutes ->
+                    putExtra(
+                        ProposalAlarmScheduler
+                            .EXTRA_SNOOZE_MINUTES,
+                        minutes,
+                    )
+                }
         }
     }
 

@@ -44,6 +44,7 @@ import org.sedentaryapp.scheduling.ProposalAlarmScheduler
 import org.sedentaryapp.ui.activity.ActivityScreen
 import org.sedentaryapp.ui.activity.ActivityViewModel
 import org.sedentaryapp.ui.activity.GuidedSessionState
+import org.sedentaryapp.ui.catalog.CatalogScreen
 import org.sedentaryapp.ui.home.HomeScreen
 import org.sedentaryapp.ui.info.AboutScreen
 import org.sedentaryapp.ui.info.WhyAppScreen
@@ -131,13 +132,22 @@ class MainActivity : ComponentActivity() {
                 .loadDefaultSlots()
 
         val minimumGapMinutes =
-            policyRepository
-                .loadMinimumGapMinutes()
+            policy.scheduling
+                .minimumGapBetweenDistinctOpportunitiesMinutes
 
         val appStateRepository =
             AppStateRepository(
                 context = applicationContext,
                 defaultSlotTimes = defaultSlots,
+                defaultSnoozeDurationMinutes =
+                    policy.snooze
+                        .defaultDurationMinutes,
+                minimumSnoozeDurationMinutes =
+                    policy.snooze
+                        .minimumDurationMinutes,
+                maximumSnoozeDurationMinutes =
+                    policy.snooze
+                        .maximumDurationMinutes,
             )
 
         proposalAlarmScheduler =
@@ -241,6 +251,15 @@ class MainActivity : ComponentActivity() {
                         .collectAsState(
                             initial =
                                 NotificationAlertSettings()
+                        )
+
+                val snoozeDurationMinutes by
+                    appStateRepository
+                        .snoozeDurationMinutes
+                        .collectAsState(
+                            initial =
+                                policy.snooze
+                                    .defaultDurationMinutes
                         )
 
                 val activeProposal by
@@ -546,8 +565,8 @@ class MainActivity : ComponentActivity() {
                     val tooLate =
                         overrideAt.isBefore(
                             now.minusMinutes(
-                                ProposalAlarmScheduler
-                                    .MAX_LATE_DELIVERY_MINUTES
+                                policy.scheduling
+                                    .technicalLatenessToleranceMinutes
                             )
                         )
 
@@ -979,10 +998,39 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    screen == "catalog" -> {
+
+                        CatalogScreen(
+                            activities =
+                                activities,
+
+                            onActivitySelected = {
+                                    activityId,
+                                ->
+
+                                if (
+                                    viewModel
+                                        .openManualActivity(
+                                            preferredActivityId =
+                                                activityId
+                                        )
+                                ) {
+                                    screen =
+                                        "activity"
+                                }
+                            },
+
+                            onBack = {
+                                screen =
+                                    "home"
+                            },
+                        )
+                    }
+
                     screen == "activity" &&
                         activity != null -> {
 
-                        BackHandler {
+                        val leaveActivity = {
 
                             when (
                                 activityState
@@ -1005,6 +1053,10 @@ class MainActivity : ComponentActivity() {
                             }
 
                             screen = "home"
+                        }
+
+                        BackHandler {
+                            leaveActivity()
                         }
 
                         ActivityScreen(
@@ -1032,6 +1084,20 @@ class MainActivity : ComponentActivity() {
                                 activityState
                                     .showNotNow,
 
+                            showAlreadyDone =
+                                activityState.context ==
+                                    org.sedentaryapp.ui.activity
+                                        .ActivityDisplayContext
+                                        .CURRENT_PROPOSAL ||
+                                    activityState.context ==
+                                    org.sedentaryapp.ui.activity
+                                        .ActivityDisplayContext
+                                        .SNOOZED_PROPOSAL ||
+                                    activityState.context ==
+                                    org.sedentaryapp.ui.activity
+                                        .ActivityDisplayContext
+                                        .FUTURE_PREVIEW,
+
                             guidedSessionState =
                                 activityState
                                     .guidedSessionState,
@@ -1048,28 +1114,7 @@ class MainActivity : ComponentActivity() {
                                 completionVibrationEnabled,
 
                             onBack = {
-
-                                when (
-                                    activityState
-                                        .guidedSessionState
-                                ) {
-                                    GuidedSessionState
-                                        .RUNNING,
-                                    GuidedSessionState
-                                        .PAUSED ->
-                                        viewModel
-                                            .abandonGuidedSession()
-
-                                    GuidedSessionState
-                                        .TIME_ELAPSED ->
-                                        viewModel
-                                            .closeGuidedSession()
-
-                                    GuidedSessionState
-                                        .READY -> Unit
-                                }
-
-                                screen = "home"
+                                leaveActivity()
                             },
 
                             onPreviousActivity =
@@ -1122,14 +1167,14 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
 
-                            onCompleteSimpleActivity = {
+                            onMarkActivityDone = {
                                 if (snoozedProposalOpen) {
                                     viewModel
                                         .cancelPendingSnoozedActivityPersistence()
                                 }
 
                                 viewModel
-                                    .completeSimpleActivity()
+                                    .markCurrentActivityDone()
 
                                 NotificationPublisher
                                     .cancel(
@@ -1212,6 +1257,17 @@ class MainActivity : ComponentActivity() {
                                 notificationAlertSettings
                                     .vibrationEnabled,
 
+                            snoozeDurationMinutes =
+                                snoozeDurationMinutes,
+
+                            snoozeMinimumDurationMinutes =
+                                policy.snooze
+                                    .minimumDurationMinutes,
+
+                            snoozeMaximumDurationMinutes =
+                                policy.snooze
+                                    .maximumDurationMinutes,
+
                             minimumGapMinutes =
                                 minimumGapMinutes,
 
@@ -1220,13 +1276,6 @@ class MainActivity : ComponentActivity() {
 
                             nextProposalOverrideActive =
                                 nextProposalOverrideAt != null,
-
-                            title =
-                                if (showingOnboardingConfig) {
-                                    "Configure tes pauses"
-                                } else {
-                                    "Tes réglages"
-                                },
 
                             showPauseControl =
                                 !showingOnboardingConfig,
@@ -1370,6 +1419,18 @@ class MainActivity : ComponentActivity() {
                                     appStateRepository
                                         .setNotificationVibrationEnabled(
                                             enabled
+                                        )
+                                }
+                            },
+
+                            onSnoozeDurationChanged = {
+                                    minutes,
+                                ->
+
+                                coroutineScope.launch {
+                                    appStateRepository
+                                        .setSnoozeDurationMinutes(
+                                            minutes
                                         )
                                 }
                             },
@@ -1581,6 +1642,11 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     screen = "activity"
                                 }
+                            },
+
+                            onOpenCatalog = {
+                                screen =
+                                    "catalog"
                             },
 
                             onOpenLastActivity = {

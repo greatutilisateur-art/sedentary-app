@@ -17,6 +17,8 @@ data class CatalogActivity(
     val compatiblePostures: Set<String>,
     val guidanceMode: ActivityGuidanceMode =
         ActivityGuidanceMode.SIMPLE,
+    val illustrationResourceName: String? =
+        null,
 )
 
 class CatalogRepository(
@@ -35,15 +37,6 @@ class CatalogRepository(
         return buildList {
             for (index in 0 until activitiesJson.length()) {
                 val item = activitiesJson.getJSONObject(index)
-
-                val opportunityTypesJson =
-                    item.getJSONArray("eligible_opportunity_types")
-
-                val opportunityTypes = buildSet {
-                    for (i in 0 until opportunityTypesJson.length()) {
-                        add(opportunityTypesJson.getString(i))
-                    }
-                }
 
                 val posturesJson =
                     item.getJSONArray("compatible_postures")
@@ -83,8 +76,6 @@ class CatalogRepository(
                                 item.getBoolean("standing_required"),
                             walkingRequired =
                                 item.getBoolean("walking_required"),
-                            eligibleOpportunityTypes =
-                                opportunityTypes,
                             baseWeight =
                                 item.getDouble("base_weight"),
                         ),
@@ -96,6 +87,14 @@ class CatalogRepository(
                             compatiblePostures,
                         guidanceMode =
                             guidanceMode,
+                        illustrationResourceName =
+                            item.optString(
+                                "illustration_resource",
+                                ""
+                            )
+                                .takeIf {
+                                    it.isNotBlank()
+                                },
                     )
                 )
             }

@@ -21,7 +21,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            assets.srcDirs("../catalog", "../policy")
+            assets.srcDirs("../catalog")
         }
     }
 

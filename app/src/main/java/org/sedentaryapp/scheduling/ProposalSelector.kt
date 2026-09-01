@@ -119,8 +119,6 @@ object ProposalSelector {
                 preferences.enabledIntensities,
             requiredWalking =
                 requiredWalking,
-            opportunityType =
-                "standard",
         )
     }
 }
