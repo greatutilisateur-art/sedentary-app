@@ -1,86 +1,192 @@
-# SedentaryApp — V0
+# Intervalles
 
-Application Android gratuite, open source et entièrement hors ligne destinée à aider les personnes à interrompre leur sédentarité au travail grâce à des activités courtes.
+Intervalles est une application Android gratuite, open source et entièrement hors ligne destinée à aider à interrompre la sédentarité au travail.
 
-## État actuel
+Elle propose de petites activités simples, généralement de quelques minutes : marche, mobilité, étirements, mouvements dynamiques, respiration ou pauses visuelles.
 
-- vision produit consolidée ;
-- principes produit ;
-- cadre scientifique ;
-- catalogue V0 de 23 activités, version `1.0.2` ;
-- schéma JSON et vocabulaires contrôlés ;
-- moteur de décision V0 simplifié ;
-- politique `decision-policy-v1.0.5` ;
-- scénarios de test mis à jour ;
-- UX V1.2 spécifiée et validée avant implémentation Android.
+**Intervalles n’est pas une application de sport.**
 
-### Validation actuelle
+Le produit privilégie :
 
-Le moteur a été resimulé après simplification du planning puis du scoring. `internal_family` n’influence plus la sélection runtime.
+* la simplicité ;
+* la faible friction ;
+* la crédibilité scientifique ;
+* l’autonomie de l’utilisateur ;
+* l’absence de culpabilisation ;
+* la fiabilité ;
+* un moteur de décision explicable.
 
-Cette règle a été supprimée avant l'implémentation Android.
+## État du projet
 
-La validation actuelle est documentée dans `docs/VALIDATION_STATUS.md`. Une dernière exécution doit être reproduite sur le dépôt local synchronisé avant le passage au Kotlin.
+Version de travail actuelle : **V0.6**.
+
+L’application est fonctionnelle et testée en conditions réelles.
+
+La V0.6 comprend notamment :
+
+* propositions automatiques à des horaires configurables ;
+* notifications Android programmées ;
+* report configurable : 15, 30, 60 minutes ou durée personnalisée ;
+* une seule possibilité de report par proposition ;
+* préférences d’intensité et de type de mouvement ;
+* alternatives d’activités ;
+* historique récent utilisé pour favoriser la diversité ;
+* chrono pour les activités guidées dans le temps ;
+* `Bouger maintenant` ;
+* catalogue manuel ;
+* mise en pause des propositions ;
+* fonctionnement entièrement hors ligne ;
+* 23 activités ;
+* 23 illustrations fonctionnelles.
+
+Les règles fonctionnelles détaillées de la version actuelle sont documentées dans [`docs/REFERENCE_V0_6_CURRENT.md`](docs/REFERENCE_V0_6_CURRENT.md).
+
+## Architecture
+
+Le projet comporte deux modules Gradle actifs :
+
+* `:app` — application Android, interface Compose, persistance locale, notifications et planification Android ;
+* `:engine` — logique métier Kotlin indépendante de l’interface Android.
+
+Le moteur de décision reste volontairement simple et auditable.
+
+Il repose sur :
+
+* filtrage des activités compatibles ;
+* historique récent ;
+* pondération explicite ;
+* sélection aléatoire pondérée ;
+* règles temporelles versionnées.
+
+Il n’utilise pas d’IA opaque pour choisir les activités.
+
+Voir [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md) pour les chemins et sources de vérité du dépôt.
+
+## Données et confidentialité
+
+Intervalles fonctionne localement sur l’appareil.
+
+Le fonctionnement de base ne nécessite :
+
+* aucun compte ;
+* aucun serveur ;
+* aucune authentification ;
+* aucune synchronisation cloud ;
+* aucune analytics distante ;
+* aucune collecte de données médicales.
+
+Le backup cloud Android est désactivé pour la version actuelle.
+
+## Catalogue
+
+Le catalogue actif se trouve dans :
+
+```text
+catalog/activities_v1.json
+```
+
+Son contrat et ses valeurs contrôlées sont définis dans :
+
+```text
+catalog/activity_catalog_schema_v1.json
+catalog/activity_vocabularies_v1.json
+```
+
+Le catalogue V0.6 contient 23 activités.
+
+Les illustrations Android associées sont placées dans :
+
+```text
+app/src/main/res/drawable/
+```
+
+La charte visuelle des illustrations est documentée dans :
+
+```text
+docs/Illustrations/V0_6_ILLUSTRATION_GUIDE.md
+```
+
+## Moteur et policy
+
+La policy runtime active est :
+
+```text
+app/src/main/assets/decision_policy_v1.json
+```
+
+La spécification technique actuelle du moteur est :
+
+```text
+docs/DecisionEngineSpecification_v1_3.md
+```
+
+Les scénarios de référence sont :
+
+```text
+docs/DecisionEngine_TestScenarios_v1_3.md
+```
+
+La logique métier Kotlin se trouve principalement dans :
+
+```text
+engine/src/main/java/org/sedentaryapp/engine/
+```
+
+## Documentation
+
+Les documents actifs sont volontairement peu nombreux :
+
+* [`docs/Vision.md`](docs/Vision.md) — vision et positionnement ;
+* [`docs/ProductPrinciples.md`](docs/ProductPrinciples.md) — principes de décision produit ;
+* [`docs/Scientific_framework.md`](docs/Scientific_framework.md) — cadre scientifique et limites d’interprétation ;
+* [`docs/REFERENCE_V0_6_CURRENT.md`](docs/REFERENCE_V0_6_CURRENT.md) — baseline fonctionnelle actuelle ;
+* [`docs/DecisionEngineSpecification_v1_3.md`](docs/DecisionEngineSpecification_v1_3.md) — contrat technique du moteur ;
+* [`docs/DecisionEngine_TestScenarios_v1_3.md`](docs/DecisionEngine_TestScenarios_v1_3.md) — scénarios moteur ;
+* [`docs/Illustrations/V0_6_ILLUSTRATION_GUIDE.md`](docs/Illustrations/V0_6_ILLUSTRATION_GUIDE.md) — charte des illustrations.
+
+Les anciennes spécifications restent disponibles dans l’historique Git mais ne constituent pas des sources de vérité actives.
 
 ## Sources de vérité
 
-1. `catalog/activities_v1.json` — catalogue officiel ;
-2. `catalog/activity_catalog_schema_v1.json` — contrat de données ;
-3. `catalog/activity_vocabularies_v1.json` — valeurs contrôlées ;
-4. `policy/decision_policy_v1.json` — paramètres versionnés du moteur ;
-5. `docs/DecisionEngine.md` — règles métier ;
-6. `docs/UXSpecification_v1_2.md` — comportement UX courant ;
-7. `docs/AndroidArchitecture_V0_2.md` — architecture Android V0 ;
-8. `docs/Scientific_framework.md` — cadre scientifique ;
-9. `docs/Vision.md` et `docs/ProductPrinciples.md` — direction et arbitrages produit.
+En cas de contradiction, privilégier dans cet ordre :
 
-Les documents explicitement marqués `LEGACY` sont conservés uniquement pour l'historique et ne doivent pas guider l'implémentation.
+1. le code réellement intégré et testé ;
+2. les fichiers actifs de policy et de catalogue ;
+3. `docs/REFERENCE_V0_6_CURRENT.md` ;
+4. les spécifications techniques actives ;
+5. les principes et documents de contexte.
 
-## Politique de planning V0
+Une ancienne spécification ne doit pas être utilisée pour reconstruire un comportement qui n’existe plus dans le code actuel.
 
-- quatre créneaux proposés par défaut, avec 1 à 4 créneaux actifs au choix ;
-- créneaux fixes dans les plages de travail configurées ;
-- minimum de 20 minutes entre deux opportunités distinctes ;
-- aucune règle 90/60 ;
-- aucun rattrapage ;
-- reports +10/+30 conservant la même activité ;
-- reports explicitement demandés autorisés pendant la pause déjeuner ou après la fin habituelle du travail ;
-- un report ne déplace jamais un créneau fixe ;
-- une seule notification d’activité visible à la fois ;
-- les comportements passifs ne créent ni préférence, ni relance, ni rattrapage ;
-- modifier le planning ou un réglage d’éligibilité annule un report actif ;
-- un report ne traverse jamais minuit.
+## Construire et tester
 
-- zéro jour travaillé sélectionné est valide et produit zéro proposition ;
-- suspension uniquement manuelle jusqu’à `Reprendre` ;
-- reprise/permission/onboarding : opportunités futures uniquement ;
-- horaires interprétés en heure locale ;
-- travail traversant minuit non supporté en V0.
+Le projet peut être ouvert directement dans Android Studio.
 
-- accueil réduit à l’état + prochaine proposition ;
-- posture portée par un badge contextuel ;
-- permission Android différée si aucune proposition automatique n’est prévue ;
-- réglages pouvant produire zéro activité éligible sans blocage.
+Sous Windows, depuis la racine du dépôt :
 
+```powershell
+.\gradlew.bat :engine:test :app:testDebugUnitTest :app:assembleDebug
+```
 
-## Flux activité UX V1.2
+Cette commande exécute les tests Kotlin concernés et construit l’APK debug.
 
-- aucun bouton de confirmation de démarrage ;
-- l’écran activité sert à consulter la consigne ;
-- Retour Android est neutre ;
-- `Dernière activité proposée` permet de rouvrir la consigne depuis l’accueil ;
-- swipe, verrouillage et autres comportements passifs n’ont aucune signification comportementale ;
-- `Pas maintenant` reste l’abandon explicite ;
-- un report conserve la même activité ;
-- aucune métrique V0 ne prétend mesurer les activités réellement effectuées ;
-- `Autre activité` suit une séquence `A → B → C` : toutes les activités déjà montrées dans l’interaction sont temporairement exclues.
+## Principes d’évolution
 
-## Architecture Android V0
+Une nouvelle fonctionnalité doit répondre à un problème utilisateur identifiable.
 
-Le port Kotlin pur du moteur est préparé pour `:engine` mais n’est pas encore intégré au projet Android.
+Le projet évite notamment :
 
-Le module `:app` utilise Compose, DataStore et AlarmManager inexact.
+* les abstractions ajoutées « au cas où » ;
+* les réglages sans utilité réelle ;
+* les mécanismes de gamification culpabilisants ;
+* les profils comportementaux opaques ;
+* les dépendances réseau non nécessaires ;
+* la duplication des sources de vérité.
 
-Pas de Room, pas de Hilt et pas de WorkManager comme scheduler principal en V0.
+Les recommandations scientifiques sont distinguées des choix de conception produit, UX et technique.
 
-Aucune règle métier ne dépend de Compose, DataStore, AlarmManager ou du gestionnaire de notifications.
+## Licence
+
+Le projet a vocation à être distribué sous une licence open source.
+
+La licence définitive est en cours de formalisation dans le fichier [`LICENSE`](LICENSE).
