@@ -1,5 +1,18 @@
 # Intervalles — Référence V0.6 actuelle
 
+### Alternatives
+
+Dans une même interaction, une activité déjà affichée n’est pas reproposée : la navigation suit une logique A → B → C. Cette exclusion est temporaire et disparaît avec une nouvelle opportunité.
+
+### Alternatives
+
+Dans une même interaction, une activité déjà affichée n’est pas reproposée : la navigation suit une logique A → B → C.
+
+Cette exclusion est temporaire :
+- elle ne devient pas une préférence utilisateur ;
+- elle ne modifie pas durablement les poids ;
+- elle est réinitialisée avec une nouvelle opportunité.
+
 ## Pause
 
 Mettre les propositions en pause suspend les propositions automatiques sans empêcher de modifier les jours, créneaux et préférences.
@@ -18,9 +31,29 @@ Il est indépendant du planning automatique :
 - il reste disponible même sans jour actif ;
 - ouvrir ou réaliser une activité depuis le catalogue ne consomme pas et ne décale pas une proposition planifiée.
 
+
 Le catalogue affiche toutes les activités publiées, indépendamment des préférences utilisées par le moteur pour les propositions automatiques.
 
 En V0.6, il n’intègre ni recherche, ni favoris, ni filtres avancés, ni statistiques.
+
+Une activité réalisée manuellement peut alimenter l’historique récent utilisé pour la diversité, sans être assimilée à une opportunité planifiée.
+
+Lorsqu’elle est effectivement terminée, elle peut mettre à jour `Dernière activité`.
+
+## Alternatives
+
+Dans une même interaction, une activité déjà affichée n’est pas reproposée : la navigation suit une logique A → B → C.
+
+Cette exclusion est temporaire :
+- elle ne devient pas une préférence utilisateur ;
+- elle ne modifie pas durablement les poids ;
+- elle est réinitialisée avec une nouvelle opportunité.
+
+## Activités manuelles et historique
+
+Une activité réalisée manuellement peut alimenter l’historique récent utilisé pour la diversité, sans être assimilée à une opportunité planifiée.
+
+Lorsqu’elle est effectivement terminée, elle peut mettre à jour `Dernière activité`.
 
 ## Fiche activité
 
