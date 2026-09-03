@@ -217,11 +217,41 @@ object DecisionEngine {
             return null
         }
 
+                val recentActivityIds =
+            history
+                .takeLast(
+                    policy.scoring
+                        .historyWindowProposals
+                )
+                .map {
+                    it.id
+                }
+                .toSet()
+
+        val nonRecentCandidates =
+            candidates.filter { activity ->
+                activity.id !in
+                    recentActivityIds
+            }
+
+        val candidatesForSelection =
+            if (
+                nonRecentCandidates
+                    .isNotEmpty()
+            ) {
+                nonRecentCandidates
+            } else {
+                candidates
+            }
+
         val scored =
             CandidateScorer.score(
-                candidates = candidates,
-                history = history,
-                policy = policy,
+                candidates =
+                    candidatesForSelection,
+                history =
+                    history,
+                policy =
+                    policy,
             )
 
         return WeightedSelector.select(

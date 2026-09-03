@@ -562,14 +562,14 @@
     },
     {
       "id": "DYN02",
-      "revision": 2,
+      "revision": 3,
       "status": "published",
       "title": "Quelques montées sur la pointe des pieds ?",
-      "instruction": "Monte doucement sur la pointe des pieds, redescends, puis recommence 10 fois.",
+      "instruction": "Monte lentement sur la pointe des pieds, reste une seconde en haut, puis redescends doucement. Continue tranquillement pendant une minute.",
       "user_category": "dynamique",
       "internal_family": "calf_raise",
       "intensity": "active",
-      "duration_seconds_min": 30,
+      "duration_seconds_min": 60,
       "duration_seconds_max": 60,
       "compatible_postures": [
         "standing"

@@ -314,11 +314,25 @@ private fun PortraitActivityContent(
                         onEndGuidedSession,
                 )
 
-            GuidedSessionState.TIME_ELAPSED ->
+            GuidedSessionState.TIME_ELAPSED -> {
+                ActivityGuidanceContent(
+                    activity =
+                        activity,
+                    postureLabel =
+                        postureLabel,
+                    imageHeight =
+                        176.dp,
+                    illustrationTopSpacing =
+                        28.dp,
+                    illustrationBottomSpacing =
+                        16.dp,
+                )
+
                 FinishedContent(
                     onCloseGuidedSession =
                         onCloseGuidedSession,
                 )
+            }
         }
     }
 }
@@ -547,15 +561,36 @@ private fun LandscapeActivityContent(
                 }
 
                 GuidedSessionState.TIME_ELAPSED -> {
-                    Spacer(
+                    Column(
                         modifier =
-                            Modifier.weight(0.25f),
-                    )
+                            Modifier
+                                .weight(1.15f)
+                                .verticalScroll(
+                                    rememberScrollState()
+                                )
+                                .padding(
+                                    end = 18.dp,
+                                    bottom = 8.dp,
+                                ),
+                    ) {
+                        ActivityGuidanceContent(
+                            activity =
+                                activity,
+                            postureLabel =
+                                postureLabel,
+                            imageHeight =
+                                148.dp,
+                            illustrationTopSpacing =
+                                14.dp,
+                            illustrationBottomSpacing =
+                                10.dp,
+                        )
+                    }
 
                     Column(
                         modifier =
                             Modifier
-                                .weight(1.5f)
+                                .weight(0.85f)
                                 .align(
                                     Alignment.CenterVertically
                                 ),
@@ -567,11 +602,6 @@ private fun LandscapeActivityContent(
                                 40,
                         )
                     }
-
-                    Spacer(
-                        modifier =
-                            Modifier.weight(0.25f),
-                    )
                 }
             }
         }

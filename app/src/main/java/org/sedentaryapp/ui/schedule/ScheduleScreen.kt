@@ -327,7 +327,7 @@ fun ScheduleScreen(
                 if (proposalsPaused) {
                     Text(
                         text =
-                            "Propositions d'activités en pause",
+                            "Propositions d'activités suspendues",
                         style =
                             MaterialTheme.typography
                                 .titleLarge,
@@ -347,7 +347,7 @@ fun ScheduleScreen(
                             )
                         },
                     ) {
-                        Text("Réactiver")
+                        Text("Reprendre les propositions d’activité")
                     }
                 } else {
                     FilledTonalButton(
@@ -362,7 +362,7 @@ fun ScheduleScreen(
                             RoundedCornerShape(14.dp),
                     ) {
                         Text(
-                            "Mettre les propositions d’activité en pause"
+                            "Suspendre les propositions d’activité"
                         )
                     }
                 }

@@ -159,7 +159,7 @@ fun HomeScreen(
             if (proposalsPaused) {
                 Text(
                     text =
-                        "Propositions d'activités en pause",
+                        "Propositions d'activités suspendues",
                     style =
                         MaterialTheme.typography
                             .titleLarge,
@@ -176,7 +176,7 @@ fun HomeScreen(
                     onClick =
                         onResumeProposals,
                 ) {
-                    Text("Réactiver")
+                    Text("Reprendre les propositions d'activité")
                 }
 
                 return@Column
@@ -301,7 +301,7 @@ fun HomeScreen(
                 shape =
                     RoundedCornerShape(14.dp),
             ) {
-                Text("Mettre les propositions d’activité en pause")
+                Text("Suspendre les propositions d’activité")
             }
 
             Spacer(

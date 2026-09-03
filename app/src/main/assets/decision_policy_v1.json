@@ -1,6 +1,6 @@
 {
   "policy_version": "decision-policy-v1.0.5",
-  "selector_version": "weighted-selector-v1.0.0",
+  "selector_version": "weighted-selector-v1.1.0",
   "default_slots": [
     "10:00",
     "11:30",

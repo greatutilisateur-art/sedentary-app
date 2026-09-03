@@ -89,6 +89,78 @@ class DecisionEngineTest {
         )
     }
 
+@Test
+fun recentActivityIsAvoidedWhenAlternativeExists() {
+    val recent =
+        activity(
+            id = "A",
+            baseWeight = 20.0,
+        )
+
+    val alternative =
+        activity(
+            id = "B",
+            baseWeight = 1.0,
+        )
+
+    val selected =
+        DecisionEngine.chooseActivity(
+            activities =
+                listOf(
+                    recent,
+                    alternative,
+                ),
+            history =
+                listOf(
+                    recent
+                ),
+            policy =
+                policy,
+            seed =
+                "seed",
+        )
+
+    assertEquals(
+        "B",
+        selected?.id,
+    )
+}
+
+@Test
+fun recentActivitiesRemainAvailableWhenNoAlternativeExists() {
+    val a =
+        activity("A")
+
+    val b =
+        activity("B")
+
+    val selected =
+        DecisionEngine.chooseActivity(
+            activities =
+                listOf(
+                    a,
+                    b,
+                ),
+            history =
+                listOf(
+                    a,
+                    b,
+                ),
+            policy =
+                policy,
+            seed =
+                "seed",
+        )
+
+    assertTrue(
+        selected?.id in
+            setOf(
+                "A",
+                "B",
+            )
+    )
+}
+
     @Test
     fun recentActivityUses055() {
         val a = activity("A")
