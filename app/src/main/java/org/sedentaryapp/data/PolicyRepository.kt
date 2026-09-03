@@ -268,7 +268,7 @@ class PolicyRepository(
             "decision-policy-v1.0.5"
 
         const val SUPPORTED_SELECTOR_VERSION =
-            "weighted-selector-v1.0.0"
+            "weighted-selector-v1.1.0"
 
         val CACHE_LOCK =
             Any()
