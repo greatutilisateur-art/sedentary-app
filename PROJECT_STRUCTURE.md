@@ -82,11 +82,12 @@ sedentary-app/
 │   ├── Vision.md
 │   ├── ProductPrinciples.md
 │   ├── Scientific_framework.md
-│   ├── REFERENCE_V0_6_CURRENT.md
-│   ├── DecisionEngineSpecification_v1_3.md
-│   ├── DecisionEngine_TestScenarios_v1_3.md
+│   ├── CURRENT_REFERENCE.md
+│   ├── ROADMAP.md
+│   ├── DecisionEngineSpecification.md
+│   ├── DecisionEngine_TestScenarios.md
 │   └── Illustrations/
-│       └── V0_6_ILLUSTRATION_GUIDE.md
+│       └── ILLUSTRATION_GUIDE.md
 │
 ├── gradle/
 ├── build.gradle.kts
@@ -105,13 +106,21 @@ sedentary-app/
 
 Le code intégré et testé est prioritaire lorsqu’un document est devenu incohérent avec l’implémentation.
 
-### Baseline fonctionnelle
+### Référence fonctionnelle actuelle
 
 ```text
-docs/REFERENCE_V0_6_CURRENT.md
+docs/CURRENT_REFERENCE.md
 ```
 
-Décrit les décisions fonctionnelles actuelles de la V0.6.
+Décrit le comportement actuellement implémenté.
+
+### Roadmap
+
+```text
+docs/ROADMAP.md
+```
+
+Décrit les évolutions prévues. Elle ne constitue pas une description du comportement déjà disponible.
 
 ### Policy moteur
 
@@ -121,7 +130,7 @@ app/src/main/assets/decision_policy_v1.json
 
 Source canonique des paramètres numériques runtime du moteur.
 
-Les coefficients détaillés ne doivent pas être recopiés dans plusieurs documents.
+Les coefficients détaillés ne doivent pas être recopiés inutilement dans plusieurs documents.
 
 ### Catalogue
 
@@ -158,10 +167,18 @@ Il n’existe pas de seconde copie active des modèles dans `:app`.
 ### Spécification moteur
 
 ```text
-docs/DecisionEngineSpecification_v1_3.md
+docs/DecisionEngineSpecification.md
 ```
 
 Décrit le contrat technique et les invariants importants du moteur actuel.
+
+### Scénarios moteur
+
+```text
+docs/DecisionEngine_TestScenarios.md
+```
+
+Décrit les scénarios de référence à maintenir pour le moteur et la policy.
 
 ### Principes produit et science
 
@@ -226,7 +243,7 @@ engine/src/main/java/org/sedentaryapp/engine/
 
 ### `decision/`
 
-Sélection des activités compatibles et choix pondéré.
+Sélection des activités compatibles, règles de diversité, scoring et choix pondéré.
 
 ### `model/`
 
@@ -250,10 +267,10 @@ app/src/main/res/drawable/ill_*.png
 
 L’association activité → illustration est définie par le catalogue via `illustration_resource`.
 
-La charte graphique est documentée dans :
+La charte graphique active est documentée dans :
 
 ```text
-docs/Illustrations/V0_6_ILLUSTRATION_GUIDE.md
+docs/Illustrations/ILLUSTRATION_GUIDE.md
 ```
 
 Il ne faut pas maintenir manuellement un second mapping Markdown des illustrations.
@@ -282,6 +299,6 @@ Lorsqu’une architecture ou une règle est remplacée :
 1. mettre à jour la source active concernée ;
 2. mettre à jour ce document uniquement si la structure du dépôt change réellement ;
 3. supprimer les documents obsolètes de l’arborescence active ;
-4. utiliser l’historique Git pour retrouver les anciennes versions.
+4. utiliser l’historique Git et les tags pour retrouver les anciennes versions.
 
 `PROJECT_STRUCTURE.md` doit rester court. Il ne doit pas devenir un dump automatique de tous les fichiers ou de leurs dates de modification.

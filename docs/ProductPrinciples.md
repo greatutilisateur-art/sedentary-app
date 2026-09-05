@@ -2,7 +2,7 @@
 
 **Produit :** application Android hors ligne de lutte contre la sédentarité au travail
 **Rôle :** filtre de décision produit, UX et technique
-**Statut :** principes durables — les comportements V0.6 détaillés sont définis dans `REFERENCE_V0_6_CURRENT.md`
+**Statut :** principes durables — le comportement actuellement implémenté est décrit dans `CURRENT_REFERENCE.md`
 
 ---
 
@@ -56,7 +56,7 @@ Le produit évite notamment :
 * les récompenses conditionnées à une performance ;
 * les messages culpabilisants.
 
-L’historique sert au fonctionnement de l’application et à la diversité, pas à noter l’utilisateur.
+Un futur écran de statistiques peut décrire l’utilisation d’Intervalles, mais ne doit pas noter l’utilisateur ni transformer les données d’usage en jugement.
 
 ---
 
@@ -74,7 +74,7 @@ Les propositions doivent rester :
 
 Les horaires, fréquences, durées et règles de report sont des **choix de conception à tester**, et non des prescriptions scientifiques universelles.
 
-Leurs valeurs actuelles sont documentées dans `REFERENCE_V0_6_CURRENT.md` et dans la policy active.
+Leurs valeurs actuelles sont documentées dans `CURRENT_REFERENCE.md` et dans la policy active.
 
 ---
 
@@ -85,7 +85,7 @@ Une activité doit être comprise rapidement.
 L’interface peut montrer ce qui est utile à l’action :
 
 * le titre ;
-* la durée ;
+* la durée lorsqu’elle apporte une information utile ;
 * la consigne ;
 * l’illustration lorsqu’elle aide à comprendre ;
 * les actions disponibles.
@@ -97,6 +97,8 @@ Elle n’a pas besoin d’exposer :
 * les catégories techniques ;
 * la trace algorithmique ;
 * un niveau de preuve scientifique détaillé pendant l’activité.
+
+Les catégories internes ne doivent pas devenir des libellés visibles si elles ne sont pas comprises ou utiles aux personnes.
 
 La science doit guider le produit sans médicaliser l’expérience.
 
@@ -118,7 +120,9 @@ Une proposition doit pouvoir être expliquée à partir de facteurs identifiable
 
 Pas d’adaptation opaque ni de profil caché.
 
-Le scoring V0.6 agit sur la répétition des **activités**, pas sur une famille éditoriale cachée.
+La V0.7 évite les 4 dernières activités lorsqu’une autre activité compatible est disponible.
+
+Les coefficients de répétition restent utilisés par la sélection pondérée, notamment lorsque toutes les activités compatibles sont déjà récentes.
 
 ---
 
@@ -126,7 +130,7 @@ Le scoring V0.6 agit sur la répétition des **activités**, pas sur une famille
 
 Les réglages ne doivent exister que s’ils correspondent à un choix réellement proposé à l’utilisateur ou à une contrainte réellement utilisée par le produit.
 
-La V0.6 évite les capacités, filtres ou paramètres backend conservés uniquement « au cas où ».
+Intervalles évite les capacités, filtres ou paramètres backend conservés uniquement « au cas où ».
 
 Une fausse configurabilité augmente :
 
@@ -172,7 +176,9 @@ Une marche ou une activité qui impose de quitter l’assise n’a pas le même 
 
 Intervalles peut proposer des activités apportant un bénéfice adjacent, mais ne doit pas les présenter automatiquement comme des ruptures certaines de sédentarité.
 
-Le produit ne doit pas fabriquer une mesure trompeuse en additionnant toutes les activités comme si elles avaient le même effet.
+Lors de l’enrichissement du catalogue, les activités directes, les prétextes naturels et les activités combinées doivent être distingués des activités seulement adjacentes.
+
+Le produit ne doit pas fabriquer une mesure trompeuse en additionnant toutes les activités comme si elles avaient le même effet physiologique.
 
 ---
 
@@ -190,6 +196,8 @@ Le fonctionnement de base ne nécessite :
 * aucune collecte médicale.
 
 Une dépendance réseau ne doit pas être ajoutée sans bénéfice produit démontré.
+
+Les futures statistiques personnelles restent locales.
 
 ---
 
@@ -228,16 +236,17 @@ Le système de notifications et de planification ne doit pas être complexifié 
 
 ## 13. Une source de vérité par domaine
 
-En cas de contradiction, privilégier les sources actives plutôt que les anciennes spécifications conservées dans l’historique Git.
+En cas de contradiction, privilégier les sources actives plutôt que les anciennes spécifications disponibles dans l’historique Git.
 
 Sources principales :
 
 * direction produit : `docs/Vision.md` ;
 * principes produit : `docs/ProductPrinciples.md` ;
 * cadre scientifique : `docs/Scientific_framework.md` ;
-* baseline fonctionnelle actuelle : `docs/REFERENCE_V0_6_CURRENT.md` ;
-* contrat technique du moteur : `docs/DecisionEngineSpecification_v1_3.md` ;
-* scénarios moteur : `docs/DecisionEngine_TestScenarios_v1_3.md` ;
+* comportement actuellement implémenté : `docs/CURRENT_REFERENCE.md` ;
+* évolutions prévues : `docs/ROADMAP.md` ;
+* contrat technique du moteur : `docs/DecisionEngineSpecification.md` ;
+* scénarios moteur : `docs/DecisionEngine_TestScenarios.md` ;
 * catalogue : `catalog/activities_v1.json` ;
 * schéma : `catalog/activity_catalog_schema_v1.json` ;
 * vocabulaire : `catalog/activity_vocabularies_v1.json` ;
@@ -268,43 +277,44 @@ Le moteur métier reste séparé de l’interface Android sans multiplier artifi
 
 ## 15. Classement des évolutions
 
-### V0 / V0.6 — socle actuel
+### V0.7 — version stable actuelle
 
-Le socle doit permettre de façon fiable :
+La V0.7 stabilise l’expérience issue des premiers tests terrain.
 
-* configurer les propositions ;
-* recevoir les notifications ;
-* comprendre et réaliser une activité ;
-* utiliser le chrono lorsque nécessaire ;
-* reporter ou abandonner ;
-* demander une alternative ;
-* suspendre et reprendre ;
-* utiliser `Bouger maintenant` et le catalogue manuel ;
-* fonctionner entièrement hors ligne.
+Elle comprend notamment :
 
-### V0.7 — corrections issues du terrain
+* amélioration de l’état final du chrono ;
+* wording homogénéisé autour de Suspendre / Reprendre ;
+* révision de certaines consignes ;
+* renforcement de la diversité en évitant les 4 dernières activités lorsqu’une alternative compatible existe.
 
-Une évolution légère peut entrer en V0.7 lorsqu’elle corrige un problème observé sans transformer l’architecture.
+La V0.7 ne reçoit plus de nouvelle fonctionnalité, sauf correction nécessaire à sa stabilité.
+
+### V1.0 — enrichissement issu des usages
+
+Le périmètre prévu est documenté dans `ROADMAP.md`.
+
+Il comprend notamment :
+
+* statistiques personnelles locales ;
+* historique local d’événements nécessaire aux statistiques ;
+* action `Déjà fait` dans la notification ;
+* meilleure compréhension des jours et créneaux dans les Paramètres ;
+* simplification des catégories visibles des activités ;
+* harmonisation des titres et consignes ;
+* réduction des objectifs en nombre de répétitions ;
+* enrichissement méthodique du catalogue.
+
+### V1.x — candidats après validation de V1.0
 
 Exemples :
 
-* améliorer une consigne mal calibrée ;
-* corriger une répétition jugée trop proche ;
-* améliorer l’état final du chrono ;
-* harmoniser un wording incohérent.
-
-### V1 — enrichissement justifié par l’usage
-
-Exemples possibles :
-
-* durées mieux adaptées selon les activités ;
-* mini-séquences guidées ;
-* pauses plus longues ponctuelles ;
-* cohérence cardiaque ;
-* sessions guidées ;
-* informations et conseils mieux structurés.
-
-Ces pistes doivent être testées avant de devenir des systèmes génériques.
+* durées davantage adaptées aux activités ;
+* mini-séquences ;
+* sessions guidées volontaires ;
+* respiration guidée plus longue ;
+* possibilité de masquer certaines activités ;
+* contenus scientifiques courts et sourcés.
 
 ### V2 — expérimental
 
@@ -313,10 +323,10 @@ Exemples :
 * adaptation automatique avancée ;
 * personnalisation plus complexe ;
 * détection locale de contexte ;
-* protocoles de recherche ;
+* statistiques avancées ;
 * fonctions nécessitant une architecture significativement plus riche.
 
-Une idée V1 ou V2 ne doit pas complexifier la version actuelle sans bénéfice démontré.
+Une idée V1.x ou V2 ne doit pas complexifier la version actuelle sans bénéfice démontré.
 
 ---
 
@@ -365,7 +375,7 @@ Une évolution importante doit :
 1. partir d’un problème ou d’un objectif explicite ;
 2. distinguer recommandation scientifique et décision de conception ;
 3. examiner les risques UX, comportementaux et techniques ;
-4. être classée V0.7, V1 ou V2 lorsque pertinent ;
+4. être classée V0.7, V1.0, V1.x ou V2 lorsque pertinent ;
 5. privilégier la solution la plus simple suffisante ;
 6. mettre à jour les sources actives concernées ;
 7. être versionnée dans Git.

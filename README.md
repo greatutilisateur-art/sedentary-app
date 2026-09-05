@@ -18,11 +18,13 @@ Le produit privilégie :
 
 ## État du projet
 
-Version de travail actuelle : **V0.6**.
+Version stable actuelle : **V0.7**.
+
+Prochaine cible : **V1.0**.
 
 L’application est fonctionnelle et testée en conditions réelles.
 
-La V0.6 comprend notamment :
+La V0.7 comprend notamment :
 
 * propositions automatiques à des horaires configurables ;
 * notifications Android programmées ;
@@ -31,15 +33,19 @@ La V0.6 comprend notamment :
 * préférences d’intensité et de type de mouvement ;
 * alternatives d’activités ;
 * historique récent utilisé pour favoriser la diversité ;
-* chrono pour les activités guidées dans le temps ;
+* évitement des 4 dernières activités lorsqu’une autre activité compatible est disponible ;
+* chrono pour les activités pratiquées pendant une durée ;
+* contenu de l’activité conservé à la fin naturelle du chrono ;
 * `Bouger maintenant` ;
 * catalogue manuel ;
-* mise en pause des propositions ;
+* mise en pause et reprise des propositions ;
 * fonctionnement entièrement hors ligne ;
 * 23 activités ;
 * 23 illustrations fonctionnelles.
 
-Les règles fonctionnelles détaillées de la version actuelle sont documentées dans [`docs/REFERENCE_V0_6_CURRENT.md`](docs/REFERENCE_V0_6_CURRENT.md).
+Le comportement actuellement implémenté est documenté dans [`docs/CURRENT_REFERENCE.md`](docs/CURRENT_REFERENCE.md).
+
+Les évolutions prévues sont décrites dans [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Architecture
 
@@ -54,6 +60,7 @@ Il repose sur :
 
 * filtrage des activités compatibles ;
 * historique récent ;
+* règles explicites de diversité ;
 * pondération explicite ;
 * sélection aléatoire pondérée ;
 * règles temporelles versionnées.
@@ -92,7 +99,7 @@ catalog/activity_catalog_schema_v1.json
 catalog/activity_vocabularies_v1.json
 ```
 
-Le catalogue V0.6 contient 23 activités.
+Le catalogue actuel contient 23 activités.
 
 Les illustrations Android associées sont placées dans :
 
@@ -100,10 +107,10 @@ Les illustrations Android associées sont placées dans :
 app/src/main/res/drawable/
 ```
 
-La charte visuelle des illustrations est documentée dans :
+La charte visuelle active des illustrations est documentée dans :
 
 ```text
-docs/Illustrations/V0_6_ILLUSTRATION_GUIDE.md
+docs/Illustrations/ILLUSTRATION_GUIDE.md
 ```
 
 ## Moteur et policy
@@ -117,13 +124,13 @@ app/src/main/assets/decision_policy_v1.json
 La spécification technique actuelle du moteur est :
 
 ```text
-docs/DecisionEngineSpecification_v1_3.md
+docs/DecisionEngineSpecification.md
 ```
 
 Les scénarios de référence sont :
 
 ```text
-docs/DecisionEngine_TestScenarios_v1_3.md
+docs/DecisionEngine_TestScenarios.md
 ```
 
 La logique métier Kotlin se trouve principalement dans :
@@ -139,24 +146,26 @@ Les documents actifs sont volontairement peu nombreux :
 * [`docs/Vision.md`](docs/Vision.md) — vision et positionnement ;
 * [`docs/ProductPrinciples.md`](docs/ProductPrinciples.md) — principes de décision produit ;
 * [`docs/Scientific_framework.md`](docs/Scientific_framework.md) — cadre scientifique et limites d’interprétation ;
-* [`docs/REFERENCE_V0_6_CURRENT.md`](docs/REFERENCE_V0_6_CURRENT.md) — baseline fonctionnelle actuelle ;
-* [`docs/DecisionEngineSpecification_v1_3.md`](docs/DecisionEngineSpecification_v1_3.md) — contrat technique du moteur ;
-* [`docs/DecisionEngine_TestScenarios_v1_3.md`](docs/DecisionEngine_TestScenarios_v1_3.md) — scénarios moteur ;
-* [`docs/Illustrations/V0_6_ILLUSTRATION_GUIDE.md`](docs/Illustrations/V0_6_ILLUSTRATION_GUIDE.md) — charte des illustrations.
+* [`docs/CURRENT_REFERENCE.md`](docs/CURRENT_REFERENCE.md) — comportement actuellement implémenté ;
+* [`docs/ROADMAP.md`](docs/ROADMAP.md) — évolutions prévues ;
+* [`docs/DecisionEngineSpecification.md`](docs/DecisionEngineSpecification.md) — contrat technique du moteur ;
+* [`docs/DecisionEngine_TestScenarios.md`](docs/DecisionEngine_TestScenarios.md) — scénarios moteur ;
+* [`docs/Illustrations/ILLUSTRATION_GUIDE.md`](docs/Illustrations/ILLUSTRATION_GUIDE.md) — charte des illustrations.
 
 Les anciennes spécifications restent disponibles dans l’historique Git mais ne constituent pas des sources de vérité actives.
 
 ## Sources de vérité
 
-En cas de contradiction, privilégier dans cet ordre :
+En cas de contradiction sur le comportement actuellement implémenté, privilégier dans cet ordre :
 
 1. le code réellement intégré et testé ;
 2. les fichiers actifs de policy et de catalogue ;
-3. `docs/REFERENCE_V0_6_CURRENT.md` ;
-4. les spécifications techniques actives ;
-5. les principes et documents de contexte.
+3. les spécifications techniques actives ;
+4. `docs/CURRENT_REFERENCE.md` pour la synthèse produit.
 
-Une ancienne spécification ne doit pas être utilisée pour reconstruire un comportement qui n’existe plus dans le code actuel.
+`docs/ROADMAP.md` décrit le futur et ne constitue pas une description du comportement déjà disponible.
+
+Les principes produit, la vision et le cadre scientifique guident les arbitrages mais ne remplacent pas le comportement réellement intégré.
 
 ## Construire et tester
 
@@ -187,6 +196,6 @@ Les recommandations scientifiques sont distinguées des choix de conception prod
 
 ## Licence
 
-Le projet a vocation à être distribué sous une licence open source.
+Intervalles est distribué sous licence Apache License 2.0.
 
-La licence définitive est en cours de formalisation dans le fichier [`LICENSE`](LICENSE).
+Voir [`LICENSE`](LICENSE).

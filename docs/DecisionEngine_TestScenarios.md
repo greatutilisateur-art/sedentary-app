@@ -1,15 +1,20 @@
-# Decision Engine — scénarios de test v1.3
+# Decision Engine — Scénarios de test
+
+**Statut :** scénarios de test actifs du moteur.
 
 ## A. Policy
 
 | ID | Scénario | Attendu |
 |---|---|---|
 | P-01 | version `decision-policy-v1.0.5` | chargement OK |
-| P-02 | 4 slots par défaut | 10:00 / 11:30 / 15:00 / 16:30 |
-| P-03 | min gap = 10 | valeur runtime = 10 |
-| P-04 | retard = 10 | valeur runtime = 10 |
-| P-05 | report défaut/min/max | 30 / 5 / 60 |
-| P-06 | coefficients famille absents | aucun champ runtime mort |
+| P-02 | version sélecteur `weighted-selector-v1.1.0` | chargement OK |
+| P-03 | 4 slots par défaut | 10:00 / 11:30 / 15:00 / 16:30 |
+| P-04 | min gap = 10 | valeur runtime = 10 |
+| P-05 | retard = 10 | valeur runtime = 10 |
+| P-06 | report défaut/min/max | 30 / 5 / 60 |
+| P-07 | coefficients famille absents | aucun champ runtime mort |
+| P-08 | version policy non supportée | refus au chargement |
+| P-09 | version sélecteur non supportée | refus au chargement |
 
 ## B. Espacement
 
@@ -45,7 +50,22 @@
 | L-01 | retard 10 min | encore livrable |
 | L-02 | retard >10 min | proposition périmée, pas de rattrapage |
 
-## E. Tests UI Paramètres
+## E. Diversité
+
+| ID | Scénario | Attendu |
+|---|---|---|
+| D-01 | activité A récente, activité B compatible non récente disponible | A exclue de la sélection, B reste disponible |
+| D-02 | toutes les activités compatibles sont dans la fenêtre récente | aucun candidat n’est supprimé définitivement ; sélection possible |
+| D-03 | historique récent vide | sélection normale sur les candidats compatibles |
+| D-04 | activité présente hors des 4 dernières entrées seulement | elle n’est pas considérée récente par la règle V0.7 |
+| D-05 | `internal_family` identique ou différente | aucun effet de scoring |
+| D-06 | même seed et mêmes entrées | sélection déterministe |
+
+Les tests automatisés doivent notamment couvrir :
+- `recentActivityIsAvoidedWhenAlternativeExists()` ;
+- `recentActivitiesRemainAvailableWhenNoAlternativeExists()`.
+
+## F. Tests UI Paramètres
 
 - Report affiche 15 / 30 / 60 / Autre ;
 - 30 sélectionné au premier lancement ;
@@ -55,3 +75,5 @@
 - valeur custom persistée après fermeture/réouverture ;
 - grandes polices : les choix se réorganisent sans troncature ;
 - info-bulle explique la règle des 10 min et le retour au prochain créneau.
+
+Les aides supplémentaires prévues pour `Jours` et `Créneaux` appartiennent à la V1.0 et ne sont pas des invariants V0.7.
